@@ -3,17 +3,39 @@ import prisma from '@/lib/prisma'
 
 // Webhook verification untuk WABA
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const mode = searchParams.get('hub.mode')
-  const token = searchParams.get('hub.verify_token')
-  const challenge = searchParams.get('hub.challenge')
+  try {
+    const { searchParams } = new URL(req.url)
+    const mode = searchParams.get('hub.mode')
+    const token = searchParams.get('hub.verify_token')
+    const challenge = searchParams.get('hub.challenge')
 
-  if (mode === 'subscribe' && token === process.env.WABA_WEBHOOK_VERIFY_TOKEN) {
-    console.log('Webhook verified')
-    return new NextResponse(challenge, { status: 200 })
+    console.log('📞 Webhook verification request received')
+    console.log('Mode:', mode)
+    console.log('Token received:', token ? 'yes' : 'no')
+    console.log('Challenge:', challenge)
+    console.log('Expected token:', process.env.WABA_WEBHOOK_VERIFY_TOKEN ? 'set' : 'NOT SET')
+
+    // Verify mode and token
+    if (mode === 'subscribe' && token === process.env.WABA_WEBHOOK_VERIFY_TOKEN) {
+      console.log('✅ Webhook verified successfully')
+      // IMPORTANT: Return plain text, not JSON
+      return new NextResponse(challenge, { 
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      })
+    }
+
+    console.log('❌ Webhook verification failed')
+    console.log('Mode match:', mode === 'subscribe')
+    console.log('Token match:', token === process.env.WABA_WEBHOOK_VERIFY_TOKEN)
+    
+    return new NextResponse('Forbidden', { status: 403 })
+  } catch (error: any) {
+    console.error('❌ Webhook verification error:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
-
-  return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
 // Menerima webhook dari WABA
