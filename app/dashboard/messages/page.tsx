@@ -41,6 +41,7 @@ type Message = {
   caption: string | null
   timestamp: string
   isFromContact: boolean
+  contactId: string
   sender: {
     email: string
     role: string
@@ -91,10 +92,11 @@ export default function MessagesPage() {
       caption: null,
       timestamp: new Date().toISOString(),
       isFromContact: false,
+      contactId: selectedContact.id,
       sender: null,
     }
     
-    setMessages((prev) => [...prev, optimisticMessage])
+    setMessages((prev: any) => [...prev, optimisticMessage])
     const messageToSend = newMessage
     setNewMessage('') // Clear input immediately
 
@@ -111,14 +113,14 @@ export default function MessagesPage() {
 
       if (!res.ok) {
         // Remove optimistic message on error
-        setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id))
+        setMessages((prev: any) => prev.filter((m: any) => m.id !== optimisticMessage.id))
         setNewMessage(messageToSend) // Restore message
         console.error('Send message failed')
       }
       // Real-time hook will replace optimistic message with real one
     } catch (error) {
       // Remove optimistic message on error
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id))
+      setMessages((prev: any) => prev.filter((m: any) => m.id !== optimisticMessage.id))
       setNewMessage(messageToSend) // Restore message
       console.error('Send message error:', error)
     } finally {
@@ -148,7 +150,6 @@ export default function MessagesPage() {
     if (selectedContact?.id === contactId) {
       setSelectedContact({
         ...selectedContact,
-        labelId,
         label: { id: newLabel.id, name: newLabel.name, color: newLabel.color },
       })
     }

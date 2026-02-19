@@ -16,16 +16,24 @@ type Label = {
   order: number
 }
 
+// Use Contact type from hook
 type Contact = {
   id: string
   waId: string
   name: string | null
   phoneNumber: string
   profilePic: string | null
-  labelId: string
+  label: {
+    id: string
+    name: string
+    color: string
+  }
   messages: Array<{
+    id: string
     content: string | null
+    type: string
     timestamp: string
+    isFromContact: boolean
   }>
 }
 
@@ -48,7 +56,11 @@ export default function BoardPage() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const contact = contacts.find((c) => c.id === event.active.id)
-    setActiveContact(contact || null)
+    if (contact) {
+      setActiveContact(contact as unknown as Contact)
+    } else {
+      setActiveContact(null)
+    }
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -61,12 +73,12 @@ export default function BoardPage() {
     const newLabelId = over.id as string
 
     const contact = contacts.find((c) => c.id === contactId)
-    if (!contact || contact.labelId === newLabelId) return
+    if (!contact || contact.label.id === newLabelId) return
 
     // Optimistic update - update UI immediately
     const previousContacts = [...contacts]
     setContacts((prev) =>
-      prev.map((c) => (c.id === contactId ? { ...c, labelId: newLabelId } : c))
+      prev.map((c) => (c.id === contactId ? { ...c, label: { ...c.label, id: newLabelId } } : c))
     )
 
     try {
@@ -90,7 +102,7 @@ export default function BoardPage() {
   }
 
   const getContactsByLabel = (labelId: string) => {
-    return contacts.filter((c) => c.labelId === labelId)
+    return contacts.filter((c) => c.label.id === labelId)
   }
 
   return (
@@ -103,7 +115,7 @@ export default function BoardPage() {
             <KanbanColumn
               key={label.id}
               label={label}
-              contacts={getContactsByLabel(label.id)}
+              contacts={getContactsByLabel(label.id) as any}
             />
           ))}
         </div>
