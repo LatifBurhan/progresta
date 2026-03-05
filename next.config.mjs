@@ -4,7 +4,7 @@ const withPWA = withPWAInit({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false, // Enable di semua environment untuk testing
+  disable: false,
   reloadOnOnline: true,
   fallbacks: {
     document: '/offline',
@@ -23,6 +23,14 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
+  },
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+  swcMinify: true,
+  experimental: {
+    optimizePackageImports: ['@prisma/client', 'lucide-react'],
   },
 }
 

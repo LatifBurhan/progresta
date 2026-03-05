@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { getCachedUsers } from '@/lib/cache'
 import UsersPageClient from './UsersPageClient'
 
 export default async function UsersPage() {
@@ -11,15 +11,7 @@ export default async function UsersPage() {
     redirect('/dashboard')
   }
 
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      createdAt: true,
-    },
-  })
+  const users = await getCachedUsers()
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">

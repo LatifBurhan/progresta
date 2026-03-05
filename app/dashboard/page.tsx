@@ -1,14 +1,12 @@
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { getCachedProfile } from '@/lib/cache'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Image from 'next/image'
 
 export default async function DashboardPage() {
   const session = await verifySession()
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session!.userId },
-  })
+  const profile = await getCachedProfile(session!.userId)
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -29,6 +27,8 @@ export default async function DashboardPage() {
                     alt="Profile"
                     fill
                     className="object-cover"
+                    priority
+                    sizes="(max-width: 640px) 96px, 128px"
                     unoptimized
                   />
                 </div>

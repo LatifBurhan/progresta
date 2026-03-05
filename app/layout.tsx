@@ -1,8 +1,13 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import PerformanceMonitor from '@/components/PerformanceMonitor'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+})
 
 export const metadata: Metadata = {
   title: 'Dashboard Template',
@@ -40,8 +45,13 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {process.env.NODE_ENV === 'development' && <PerformanceMonitor />}
+        {children}
+      </body>
     </html>
   )
 }

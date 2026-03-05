@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
 import { logoutAction } from '@/app/actions/auth-actions'
-import prisma from '@/lib/prisma'
+import { getCachedProfile } from '@/lib/cache'
 import ChatBot from './ChatBot'
 import { ChatProvider } from './ChatContext'
 import InstallPrompt from '@/components/InstallPrompt'
@@ -18,9 +18,7 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.userId },
-  })
+  const profile = await getCachedProfile(session.userId)
 
   return (
     <ChatProvider>

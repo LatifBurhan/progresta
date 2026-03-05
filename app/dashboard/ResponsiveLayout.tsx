@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 type Session = {
   userId: string
@@ -25,6 +27,9 @@ export default function ResponsiveLayout({
   logoutAction: () => void
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const pathname = usePathname()
+
+  const isActive = (path: string) => pathname === path
 
   return (
     <>
@@ -68,6 +73,7 @@ export default function ResponsiveLayout({
                       alt="Profile"
                       fill
                       className="object-cover"
+                      sizes="(max-width: 640px) 32px, 40px"
                       unoptimized
                     />
                   </div>
@@ -121,9 +127,13 @@ export default function ResponsiveLayout({
           `}
         >
           <nav className="p-4 space-y-2">
-            <a
+            <Link
               href="/dashboard"
-              className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/dashboard')
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+              }`}
               onClick={() => setIsSidebarOpen(false)}
             >
               <svg
@@ -140,11 +150,15 @@ export default function ResponsiveLayout({
                 />
               </svg>
               <span>Dashboard</span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/dashboard/profile"
-              className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/dashboard/profile')
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+              }`}
               onClick={() => setIsSidebarOpen(false)}
             >
               <svg
@@ -161,12 +175,16 @@ export default function ResponsiveLayout({
                 />
               </svg>
               <span>Profile</span>
-            </a>
+            </Link>
 
             {session.role === 'ADMIN' && (
-              <a
+              <Link
                 href="/dashboard/users"
-                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive('/dashboard/users')
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                }`}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <svg
@@ -183,7 +201,7 @@ export default function ResponsiveLayout({
                   />
                 </svg>
                 <span>User Management</span>
-              </a>
+              </Link>
             )}
           </nav>
         </aside>
