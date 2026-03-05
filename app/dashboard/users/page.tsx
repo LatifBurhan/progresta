@@ -22,9 +22,9 @@ export default async function UsersPage() {
   })
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">User Management</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">User Management</h1>
         <UsersPageClient users={users} />
       </div>
     </div>

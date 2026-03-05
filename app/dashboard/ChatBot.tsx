@@ -94,10 +94,10 @@ export default function ChatBot() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+        className="fixed bottom-6 right-4 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-50"
       >
         <svg
-          className="w-6 h-6"
+          className="w-5 h-5 sm:w-6 sm:h-6"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -114,7 +114,7 @@ export default function ChatBot() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] shadow-2xl rounded-lg overflow-hidden z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] sm:w-96 h-[calc(100vh-8rem)] sm:h-[600px] max-h-[600px] shadow-2xl rounded-lg overflow-hidden z-50">
       <Card className="h-full flex flex-col">
         <CardHeader className="bg-blue-600 text-white">
           <div className="flex items-center justify-between">

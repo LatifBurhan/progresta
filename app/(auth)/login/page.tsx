@@ -55,10 +55,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center">Dashboard Template</CardTitle>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-xl sm:text-2xl text-center">Dashboard Template</CardTitle>
           <p className="text-center text-sm text-muted-foreground">
             Login ke akun Anda
           </p>
@@ -81,6 +81,7 @@ export default function LoginPage() {
                 type="email"
                 placeholder="nama@email.com"
                 required
+                className="text-base"
               />
             </div>
 
@@ -94,6 +95,7 @@ export default function LoginPage() {
                 type="password"
                 placeholder="••••••••"
                 required
+                className="text-base"
               />
             </div>
 
