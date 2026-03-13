@@ -6,7 +6,7 @@ import { revalidateTag } from 'next/cache'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await verifySession()
@@ -17,7 +17,7 @@ export async function DELETE(
       )
     }
 
-    const reportId = params.id
+    const { id: reportId } = await params
 
     // Get report with details to check ownership and get file paths
     const report = await prisma.report.findUnique({
@@ -93,7 +93,7 @@ export async function DELETE(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await verifySession()
@@ -104,7 +104,7 @@ export async function PUT(
       )
     }
 
-    const reportId = params.id
+    const { id: reportId } = await params
     const body = await request.json()
 
     // Get existing report to check ownership

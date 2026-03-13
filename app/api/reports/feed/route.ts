@@ -143,8 +143,8 @@ export async function GET(request: Request) {
     })
 
     // Get divisions for filter dropdown (if user has permission)
-    let divisions = []
-    let projects = []
+    let divisions: Array<{id: string, name: string, color: string | null}> = []
+    let projects: Array<{id: string, name: string}> = []
     
     if (['PM', 'CEO', 'HRD', 'ADMIN'].includes(session.role)) {
       divisions = await prisma.division.findMany({

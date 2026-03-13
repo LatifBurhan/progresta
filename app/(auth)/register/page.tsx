@@ -10,7 +10,7 @@ import { registerAction } from '@/app/actions/auth-actions'
 export default function RegisterPage() {
   const [state, formAction, pending] = useActionState(registerAction, {
     success: false,
-    message: null,
+    message: '',
     errors: null,
   })
 

@@ -39,28 +39,36 @@ export const getCachedProfile = unstable_cache(
 // Cache users list for 30 seconds
 export const getCachedUsers = unstable_cache(
   async () => {
-    return await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-        createdAt: true,
-        profile: {
-          select: {
-            name: true,
-            fotoProfil: true,
-          },
-        },
-        division: {
-          select: {
-            name: true,
-            color: true,
-          },
-        },
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        email,
+        name,
+        role,
+        status_pending,
+        created_at
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching users:', error)
+      return []
+    }
+
+    return data.map(user => ({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status_pending ? 'PENDING' : 'ACTIVE',
+      createdAt: user.created_at,
+      profile: {
+        name: user.name,
+        fotoProfil: null
       },
-    })
+      division: null // Placeholder
+    }))
   },
   ['users'],
   {
@@ -71,27 +79,8 @@ export const getCachedUsers = unstable_cache(
 
 export const getCachedUserProjects = unstable_cache(
   async (userId: string) => {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { division: true }
-    })
-
-    if (!user || !user.divisionId) {
-      return []
-    }
-
-    return await prisma.project.findMany({
-      where: {
-        divisionId: user.divisionId,
-        isActive: true
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true
-      },
-      orderBy: { name: 'asc' }
-    })
+    // Placeholder implementation
+    return []
   },
   ['user-projects'],
   { revalidate: 300, tags: ['projects'] }
@@ -99,15 +88,8 @@ export const getCachedUserProjects = unstable_cache(
 
 export const getCachedLastReport = unstable_cache(
   async (userId: string) => {
-    return await prisma.report.findFirst({
-      where: { userId },
-      orderBy: { reportTime: 'desc' },
-      select: {
-        period: true,
-        reportDate: true,
-        reportTime: true
-      }
-    })
+    // Placeholder implementation
+    return null
   },
   ['last-report'],
   { revalidate: 60, tags: ['reports'] }

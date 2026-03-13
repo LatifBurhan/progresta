@@ -23,7 +23,7 @@ interface UserData {
 interface Division {
   id: string
   name: string
-  color: string
+  color: string | null
 }
 
 interface ApprovalModalProps {
