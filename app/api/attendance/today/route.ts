@@ -1,0 +1,100 @@
+import { NextResponse } from 'next/server'
+import { verifySession } from '@/lib/session'
+import prisma from '@/lib/prisma'
+
+export async function GET(request: Request) {
+  try {
+    const session = await verifySession()
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId') || session.userId
+
+    // Only allow users to see their own attendance or admin/PM/CEO to see others
+    if (userId !== session.userId && !['ADMIN', 'PM', 'CEO', 'HRD'].includes(session.role)) {
+      return NextResponse.json(
+        { success: false, message: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
+    // Get today's date in Jakarta timezone
+    const now = new Date()
+    const jakartaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}))
+    const today = new Date(jakartaTime.getFullYear(), jakartaTime.getMonth(), jakartaTime.getDate())
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    // Get all reports for today
+    const reports = await prisma.report.findMany({
+      where: {
+        userId,
+        reportDate: {
+          gte: today,
+          lt: tomorrow
+        }
+      },
+      orderBy: {
+        reportTime: 'asc'
+      },
+      select: {
+        reportTime: true,
+        totalHours: true
+      }
+    })
+
+    let attendance = {
+      clockIn: null as string | null,
+      clockOut: null as string | null,
+      workDuration: 0, // in hours
+      totalHours: 0,
+      isOvertime: false,
+      reportCount: reports.length,
+      lastUpdated: new Date().toISOString()
+    }
+
+    if (reports.length > 0) {
+      // Clock in = first report time
+      attendance.clockIn = reports[0].reportTime.toISOString()
+      
+      // Clock out = last report time
+      attendance.clockOut = reports[reports.length - 1].reportTime.toISOString()
+      
+      // Work duration = time between first and last report
+      const firstReport = new Date(reports[0].reportTime)
+      const lastReport = new Date(reports[reports.length - 1].reportTime)
+      const durationMs = lastReport.getTime() - firstReport.getTime()
+      attendance.workDuration = durationMs / (1000 * 60 * 60) // Convert to hours
+      
+      // Total hours = sum of all report hours
+      attendance.totalHours = reports.reduce((sum, report) => sum + report.totalHours, 0)
+      
+      // Check if overtime (last report after 16:00 WIB)
+      const lastReportTime = new Date(reports[reports.length - 1].reportTime)
+      const lastReportHour = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Jakarta',
+        hour: 'numeric',
+        hour12: false
+      }).format(lastReportTime)
+      
+      attendance.isOvertime = parseInt(lastReportHour) >= 16
+    }
+
+    return NextResponse.json({
+      success: true,
+      attendance
+    })
+
+  } catch (error) {
+    console.error('Get attendance error:', error)
+    return NextResponse.json(
+      { success: false, message: 'Terjadi kesalahan server' },
+      { status: 500 }
+    )
+  }
+}

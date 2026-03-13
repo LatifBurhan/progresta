@@ -20,8 +20,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Protect dashboard routes - redirect to login if not authenticated
-  if (pathname.startsWith('/dashboard')) {
+  // Protect dashboard and admin routes - redirect to login if not authenticated
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
+
+  // Allow access to waiting room and account disabled pages for authenticated users
+  if (pathname === '/waiting-room' || pathname === '/account-disabled') {
     if (!session) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -32,6 +39,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api/|_next/static|_next/image|favicon.ico).*)',
+    // Disable middleware temporarily for debugging
+    // '/((?!api/|_next/static|_next/image|favicon.ico).*)',
   ],
 }

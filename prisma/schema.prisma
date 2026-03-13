@@ -12,17 +12,32 @@ datasource db {
 enum Role {
   ADMIN
   USER
+  HRD
+  PM
+  CEO
+  KARYAWAN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
 }
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String   @unique
-  password  String
-  role      Role     @default(ADMIN)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String     @id @default(uuid()) @db.Uuid
+  email      String     @unique
+  password   String
+  role       Role       @default(KARYAWAN)
+  status     UserStatus @default(PENDING)
+  divisionId String?    @db.Uuid
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
-  profile Profile?
+  profile   Profile?
+  division  Division? @relation(fields: [divisionId], references: [id])
+  reports   Report[]
+  createdBy String?   @db.Uuid // User yang membuat akun ini (untuk approval)
 
   @@map("users")
 }
@@ -30,11 +45,82 @@ model User {
 model Profile {
   id         String   @id @default(uuid()) @db.Uuid
   userId     String   @unique @db.Uuid
+  name       String?  // Nama lengkap karyawan
   fotoProfil String?
+  phone      String?  // Nomor telepon
+  position   String?  // Jabatan
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+model Division {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique // Frontend, Backend, Mobile, UI/UX, QA
+  description String?
+  color       String?  // Warna untuk UI (hex code)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users    User[]
+  projects Project[]
+
+  @@map("divisions")
+}
+
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  divisionId  String   @db.Uuid
+  isActive    Boolean  @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  division      Division        @relation(fields: [divisionId], references: [id])
+  reportDetails ReportDetail[]
+
+  @@map("projects")
+}
+
+model Report {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  reportDate   DateTime  // Tanggal laporan (YYYY-MM-DD)
+  reportTime   DateTime  // Waktu laporan lengkap dengan jam
+  period       String    // "08:00-10:00", "10:00-12:00", dst
+  hasIssue     Boolean   @default(false) // Flag kendala
+  issueDesc    String?   // Deskripsi kendala
+  totalHours   Float     @default(2.0) // Total jam kerja periode ini
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id])
+  reportDetails ReportDetail[]
+
+  @@unique([userId, reportDate, period]) // Prevent duplicate report per period
+  @@map("reports")
+}
+
+model ReportDetail {
+  id          String   @id @default(uuid()) @db.Uuid
+  reportId    String   @db.Uuid
+  projectId   String   @db.Uuid
+  task        String   // Deskripsi task yang dikerjakan
+  progress    String   // Progress yang dicapai
+  evidence    String?  // URL foto bukti kerja
+  hoursSpent  Float    // Jam yang dihabiskan untuk project ini
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  report  Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@map("report_details")
 }

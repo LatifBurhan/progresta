@@ -1,15 +1,20 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 // Client-side Supabase (for public access)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+
+// Function to create Supabase client (for server-side use)
+export function createClient() {
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey)
+}
 
 // Server-side Supabase with service role (bypasses RLS)
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 export const supabaseAdmin = supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+  ? createSupabaseClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false

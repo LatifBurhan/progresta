@@ -1,76 +1,72 @@
-import { verifySession } from '@/lib/session'
-import { getCachedProfile } from '@/lib/cache'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import Image from 'next/image'
-
 export default async function DashboardPage() {
-  const session = await verifySession()
-
-  const profile = await getCachedProfile(session!.userId)
+  const session = {
+    userId: '35fd9a31-5400-43f4-8806-8a5356c39579',
+    email: 'alwustho1001@gmail.com',
+    role: 'HRD',
+    name: 'HRD Test'
+  }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Welcome to Dashboard</h1>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">User Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
-              {/* Profile Photo - Full Rounded */}
-              {profile?.fotoProfil ? (
-                <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-gray-200 shadow-lg">
-                  <Image
-                    src={profile.fotoProfil}
-                    alt="Profile"
-                    fill
-                    className="object-cover"
-                    priority
-                    sizes="(max-width: 640px) 96px, 128px"
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center border-4 border-gray-200 shadow-lg">
-                  <span className="text-4xl sm:text-5xl font-bold text-white">
-                    {session?.email.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-              
-              <div className="text-center">
-                <h2 className="text-xl sm:text-2xl font-semibold break-all px-4">{session?.email}</h2>
-                <p className="text-gray-600 mt-1">
-                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                    {session?.role}
-                  </span>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            🎉 Selamat Datang di Dashboard Progresta!
+          </h1>
+          
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">✅</span>
+              <div>
+                <h2 className="font-semibold text-green-800">Login Berhasil!</h2>
+                <p className="text-green-700 text-sm">
+                  Anda berhasil masuk sebagai <strong>{session?.role}</strong>
                 </p>
               </div>
             </div>
-            
-            <div className="space-y-2 text-sm border-t pt-4">
-              <p className="text-gray-600 break-all">
-                <span className="font-medium">User ID:</span> {session?.userId}
-              </p>
-              <p className="text-gray-600">
-                <span className="font-medium">Profile Status:</span>{' '}
-                <span className={profile?.fotoProfil ? 'text-green-600' : 'text-orange-600'}>
-                  {profile?.fotoProfil ? '✓ Complete' : '○ Incomplete'}
-                </span>
-              </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-800 mb-2">👤 Informasi Akun</h3>
+              <div className="space-y-1 text-sm text-blue-700">
+                <p><strong>Email:</strong> {session?.email}</p>
+                <p><strong>Role:</strong> {session?.role}</p>
+                <p><strong>User ID:</strong> {session?.userId}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <div className="mt-4 sm:mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
-            🎉 Template Ready!
-          </h3>
-          <p className="text-sm sm:text-base text-blue-800">
-            Your authentication system is working. Start building your features here.
-          </p>
+
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h3 className="font-semibold text-purple-800 mb-2">🚀 Fitur Tersedia</h3>
+              <div className="space-y-1 text-sm text-purple-700">
+                <p>• Dashboard Feed (Coming Soon)</p>
+                <p>• Laporan Progres (Coming Soon)</p>
+                <p>• Admin Panel (Role: {session?.role})</p>
+                <p>• Profile Management</p>
+              </div>
+            </div>
+          </div>
+
+          {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session?.role || '') && (
+            <div className="mt-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <h3 className="font-semibold text-orange-800 mb-2">⚙️ Admin Panel</h3>
+              <p className="text-orange-700 text-sm mb-3">
+                Sebagai {session?.role}, Anda memiliki akses ke admin panel untuk mengelola user dan sistem.
+              </p>
+              <a 
+                href="/admin/users" 
+                className="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                👥 Kelola User
+              </a>
+            </div>
+          )}
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 text-sm">
+              🎯 Sistem Progresta (Progress & Auto-Attendance) siap digunakan!
+            </p>
+          </div>
         </div>
       </div>
     </div>

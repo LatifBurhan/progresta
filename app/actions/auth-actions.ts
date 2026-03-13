@@ -1,9 +1,9 @@
 'use server'
 
 import { z } from 'zod'
-import { hash, compare } from 'bcryptjs'
 import { createSession, deleteSession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@/lib/supabase'
+import { redirect } from 'next/navigation'
 
 const LoginSchema = z.object({
   email: z.string().email({ message: 'Format email tidak valid' }),
@@ -13,8 +13,9 @@ const LoginSchema = z.object({
 const RegisterSchema = z.object({
   email: z.string().email({ message: 'Format email tidak valid' }),
   password: z.string().min(6, { message: 'Password minimal 6 karakter' }),
-  role: z.enum(['ADMIN', 'USER']).optional(),
-  token: z.string().optional(),
+  name: z.string().min(1, { message: 'Nama harus diisi' }),
+  phone: z.string().optional(),
+  position: z.string().optional(),
 })
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -33,11 +34,14 @@ export async function loginAction(prevState: any, formData: FormData) {
   const { email, password } = validatedFields.data
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const supabase = createClient()
+    
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     })
 
-    if (!user) {
+    if (authError || !authData.user) {
       return { 
         success: false, 
         message: 'Email atau password salah.', 
@@ -45,25 +49,32 @@ export async function loginAction(prevState: any, formData: FormData) {
       }
     }
 
-    const passwordMatch = await compare(password, user.password)
-    
-    if (!passwordMatch) {
+    // Get user data from public.users table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role, status_pending')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (userError || !userData) {
       return { 
         success: false, 
-        message: 'Email atau password salah.', 
+        message: 'Data user tidak ditemukan.', 
         errors: null 
       }
     }
 
     await createSession({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
+      userId: authData.user.id,
+      email: authData.user.email!,
+      role: userData.role,
+      name: authData.user.user_metadata?.name || authData.user.email!.split('@')[0]
     })
 
     return { 
       success: true, 
-      role: user.role, 
+      role: userData.role,
+      pending: userData.status_pending,
       errors: null, 
       message: null 
     }
@@ -90,46 +101,67 @@ export async function registerAction(prevState: any, formData: FormData) {
     }
   }
 
-  const { email, password, role, token } = validatedFields.data
-
-  // Verify token for secret registration
-  if (token) {
-    const validToken = process.env.REGISTRATION_TOKEN
-    if (!validToken || token !== validToken) {
-      return {
-        success: false,
-        message: 'Token registrasi tidak valid.',
-        errors: null,
-      }
-    }
-  }
+  const { email, password, name, phone, position } = validatedFields.data
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    const supabase = createClient()
+
+    // Create auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          phone,
+          position
+        }
+      }
     })
 
-    if (existingUser) {
+    if (authError) {
       return { 
         success: false, 
-        message: 'Email ini sudah terdaftar.', 
+        message: authError.message === 'User already registered' 
+          ? 'Email ini sudah terdaftar.' 
+          : 'Terjadi kesalahan saat pendaftaran.', 
         errors: null 
       }
     }
 
-    const passwordHash = await hash(password, 12)
+    if (!authData.user) {
+      return { 
+        success: false, 
+        message: 'Gagal membuat akun.', 
+        errors: null 
+      }
+    }
 
-    await prisma.user.create({
-      data: {
-        email,
-        password: passwordHash,
-        role: role || 'ADMIN',
-      },
-    })
+    // Create user record in public.users table
+    const { error: userError } = await supabase
+      .from('users')
+      .insert({
+        id: authData.user.id,
+        email: authData.user.email,
+        name,
+        role: 'Karyawan', // Default role
+        status_pending: true // Pending approval
+      })
+
+    if (userError) {
+      console.error('Failed to create user record:', userError)
+      // Try to clean up auth user if public user creation failed
+      await supabase.auth.admin.deleteUser(authData.user.id)
+      return { 
+        success: false, 
+        message: 'Terjadi kesalahan saat menyimpan data user.', 
+        errors: null 
+      }
+    }
 
     return { 
       success: true, 
-      message: 'Pendaftaran berhasil! Silakan login.', 
+      message: 'Pendaftaran berhasil! Akun Anda menunggu persetujuan admin. Silakan login untuk melihat status.', 
       errors: null 
     }
   } catch (error: any) {
@@ -143,5 +175,8 @@ export async function registerAction(prevState: any, formData: FormData) {
 }
 
 export async function logoutAction() {
+  const supabase = createClient()
+  await supabase.auth.signOut()
   await deleteSession()
+  redirect('/login')
 }

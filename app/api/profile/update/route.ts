@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
 import prisma from '@/lib/prisma'
 import { deleteAvatar, getFileNameFromUrl } from '@/lib/supabase'
+import { z } from 'zod'
+
+const UpdateProfileSchema = z.object({
+  name: z.string().optional(),
+  phone: z.string().optional(),
+  position: z.string().optional(),
+  fotoProfil: z.string().nullable().optional(),
+})
 
 export async function PUT(request: Request) {
   try {
@@ -14,22 +22,24 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    
-    // Only accept null (for delete operation)
-    if (body.fotoProfil !== null) {
+    const validatedData = UpdateProfileSchema.safeParse(body)
+
+    if (!validatedData.success) {
       return NextResponse.json(
-        { success: false, message: 'Invalid operation. Use upload endpoint for new photos.' },
+        { success: false, message: 'Data tidak valid' },
         { status: 400 }
       )
     }
+
+    const updateData = validatedData.data
 
     // Check if profile exists
     let profile = await prisma.profile.findUnique({
       where: { userId: session.userId },
     })
 
-    // Delete old file from storage
-    if (profile?.fotoProfil) {
+    // Handle photo deletion
+    if (updateData.fotoProfil === null && profile?.fotoProfil) {
       console.log('Deleting photo:', profile.fotoProfil)
       const oldFileName = getFileNameFromUrl(profile.fotoProfil)
       console.log('Extracted filename:', oldFileName)
@@ -41,18 +51,32 @@ export async function PUT(request: Request) {
     }
 
     if (profile) {
-      // Update existing profile - set to null
+      // Update existing profile
       profile = await prisma.profile.update({
         where: { userId: session.userId },
         data: {
-          fotoProfil: null,
+          ...(updateData.name !== undefined && { name: updateData.name || null }),
+          ...(updateData.phone !== undefined && { phone: updateData.phone || null }),
+          ...(updateData.position !== undefined && { position: updateData.position || null }),
+          ...(updateData.fotoProfil !== undefined && { fotoProfil: updateData.fotoProfil }),
+        },
+      })
+    } else {
+      // Create new profile
+      profile = await prisma.profile.create({
+        data: {
+          userId: session.userId,
+          name: updateData.name || null,
+          phone: updateData.phone || null,
+          position: updateData.position || null,
+          fotoProfil: updateData.fotoProfil || null,
         },
       })
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Foto profil berhasil dihapus',
+      message: updateData.fotoProfil === null ? 'Foto profil berhasil dihapus' : 'Profile berhasil diperbarui',
       profile,
     })
   } catch (error) {

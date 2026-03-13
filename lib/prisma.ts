@@ -25,15 +25,18 @@ if (process.env.NODE_ENV !== 'production') {
 /**
  * Graceful Shutdown Pattern
  * Disconnect database saat process exit
+ * Only available in Node.js runtime (not Edge Runtime)
  */
-const gracefulShutdown = async () => {
-  await prisma.$disconnect()
-  process.exit(0)
-}
+if (typeof process !== 'undefined' && process.on) {
+  const gracefulShutdown = async () => {
+    await prisma.$disconnect()
+    process.exit(0)
+  }
 
-process.on('beforeExit', gracefulShutdown)
-process.on('SIGINT', gracefulShutdown)
-process.on('SIGTERM', gracefulShutdown)
+  process.on('beforeExit', gracefulShutdown)
+  process.on('SIGINT', gracefulShutdown)
+  process.on('SIGTERM', gracefulShutdown)
+}
 
 /**
  * Retry Pattern dengan Exponential Backoff
