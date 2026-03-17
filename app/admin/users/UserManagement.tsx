@@ -18,8 +18,10 @@ import {
   Filter,
   MoreVertical,
   Shield,
-  Building
+  Building,
+  Edit
 } from 'lucide-react'
+import Link from 'next/link'
 import ApprovalModal from './ApprovalModal'
 import UserActionModal from './UserActionModal'
 
@@ -113,6 +115,11 @@ export default function UserManagement({
     }
   }
 
+  const handleCreateSuccess = () => {
+    // Refresh page to show new user
+    window.location.reload()
+  }
+
   const handleUserAction = async (userId: string, action: 'activate' | 'deactivate' | 'delete') => {
     try {
       const response = await fetch('/api/admin/users/action', {
@@ -179,6 +186,33 @@ export default function UserManagement({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Manajemen User</h1>
+          <p className="text-gray-600 mt-1">
+            Kelola persetujuan user baru dan status user yang sudah ada
+          </p>
+        </div>
+        {/* Add Create User Button for HRD/CEO/ADMIN */}
+        {['HRD', 'CEO', 'ADMIN'].includes(currentUserRole) && (
+          <div className="flex gap-2">
+            <Link href="/dashboard/admin/users/manage">
+              <Button variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300">
+                <Edit className="w-4 h-4 mr-2" />
+                Kelola Karyawan
+              </Button>
+            </Link>
+            <Link href="/dashboard/admin/users/create">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <User className="w-4 h-4 mr-2" />
+                Tambah User
+              </Button>
+            </Link>
+          </div>
+        )}
+      </div>
+
       {/* Pending Approvals */}
       {pendingUsers.length > 0 ? (
         <Card className="border-yellow-200 bg-yellow-50">

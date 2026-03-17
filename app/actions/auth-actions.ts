@@ -52,7 +52,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     // Get user data from public.users table
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('role, status_pending')
+      .select('role, status_pending, name')
       .eq('id', authData.user.id)
       .single()
 
@@ -68,7 +68,7 @@ export async function loginAction(prevState: any, formData: FormData) {
       userId: authData.user.id,
       email: authData.user.email!,
       role: userData.role,
-      name: authData.user.user_metadata?.name || authData.user.email!.split('@')[0]
+      name: userData.name || authData.user.user_metadata?.name || authData.user.email!.split('@')[0]
     })
 
     return { 
@@ -137,15 +137,15 @@ export async function registerAction(prevState: any, formData: FormData) {
       }
     }
 
-    // Create user record in public.users table
+    // Create user record in public.users table (sesuai dengan struktur database aktual)
     const { error: userError } = await supabase
       .from('users')
       .insert({
         id: authData.user.id,
         email: authData.user.email,
-        name,
-        role: 'Karyawan', // Default role
-        status_pending: true // Pending approval
+        name: name, // Database memiliki field name di tabel users
+        role: 'Karyawan', // Sesuai dengan constraint di database
+        status_pending: true // Database menggunakan boolean status_pending
       })
 
     if (userError) {

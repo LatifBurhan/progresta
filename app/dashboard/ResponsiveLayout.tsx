@@ -229,7 +229,7 @@ export default function ResponsiveLayout({
                 <Link
                   href="/admin/users"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname.startsWith('/admin/users')
+                    pathname === '/admin/users'
                       ? 'bg-orange-50 text-orange-700'
                       : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
                   }`}
@@ -251,10 +251,66 @@ export default function ResponsiveLayout({
                   <span>👥 Manajemen User</span>
                 </Link>
 
+                {/* HRD/CEO/ADMIN can create users */}
+                {['HRD', 'CEO', 'ADMIN'].includes(session.role) && (
+                  <Link
+                    href="/dashboard/admin/users/create"
+                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
+                      pathname === '/dashboard/admin/users/create'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                    }`}
+                    onClick={() => setIsSidebarOpen(false)}
+                  >
+                    <svg
+                      className="w-4 h-4 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                    <span className="text-sm">➕ Tambah User</span>
+                  </Link>
+                )}
+
+                {/* HRD/CEO/ADMIN can manage users */}
+                {['HRD', 'CEO', 'ADMIN'].includes(session.role) && (
+                  <Link
+                    href="/dashboard/admin/users/manage"
+                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
+                      pathname === '/dashboard/admin/users/manage'
+                        ? 'bg-green-50 text-green-700'
+                        : 'text-gray-600 hover:bg-green-50 hover:text-green-700'
+                    }`}
+                    onClick={() => setIsSidebarOpen(false)}
+                  >
+                    <svg
+                      className="w-4 h-4 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    <span className="text-sm">⚙️ Kelola Karyawan</span>
+                  </Link>
+                )}
+
                 <Link
                   href="/admin/divisions"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname.startsWith('/admin/divisions')
+                    pathname === '/admin/divisions'
                       ? 'bg-orange-50 text-orange-700'
                       : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
                   }`}
@@ -276,10 +332,38 @@ export default function ResponsiveLayout({
                   <span>🏢 Manajemen Divisi</span>
                 </Link>
 
+                {/* HRD/CEO/ADMIN can manage divisions */}
+                {['HRD', 'CEO', 'ADMIN'].includes(session.role) && (
+                  <Link
+                    href="/dashboard/admin/divisions"
+                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
+                      pathname === '/dashboard/admin/divisions'
+                        ? 'bg-purple-50 text-purple-700'
+                        : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                    onClick={() => setIsSidebarOpen(false)}
+                  >
+                    <svg
+                      className="w-4 h-4 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    <span className="text-sm">⚙️ Kelola Divisi</span>
+                  </Link>
+                )}
+
                 <Link
                   href="/admin/projects"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname.startsWith('/admin/projects')
+                    pathname === '/admin/projects'
                       ? 'bg-orange-50 text-orange-700'
                       : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
                   }`}
@@ -300,6 +384,34 @@ export default function ResponsiveLayout({
                   </svg>
                   <span>📋 Manajemen Project</span>
                 </Link>
+
+                {/* PM/HRD/CEO/ADMIN can manage projects */}
+                {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (
+                  <Link
+                    href="/dashboard/admin/projects"
+                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
+                      pathname === '/dashboard/admin/projects'
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'
+                    }`}
+                    onClick={() => setIsSidebarOpen(false)}
+                  >
+                    <svg
+                      className="w-4 h-4 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    <span className="text-sm">⚙️ Kelola Project</span>
+                  </Link>
+                )}
 
                 <Link
                   href="/admin/reports"
