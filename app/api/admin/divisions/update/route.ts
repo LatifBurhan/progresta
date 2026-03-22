@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -24,14 +24,16 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 })
     }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
     // Check if division exists
-    const existingDivision = await prisma.division.findUnique({
-      where: { id: divisionId },
-      include: {
-        users: { select: { id: true } },
-        projects: { select: { id: true } }
-      }
-    })
+    const { data: existingDivision } = await supabase
+      .from('divisions')
+      .select('id, name')
+      .eq('id', divisionId)
+      .single()
 
     if (!existingDivision) {
       return NextResponse.json({ 
@@ -42,9 +44,11 @@ export async function PUT(request: NextRequest) {
 
     // Check if new name is taken by another division
     if (name.trim() !== existingDivision.name) {
-      const nameExists = await prisma.division.findUnique({
-        where: { name: name.trim() }
-      })
+      const { data: nameExists } = await supabase
+        .from('divisions')
+        .select('id')
+        .eq('name', name.trim())
+        .single()
 
       if (nameExists) {
         return NextResponse.json({ 
@@ -55,35 +59,45 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update division
-    const updatedDivision = await prisma.division.update({
-      where: { id: divisionId },
-      data: {
+    const { data: updatedDivision, error } = await supabase
+      .from('divisions')
+      .update({
         name: name.trim(),
         description: description?.trim() || null,
         color: color || '#3B82F6'
-      }
-    })
+      })
+      .eq('id', divisionId)
+      .select()
+      .single()
 
-    // Return division with counts
+    if (error) {
+      console.error('Supabase update division error:', error)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal mengupdate divisi: ' + error.message
+      }, { status: 500 })
+    }
+
+    // Return division with counts (set to 0 for now)
     const divisionWithCounts = {
       ...updatedDivision,
-      createdAt: updatedDivision.createdAt.toISOString(),
-      updatedAt: updatedDivision.updatedAt.toISOString(),
-      userCount: existingDivision.users.length,
-      projectCount: existingDivision.projects.length
+      createdAt: updatedDivision.created_at,
+      updatedAt: updatedDivision.updated_at,
+      userCount: 0,
+      projectCount: 0
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Division updated successfully',
+      message: 'Divisi berhasil diupdate',
       division: divisionWithCounts
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update division error:', error)
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error: ' + error.message
     }, { status: 500 })
   }
 }

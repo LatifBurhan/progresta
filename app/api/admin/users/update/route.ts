@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
 import prisma from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -21,44 +21,43 @@ export async function PUT(request: NextRequest) {
     if (!userId || !email || !name || !role || !divisionId) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Missing required fields: userId, email, name, role, divisionId' 
+        message: 'Email, nama, role, dan divisi wajib diisi' 
       }, { status: 400 })
     }
 
-    // Validate role
-    const validRoles = ['KARYAWAN', 'PM', 'HRD', 'CEO', 'ADMIN']
+    // Validate role - sesuai dengan constraint database
+    const validRoles = ['Karyawan', 'PM', 'HRD', 'CEO', 'ADMIN']
     if (!validRoles.includes(role)) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid role' 
+        message: 'Role tidak valid' 
       }, { status: 400 })
     }
 
     // Permission checks
-    if (session.role === 'HRD' && !['KARYAWAN', 'PM'].includes(role)) {
+    if (session.role === 'HRD' && !['Karyawan', 'PM'].includes(role)) {
       return NextResponse.json({ 
         success: false, 
-        message: 'HRD can only edit KARYAWAN and PM roles' 
+        message: 'HRD hanya dapat mengedit role Karyawan dan PM' 
       }, { status: 403 })
     }
 
     if (session.role === 'CEO' && role === 'ADMIN') {
       return NextResponse.json({ 
         success: false, 
-        message: 'CEO cannot edit ADMIN users' 
+        message: 'CEO tidak dapat mengedit user ADMIN' 
       }, { status: 403 })
     }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true }
+      where: { id: userId }
     })
 
     if (!existingUser) {
       return NextResponse.json({ 
         success: false, 
-        message: 'User not found' 
+        message: 'User tidak ditemukan' 
       }, { status: 404 })
     }
 
@@ -71,7 +70,7 @@ export async function PUT(request: NextRequest) {
       if (emailExists) {
         return NextResponse.json({ 
           success: false, 
-          message: 'Email already exists' 
+          message: 'Email sudah digunakan user lain' 
         }, { status: 400 })
       }
     }
@@ -84,61 +83,51 @@ export async function PUT(request: NextRequest) {
     if (!division) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Division not found' 
+        message: 'Divisi tidak ditemukan' 
       }, { status: 404 })
     }
 
-    // Update user and profile in a transaction
-    const updatedUser = await prisma.$transaction(async (tx) => {
-      // Prepare user update data
-      const userUpdateData: any = {
-        email,
-        role: role as any,
-        divisionId
-      }
+    // Update user data
+    const userUpdateData: any = {
+      email,
+      name,
+      role,
+      divisionId
+    }
 
-      // Hash password if provided
-      if (password) {
-        userUpdateData.password = await bcrypt.hash(password, 12)
-      }
-
-      // Update user
-      const user = await tx.user.update({
-        where: { id: userId },
-        data: userUpdateData
-      })
-
-      // Update or create profile
-      await tx.profile.upsert({
-        where: { userId },
-        update: {
-          name,
-          phone: phone || null,
-          position: position || null
-        },
-        create: {
+    // Update password in Supabase Auth if provided
+    if (password && supabaseAdmin) {
+      try {
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
           userId,
-          name,
-          phone: phone || null,
-          position: position || null
-        }
-      })
-
-      return user
-    })
-
-    // Return updated user with profile and division
-    const userWithDetails = await prisma.user.findUnique({
-      where: { id: updatedUser.id },
-      include: {
-        profile: {
-          select: {
-            name: true,
-            phone: true,
-            position: true,
-            fotoProfil: true
+          { 
+            password,
+            user_metadata: {
+              name,
+              phone: phone || null,
+              position: position || null
+            }
           }
-        },
+        )
+
+        if (authError) {
+          console.error('Supabase Auth update error:', authError)
+          return NextResponse.json({ 
+            success: false, 
+            message: `Gagal update password: ${authError.message}` 
+          }, { status: 400 })
+        }
+      } catch (error: any) {
+        console.error('Supabase Auth update failed:', error)
+        // Continue with user data update even if auth update fails
+      }
+    }
+
+    // Update user in database
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: userUpdateData,
+      include: {
         division: {
           select: {
             name: true,
@@ -150,18 +139,41 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'User updated successfully',
+      message: 'User berhasil diupdate',
       user: {
-        ...userWithDetails,
-        createdAt: userWithDetails?.createdAt.toISOString()
+        ...updatedUser,
+        createdAt: updatedUser.createdAt.toISOString(),
+        // Create mock profile from user data
+        profile: {
+          name: updatedUser.name,
+          phone: phone || null,
+          position: position || null,
+          fotoProfil: null
+        }
       }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update user error:', error)
+    
+    // Handle specific Prisma errors
+    if (error.code === 'P2002') {
+      return NextResponse.json({
+        success: false,
+        message: 'Email sudah digunakan'
+      }, { status: 400 })
+    }
+    
+    if (error.code === 'P2025') {
+      return NextResponse.json({
+        success: false,
+        message: 'User atau divisi tidak ditemukan'
+      }, { status: 400 })
+    }
+
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Terjadi kesalahan internal server'
     }, { status: 500 })
   }
 }

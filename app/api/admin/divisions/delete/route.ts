@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -24,14 +24,16 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if division exists and get counts
-    const existingDivision = await prisma.division.findUnique({
-      where: { id: divisionId },
-      include: {
-        users: { select: { id: true } },
-        projects: { select: { id: true } }
-      }
-    })
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Check if division exists
+    const { data: existingDivision } = await supabase
+      .from('divisions')
+      .select('id, name')
+      .eq('id', divisionId)
+      .single()
 
     if (!existingDivision) {
       return NextResponse.json({ 
@@ -40,36 +42,43 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Check if division has users or projects
-    if (existingDivision.users.length > 0) {
-      return NextResponse.json({ 
-        success: false, 
-        message: `Cannot delete division. It has ${existingDivision.users.length} users. Please move all users to other divisions first.` 
-      }, { status: 400 })
-    }
+    // Check if division has users
+    const { count: userCount } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('division_id', divisionId)
 
-    if (existingDivision.projects.length > 0) {
+    if (userCount && userCount > 0) {
       return NextResponse.json({ 
         success: false, 
-        message: `Cannot delete division. It has ${existingDivision.projects.length} projects. Please move all projects to other divisions first.` 
+        message: `Cannot delete division. It has ${userCount} users. Please move all users to other divisions first.` 
       }, { status: 400 })
     }
 
     // Delete division
-    await prisma.division.delete({
-      where: { id: divisionId }
-    })
+    const { error } = await supabase
+      .from('divisions')
+      .delete()
+      .eq('id', divisionId)
+
+    if (error) {
+      console.error('Supabase delete division error:', error)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal menghapus divisi: ' + error.message
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Division deleted successfully'
+      message: 'Divisi berhasil dihapus'
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete division error:', error)
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error: ' + error.message
     }, { status: 500 })
   }
 }

@@ -9,112 +9,114 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Model sesuai dengan struktur database yang sebenarnya
 model User {
-  id         String     @id @default(uuid()) @db.Uuid
-  email      String     @unique
-  password   String
-  role       Role       @default(KARYAWAN)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  createdBy  String?    @db.Uuid
-  divisionId String?    @db.Uuid
-  status     UserStatus @default(PENDING)
-  profile    Profile?
-  reports    Report[]
-  division   Division?  @relation(fields: [divisionId], references: [id])
+  id            String    @id @db.Uuid
+  email         String    @unique
+  // name field tidak ada di database, jadi dihapus
+  role          String    @default("Karyawan") // Sesuai constraint database
+  divisionId    String?   @map("division_id") @db.Uuid
+  statusPending Boolean   @default(true) @map("status_pending")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  division      Division? @relation(fields: [divisionId], references: [id])
+  reports       Report[]
+  projectAssignments ProjectAssignment[]
 
   @@map("users")
 }
 
-model Profile {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @unique @db.Uuid
-  fotoProfil String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  name       String?
-  phone      String?
-  position   String?
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("profiles")
-}
-
 model Division {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
   name        String    @unique
   description String?
-  color       String?
-  createdAt   DateTime  @default(now())
-  isActive    Boolean   @default(true)
-  updatedAt   DateTime  @updatedAt
-  projects    Project[]
+  color       String?   @default("#3B82F6")
+  createdAt   DateTime? @default(now()) @map("created_at")
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
   users       User[]
+  projectDivisions ProjectDivision[]
 
   @@map("divisions")
 }
 
 model Project {
-  id            String         @id @default(uuid()) @db.Uuid
-  name          String
-  description   String?
-  createdAt     DateTime       @default(now())
-  divisionId    String         @db.Uuid
-  endDate       DateTime?
-  isActive      Boolean        @default(true)
-  startDate     DateTime?
-  updatedAt     DateTime       @updatedAt
-  division      Division       @relation(fields: [divisionId], references: [id])
-  reportDetails ReportDetail[]
+  id          String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  name        String
+  client      String?
+  description String?
+  startDate   DateTime? @map("start_date") @db.Timestamp(6)
+  endDate     DateTime? @map("end_date") @db.Timestamp(6)
+  statusActive Boolean? @default(true) @map("status_active")
+  isActive    Boolean?  @default(true) @map("is_active")
+  createdAt   DateTime? @default(now()) @map("created_at")
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  projectAssignments ProjectAssignment[]
+  projectDivisions   ProjectDivision[]
+  reportDetails      ReportDetail[]
 
   @@map("projects")
 }
 
-model Report {
-  id            String         @id @default(uuid()) @db.Uuid
-  userId        String         @db.Uuid
-  reportDate    DateTime
-  reportTime    DateTime
-  period        String
-  hasIssue      Boolean        @default(false)
-  issueDesc     String?
-  totalHours    Float          @default(2.0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  reportDetails ReportDetail[]
-  user          User           @relation(fields: [userId], references: [id])
+model ProjectAssignment {
+  id        String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  projectId String    @map("project_id") @db.Uuid
+  createdAt DateTime? @default(now()) @map("created_at")
+  
+  // Relations
+  user      User      @relation(fields: [userId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
 
-  @@unique([userId, reportDate, period])
+  @@map("project_assignments")
+}
+
+model ProjectDivision {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId  String    @map("project_id") @db.Uuid
+  divisionId String    @map("division_id") @db.Uuid
+  createdAt  DateTime? @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamp(6)
+  
+  // Relations
+  project    Project   @relation(fields: [projectId], references: [id])
+  division   Division  @relation(fields: [divisionId], references: [id])
+
+  @@map("project_divisions")
+}
+
+model Report {
+  id         String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  location   String    // 'Al-Wustho', 'WFA', 'Client Site'
+  period     String    // '08-10', '10-12', '13-15', '15-17'
+  futurePlan String    @map("future_plan")
+  photoUrl   String?   @map("photo_url")
+  createdAt  DateTime? @default(now()) @map("created_at")
+  updatedAt  DateTime? @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  user          User           @relation(fields: [userId], references: [id])
+  reportDetails ReportDetail[]
+
   @@map("reports")
 }
 
 model ReportDetail {
-  id         String   @id @default(uuid()) @db.Uuid
-  reportId   String   @db.Uuid
-  projectId  String   @db.Uuid
-  task       String
-  progress   String
-  evidence   String?
-  hoursSpent Float
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  project    Project  @relation(fields: [projectId], references: [id])
-  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  id        String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  reportId  String    @map("report_id") @db.Uuid
+  projectId String    @map("project_id") @db.Uuid
+  progress  String
+  issues    String?
+  createdAt DateTime? @default(now()) @map("created_at")
+  
+  // Relations
+  report    Report    @relation(fields: [reportId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
 
   @@map("report_details")
-}
-
-enum Role {
-  ADMIN
-  USER
-  HRD
-  PM
-  CEO
-  KARYAWAN
-}
-
-enum UserStatus {
-  PENDING
-  ACTIVE
-  INACTIVE
 }

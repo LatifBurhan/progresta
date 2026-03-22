@@ -52,14 +52,24 @@ export async function loginAction(prevState: any, formData: FormData) {
     // Get user data from public.users table
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('role, status_pending, name')
+      .select('id, email, role, status, divisionId')
       .eq('id', authData.user.id)
       .single()
 
     if (userError || !userData) {
+      console.error('User data fetch error:', userError)
       return { 
         success: false, 
-        message: 'Data user tidak ditemukan.', 
+        message: 'Data user tidak ditemukan di sistem.', 
+        errors: null 
+      }
+    }
+
+    // Check if user account is disabled (status = 'ACTIVE' means user can login)
+    if (userData.status !== 'ACTIVE') {
+      return { 
+        success: false, 
+        message: 'Akun Anda tidak aktif. Silakan hubungi administrator.', 
         errors: null 
       }
     }
@@ -68,13 +78,13 @@ export async function loginAction(prevState: any, formData: FormData) {
       userId: authData.user.id,
       email: authData.user.email!,
       role: userData.role,
-      name: userData.name || authData.user.user_metadata?.name || authData.user.email!.split('@')[0]
+      name: authData.user.user_metadata?.name || authData.user.email!.split('@')[0]
     })
 
     return { 
       success: true, 
       role: userData.role,
-      pending: userData.status_pending,
+      pending: false, // No pending status anymore
       errors: null, 
       message: null 
     }

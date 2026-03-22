@@ -15,21 +15,16 @@ export default async function UserManagePage() {
     redirect('/dashboard')
   }
 
-  // Get all users with their profiles and divisions
-  const [allUsers, divisions] = await Promise.all([
-    prisma.user.findMany({
+  // Get all users with their divisions (no profiles table in current schema)
+  let allUsers = []
+  let divisions = []
+
+  try {
+    const users = await prisma.user.findMany({
       where: { 
-        status: { in: ['ACTIVE', 'INACTIVE'] }
+        statusPending: false // Only active users (not pending approval)
       },
       include: {
-        profile: {
-          select: {
-            name: true,
-            fotoProfil: true,
-            phone: true,
-            position: true
-          }
-        },
         division: {
           select: {
             name: true,
@@ -38,18 +33,44 @@ export default async function UserManagePage() {
         }
       },
       orderBy: { createdAt: 'desc' }
-    }).then(users => users.map(user => ({
+    })
+
+    // Transform users to match expected format
+    allUsers = users.map(user => ({
       ...user,
-      createdAt: user.createdAt.toISOString()
-    }))),
-    prisma.division.findMany({
+      createdAt: user.createdAt.toISOString(),
+      // Get name from Supabase Auth metadata atau gunakan email
+      profile: {
+        name: user.email.split('@')[0], // Fallback: gunakan bagian email sebelum @
+        fotoProfil: null,
+        phone: null,
+        position: null
+      }
+    }))
+
+    // Get all active divisions
+    divisions = await prisma.division.findMany({
       where: { isActive: true },
       orderBy: { name: 'asc' }
     })
-  ])
+
+  } catch (error) {
+    console.error('Failed to fetch users or divisions:', error)
+    // Return empty arrays if database fails
+    allUsers = []
+    divisions = []
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {allUsers.length === 0 && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800">
+            ⚠️ Tidak dapat memuat data user. Periksa koneksi database.
+          </p>
+        </div>
+      )}
+      
       <UserManagementClient 
         allUsers={allUsers}
         divisions={divisions}

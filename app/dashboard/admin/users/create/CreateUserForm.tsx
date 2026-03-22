@@ -74,7 +74,7 @@ export default function CreateUserForm({ divisions }: CreateUserFormProps) {
         })
         // Redirect after 1.5 seconds
         setTimeout(() => {
-          router.push('/admin/users')
+          router.push('/dashboard/admin/users/manage')
         }, 1500)
       } else {
         setError(result.message || 'Gagal membuat user')

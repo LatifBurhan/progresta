@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
+import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,10 +25,16 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
     // Check if division name already exists
-    const existingDivision = await prisma.division.findUnique({
-      where: { name: name.trim() }
-    })
+    const { data: existingDivision } = await supabase
+      .from('divisions')
+      .select('id, name')
+      .eq('name', name.trim())
+      .single()
 
     if (existingDivision) {
       return NextResponse.json({ 
@@ -37,35 +44,46 @@ export async function POST(request: NextRequest) {
     }
 
     // Create division
-    const newDivision = await prisma.division.create({
-      data: {
+    const { data: newDivision, error } = await supabase
+      .from('divisions')
+      .insert([{
+        id: uuidv4(), // Generate UUID using uuid package
         name: name.trim(),
         description: description?.trim() || null,
         color: color || '#3B82F6',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         isActive: true
-      }
-    })
+      }])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Supabase create division error:', error)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal membuat divisi: ' + error.message
+      }, { status: 500 })
+    }
 
     // Return division with counts (new division has 0 users and projects)
     const divisionWithCounts = {
       ...newDivision,
-      createdAt: newDivision.createdAt.toISOString(),
-      updatedAt: newDivision.updatedAt.toISOString(),
       userCount: 0,
       projectCount: 0
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Division created successfully',
+      message: 'Divisi berhasil dibuat',
       division: divisionWithCounts
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create division error:', error)
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error: ' + error.message
     }, { status: 500 })
   }
 }

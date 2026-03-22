@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
 import CreateUserForm from './CreateUserForm'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -18,11 +18,29 @@ export default async function CreateUserPage() {
     redirect('/dashboard')
   }
 
-  // Get all active divisions
-  const divisions = await prisma.division.findMany({
-    where: { isActive: true },
-    orderBy: { name: 'asc' }
-  })
+  // Get all divisions using Supabase client
+  let divisions = []
+  
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    
+    const { data, error } = await supabase
+      .from('divisions')
+      .select('id, name, color')
+      .order('name', { ascending: true })
+    
+    if (error) {
+      console.error('Failed to fetch divisions:', error)
+      divisions = []
+    } else {
+      divisions = data || []
+    }
+  } catch (error) {
+    console.error('Failed to fetch divisions:', error)
+    divisions = []
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -31,18 +49,26 @@ export default async function CreateUserPage() {
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
           <Link href="/dashboard" className="hover:text-blue-600">Dashboard</Link>
           <span>/</span>
-          <Link href="/admin/users" className="hover:text-blue-600">Manajemen User</Link>
+          <Link href="/dashboard/admin/users/manage" className="hover:text-blue-600">Manajemen User</Link>
           <span>/</span>
           <span className="text-gray-900 font-medium">Tambah User</span>
         </nav>
         
-        <Link href="/admin/users">
+        <Link href="/dashboard/admin/users/manage">
           <Button variant="outline" className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Kembali ke Manajemen User
           </Button>
         </Link>
       </div>
+
+      {divisions.length === 0 && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800">
+            ⚠️ Tidak dapat memuat data divisi. Periksa koneksi database.
+          </p>
+        </div>
+      )}
 
       <CreateUserForm divisions={divisions} />
     </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
@@ -21,116 +21,145 @@ export async function POST(request: NextRequest) {
     if (!email || !password || !name || !role || !divisionId) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Missing required fields: email, password, name, role, divisionId' 
+        message: 'Email, password, nama, role, dan divisi wajib diisi' 
       }, { status: 400 })
     }
 
-    // Validate role
-    const validRoles = ['KARYAWAN', 'PM', 'HRD', 'CEO']
-    if (!validRoles.includes(role)) {
+    // Validate role - sesuai dengan constraint database (uppercase)
+    const validRoles = ['KARYAWAN', 'PM', 'HRD', 'CEO', 'ADMIN']
+    if (!validRoles.includes(role.toUpperCase())) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid role' 
+        message: 'Role tidak valid' 
       }, { status: 400 })
     }
+
+    const normalizedRole = role.toUpperCase() // Convert to uppercase
 
     // Only ADMIN can create ADMIN users
-    if (role === 'ADMIN' && session.role !== 'ADMIN') {
+    if (normalizedRole === 'ADMIN' && session.role !== 'ADMIN') {
       return NextResponse.json({ 
         success: false, 
-        message: 'Only ADMIN can create ADMIN users' 
+        message: 'Hanya ADMIN yang dapat membuat user ADMIN' 
       }, { status: 403 })
     }
 
-    // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (existingUser) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Email already exists' 
-      }, { status: 400 })
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Check if division exists
-    const division = await prisma.division.findUnique({
-      where: { id: divisionId }
-    })
+    const { data: division } = await supabase
+      .from('divisions')
+      .select('id, name')
+      .eq('id', divisionId)
+      .single()
 
     if (!division) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Division not found' 
+        message: 'Divisi tidak ditemukan' 
       }, { status: 404 })
     }
 
-    // Hash password
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (existingUser) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Email sudah terdaftar' 
+      }, { status: 400 })
+    }
+
+    // Create user in Supabase Auth first
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      user_metadata: {
+        name,
+        phone: phone || null,
+        position: position || null
+      },
+      email_confirm: true
+    })
+
+    if (authError) {
+      console.error('Supabase Auth error:', authError)
+      return NextResponse.json({ 
+        success: false, 
+        message: `Gagal membuat user di sistem autentikasi: ${authError.message}` 
+      }, { status: 400 })
+    }
+
+    // Hash password for database storage
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user with profile in a transaction
-    const newUser = await prisma.$transaction(async (tx) => {
-      // Create user
-      const user = await tx.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          role: role as any,
-          status: 'ACTIVE', // Direct creation = active immediately
-          divisionId,
-          createdBy: session.userId
-        }
-      })
+    // Create user record in database
+    const { data: userData, error: dbError } = await supabase
+      .from('users')
+      .insert([{
+        id: authData.user.id,
+        email: email,
+        password: hashedPassword, // Include hashed password
+        role: normalizedRole, // Use normalized (uppercase) role
+        divisionId: divisionId,
+        status: 'ACTIVE', // Use 'ACTIVE' instead of status_pending: false
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: authData.user.id // Set createdBy to the user's own ID for admin-created users
+      }])
+      .select(`
+        id,
+        email,
+        role,
+        divisionId,
+        status,
+        createdAt,
+        divisions!inner(name, color)
+      `)
+      .single()
 
-      // Create profile
-      await tx.profile.create({
-        data: {
-          userId: user.id,
-          name,
-          phone: phone || null,
-          position: position || null
-        }
-      })
-
-      return user
-    })
-
-    // Return user data with profile and division
-    const userWithDetails = await prisma.user.findUnique({
-      where: { id: newUser.id },
-      include: {
-        profile: {
-          select: {
-            name: true,
-            phone: true,
-            position: true,
-            fotoProfil: true
-          }
-        },
-        division: {
-          select: {
-            name: true,
-            color: true
-          }
-        }
-      }
-    })
+    if (dbError) {
+      console.error('Database user creation error:', dbError)
+      // Try to delete the auth user if database creation failed
+      await supabase.auth.admin.deleteUser(authData.user.id)
+      return NextResponse.json({ 
+        success: false, 
+        message: `Gagal membuat user di database: ${dbError.message}` 
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'User created successfully',
+      message: 'User berhasil dibuat dan dapat langsung login',
       user: {
-        ...userWithDetails,
-        createdAt: userWithDetails?.createdAt.toISOString()
+        id: userData.id,
+        email: userData.email,
+        name: name,
+        role: userData.role,
+        divisionId: userData.divisionId,
+        status: userData.status,
+        createdAt: userData.createdAt,
+        division: userData.divisions,
+        profile: {
+          name: name,
+          phone: phone || null,
+          position: position || null,
+          fotoProfil: null
+        }
       }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create user error:', error)
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Terjadi kesalahan internal server: ' + error.message
     }, { status: 500 })
   }
 }
