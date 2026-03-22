@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
+import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { name, description, divisionId, startDate, endDate } = await request.json()
+    const { name, description, client, divisionId, startDate, endDate } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ 
@@ -44,66 +45,67 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if division exists and is active
-    const division = await prisma.division.findUnique({
-      where: { id: divisionId }
-    })
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    if (!division) {
+    // Check if division exists
+    const { data: division, error: divisionError } = await supabase
+      .from('divisions')
+      .select('id, name, color')
+      .eq('id', divisionId)
+      .single()
+
+    if (divisionError || !division) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Division not found' 
+        message: 'Divisi tidak ditemukan' 
       }, { status: 404 })
     }
 
-    if (!division.isActive) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Cannot assign project to inactive division' 
-      }, { status: 400 })
-    }
-
     // Create project
-    const newProject = await prisma.project.create({
-      data: {
+    const { data: newProject, error: projectError } = await supabase
+      .from('projects')
+      .insert([{
+        id: uuidv4(),
         name: name.trim(),
         description: description?.trim() || null,
-        divisionId,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        isActive: true
-      },
-      include: {
-        division: {
-          select: {
-            name: true,
-            color: true
-          }
-        }
-      }
-    })
+        divisionId: divisionId,
+        startDate: startDate ? new Date(startDate).toISOString() : null,
+        endDate: endDate ? new Date(endDate).toISOString() : null,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }])
+      .select()
+      .single()
 
-    // Return project with formatted dates and report count
+    if (projectError) {
+      console.error('Supabase create project error:', projectError)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal membuat project: ' + projectError.message
+      }, { status: 500 })
+    }
+
+    // Return project with details
     const projectWithDetails = {
       ...newProject,
-      createdAt: newProject.createdAt.toISOString(),
-      updatedAt: newProject.updatedAt.toISOString(),
-      startDate: newProject.startDate?.toISOString() || null,
-      endDate: newProject.endDate?.toISOString() || null,
-      reportCount: 0 // New project has no reports
+      reportCount: 0, // New project has no reports
+      division: division // Include division info
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Project created successfully',
+      message: 'Project berhasil dibuat',
       project: projectWithDetails
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create project error:', error)
     return NextResponse.json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error: ' + error.message
     }, { status: 500 })
   }
 }

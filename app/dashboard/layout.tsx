@@ -3,9 +3,6 @@ import { verifySession } from '@/lib/session'
 import { logoutAction } from '@/app/actions/auth-actions'
 import { getCachedProfile } from '@/lib/cache'
 import { createClient } from '@/lib/supabase'
-import ChatBot from './ChatBot'
-import { ChatProvider } from './ChatContext'
-import InstallPrompt from '@/components/InstallPrompt'
 import ResponsiveLayout from './ResponsiveLayout'
 
 export default async function DashboardLayout({
@@ -13,36 +10,55 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Temporary: Skip all checks for debugging
-  const session = {
-    userId: '35fd9a31-5400-43f4-8806-8a5356c39579',
-    email: 'alwustho1001@gmail.com',
-    role: 'HRD',
-    name: 'HRD Test'
+  // Get real session data
+  const session = await verifySession()
+
+  if (!session) {
+    redirect('/login')
   }
 
-  const profile = {
-    fotoProfil: null,
-    name: 'HRD Test',
-    user: {
-      email: 'alwustho1001@gmail.com',
-      role: 'HRD'
+  // Get user profile data
+  let profile = null
+  try {
+    const supabase = createClient()
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id, email, role')
+      .eq('id', session.userId)
+      .single()
+
+    if (userData) {
+      profile = {
+        fotoProfil: null,
+        name: session.name,
+        user: {
+          email: userData.email,
+          role: userData.role
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error)
+    // Fallback profile
+    profile = {
+      fotoProfil: null,
+      name: session.name,
+      user: {
+        email: session.email,
+        role: session.role
+      }
     }
   }
 
   return (
-    <ChatProvider>
-      <div className="min-h-screen bg-gray-50">
-        <ResponsiveLayout
-          session={session}
-          profile={profile}
-          logoutAction={logoutAction}
-        >
-          {children}
-        </ResponsiveLayout>
-        <InstallPrompt />
-        <ChatBot />
-      </div>
-    </ChatProvider>
+    <div className="min-h-screen bg-gray-50">
+      <ResponsiveLayout
+        session={session}
+        profile={profile}
+        logoutAction={logoutAction}
+      >
+        {children}
+      </ResponsiveLayout>
+    </div>
   )
 }

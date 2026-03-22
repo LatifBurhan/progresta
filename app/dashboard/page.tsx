@@ -1,9 +1,11 @@
+import { verifySession } from '@/lib/session'
+import { redirect } from 'next/navigation'
+
 export default async function DashboardPage() {
-  const session = {
-    userId: '35fd9a31-5400-43f4-8806-8a5356c39579',
-    email: 'alwustho1001@gmail.com',
-    role: 'HRD',
-    name: 'HRD Test'
+  const session = await verifySession()
+
+  if (!session) {
+    redirect('/login')
   }
 
   return (

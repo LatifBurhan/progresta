@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
 import UserManagementClient from './UserManagementClient'
 
 export default async function UserManagePage() {
@@ -15,48 +15,69 @@ export default async function UserManagePage() {
     redirect('/dashboard')
   }
 
-  // Get all users with their divisions (no profiles table in current schema)
+  // Get all users with their divisions using Supabase client
   let allUsers = []
   let divisions = []
 
   try {
-    const users = await prisma.user.findMany({
-      where: { 
-        statusPending: false // Only active users (not pending approval)
-      },
-      include: {
-        division: {
-          select: {
-            name: true,
-            color: true
-          }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Get all active users with their divisions
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        email,
+        role,
+        status,
+        divisionId,
+        createdAt,
+        updatedAt,
+        divisions!inner(name, color)
+      `)
+      .eq('status', 'ACTIVE') // Only active users
+      .order('createdAt', { ascending: false })
+
+    if (usersError) {
+      console.error('Failed to fetch users:', usersError)
+      allUsers = []
+    } else {
+      // Transform users to match expected format
+      allUsers = (users || []).map(user => ({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        divisionId: user.divisionId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        division: user.divisions,
+        profile: {
+          name: user.email.split('@')[0], // Fallback: use email prefix as name
+          fotoProfil: null,
+          phone: null,
+          position: null
         }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+      }))
+    }
 
-    // Transform users to match expected format
-    allUsers = users.map(user => ({
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      // Get name from Supabase Auth metadata atau gunakan email
-      profile: {
-        name: user.email.split('@')[0], // Fallback: gunakan bagian email sebelum @
-        fotoProfil: null,
-        phone: null,
-        position: null
-      }
-    }))
+    // Get all divisions
+    const { data: divisionsData, error: divisionsError } = await supabase
+      .from('divisions')
+      .select('id, name, color')
+      .order('name', { ascending: true })
 
-    // Get all active divisions
-    divisions = await prisma.division.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' }
-    })
+    if (divisionsError) {
+      console.error('Failed to fetch divisions:', divisionsError)
+      divisions = []
+    } else {
+      divisions = divisionsData || []
+    }
 
   } catch (error) {
     console.error('Failed to fetch users or divisions:', error)
-    // Return empty arrays if database fails
     allUsers = []
     divisions = []
   }
