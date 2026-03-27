@@ -1,9 +1,9 @@
 'use server'
 
 import { z } from 'zod'
-import prisma from '@/lib/prisma'
 import { uploadToSupabase } from '@/lib/supabase-upload'
 import { revalidateTag } from 'next/cache'
+import { supabaseAdmin } from '@/lib/supabase'
 
 const ProjectDetailSchema = z.object({
   projectId: z.string().uuid(),
@@ -18,6 +18,7 @@ const SubmitReportSchema = z.object({
   userId: z.string().uuid(),
   period: z.string().min(1, 'Periode harus dipilih'),
   location: z.string().min(1, 'Lokasi harus dipilih'),
+  futurePlan: z.string().optional(),
   projectDetails: z.array(ProjectDetailSchema).min(1, 'Minimal satu project harus diisi')
 })
 
@@ -33,38 +34,46 @@ export async function submitReport(data: any) {
       }
     }
 
-    const { userId, period, location, projectDetails } = validatedData.data
+    const { userId, period, location, futurePlan, projectDetails } = validatedData.data
+
+    if (!supabaseAdmin) {
+      return {
+        success: false,
+        message: 'Koneksi database tidak tersedia'
+      }
+    }
 
     // Get current date in Jakarta timezone
     const now = new Date()
     const jakartaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}))
     const reportDate = new Date(jakartaTime.getFullYear(), jakartaTime.getMonth(), jakartaTime.getDate())
 
-    // Check if report already exists for this period
-    const existingReport = await prisma.report.findUnique({
-      where: {
-        userId_reportDate_period: {
-          userId,
-          reportDate,
-          period
-        }
-      }
-    })
+    const reportDateStart = new Date(jakartaTime.getFullYear(), jakartaTime.getMonth(), jakartaTime.getDate(), 0, 0, 0, 0)
+    const reportDateEnd = new Date(jakartaTime.getFullYear(), jakartaTime.getMonth(), jakartaTime.getDate(), 23, 59, 59, 999)
 
-    if (existingReport) {
+    const { data: existingReport } = await supabaseAdmin
+      .from('reports')
+      .select('id')
+      .eq('userId', userId)
+      .eq('period', period)
+      .gte('reportDate', reportDateStart.toISOString())
+      .lte('reportDate', reportDateEnd.toISOString())
+      .maybeSingle()
+
+    if (existingReport?.id) {
       return {
         success: false,
         message: `Laporan untuk periode ${period} hari ini sudah ada`
       }
     }
 
-    // Check if user has access to all projects
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { division: true }
-    })
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, divisionId')
+      .eq('id', userId)
+      .single()
 
-    if (!user) {
+    if (userError || !user) {
       return {
         success: false,
         message: 'User tidak ditemukan'
@@ -72,74 +81,129 @@ export async function submitReport(data: any) {
     }
 
     const projectIds = projectDetails.map(p => p.projectId)
-    const projects = await prisma.project.findMany({
-      where: {
-        id: { in: projectIds },
-        divisionId: user.divisionId || undefined
-      }
-    })
+    const { data: projectRows, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select(`
+        id,
+        name,
+        status,
+        isActive,
+        divisionId,
+        project_divisions (
+          division_id
+        )
+      `)
+      .in('id', projectIds)
 
-    if (projects.length !== projectIds.length) {
+    if (projectError) {
+      return {
+        success: false,
+        message: 'Gagal memvalidasi project'
+      }
+    }
+
+    const accessibleProjectIds = new Set(
+      (projectRows || [])
+        .filter((project: any) => {
+          const isActive = project.isActive === true || project.status === 'Aktif'
+          if (!isActive || !user.divisionId) return false
+          const involvedByLegacy = project.divisionId === user.divisionId
+          const involvedByManyToMany = (project.project_divisions || []).some(
+            (pd: any) => pd.division_id === user.divisionId
+          )
+          return involvedByLegacy || involvedByManyToMany
+        })
+        .map((project: any) => project.id)
+    )
+
+    if (projectIds.some(projectId => !accessibleProjectIds.has(projectId))) {
       return {
         success: false,
         message: 'Beberapa project tidak valid atau tidak dapat diakses'
       }
     }
-    // Calculate total hours and check for issues
+
     const totalHours = projectDetails.reduce((sum, detail) => sum + detail.hoursSpent, 0)
-    const hasIssue = projectDetails.some(detail => detail.issue && detail.issue.trim().length > 0)
-    const issueDesc = projectDetails
+    const issueTexts = projectDetails
       .filter(detail => detail.issue && detail.issue.trim().length > 0)
-      .map(detail => detail.issue)
-      .join('; ')
+      .map(detail => detail.issue?.trim())
+    const mergedIssueDesc = [
+      ...(issueTexts as string[]),
+      futurePlan?.trim() ? `Rencana ke depan: ${futurePlan.trim()}` : null
+    ].filter(Boolean).join(' | ')
 
-    // Create report with transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create main report
-      const report = await tx.report.create({
-        data: {
-          userId,
-          reportDate,
-          reportTime: jakartaTime,
-          period,
-          hasIssue,
-          issueDesc: hasIssue ? issueDesc : null,
-          totalHours
+    const hasIssue = issueTexts.length > 0
+
+    const { data: report, error: reportError } = await supabaseAdmin
+      .from('reports')
+      .insert([{
+        userId,
+        reportDate: reportDate,
+        reportTime: jakartaTime,
+        period,
+        hasIssue,
+        issueDesc: mergedIssueDesc || null,
+        totalHours
+      }])
+      .select('id, userId, reportDate, reportTime, period, hasIssue, issueDesc, totalHours')
+      .single()
+
+    if (reportError || !report) {
+      return {
+        success: false,
+        message: 'Gagal membuat laporan utama'
+      }
+    }
+
+    const preparedDetails: any[] = []
+    for (const detail of projectDetails) {
+      let evidenceUrl = null
+
+      if (detail.evidence) {
+        try {
+          const uploadResult = await uploadToSupabase(
+            detail.evidence,
+            `reports/${userId}/${report.id}`
+          )
+          evidenceUrl = uploadResult.publicUrl
+        } catch (uploadError) {
+          console.error('Evidence upload failed:', uploadError)
         }
-      })
-
-      // Create report details
-      for (const detail of projectDetails) {
-        let evidenceUrl = null
-
-        // Upload evidence if provided
-        if (detail.evidence) {
-          try {
-            const uploadResult = await uploadToSupabase(
-              detail.evidence,
-              `reports/${userId}/${report.id}`
-            )
-            evidenceUrl = uploadResult.publicUrl
-          } catch (uploadError) {
-            console.error('Evidence upload failed:', uploadError)
-            // Continue without evidence rather than failing the whole report
-          }
-        }
-
-        await tx.reportDetail.create({
-          data: {
-            reportId: report.id,
-            projectId: detail.projectId,
-            task: detail.task,
-            progress: detail.progress,
-            evidence: evidenceUrl,
-            hoursSpent: detail.hoursSpent
-          }
-        })
       }
 
-      return report
-    })
+      preparedDetails.push({
+        reportId: report.id,
+        projectId: detail.projectId,
+        task: detail.task,
+        progress: detail.progress,
+        evidence: evidenceUrl,
+        hoursSpent: detail.hoursSpent
+      })
+    }
+
+    const { data: detailRows, error: detailError } = await supabaseAdmin
+      .from('report_details')
+      .insert(preparedDetails)
+      .select(`
+        id,
+        projectId,
+        task,
+        progress,
+        evidence,
+        hoursSpent,
+        projects (
+          id,
+          name
+        )
+      `)
+
+    if (detailError) {
+      await supabaseAdmin.from('reports').delete().eq('id', report.id)
+      return {
+        success: false,
+        message: 'Gagal menyimpan detail laporan'
+      }
+    }
 
     // Revalidate cache
     revalidateTag(`reports-${userId}`)
@@ -149,7 +213,14 @@ export async function submitReport(data: any) {
     return {
       success: true,
       message: 'Laporan berhasil disimpan',
-      reportId: result.id
+      reportId: report.id,
+      report: {
+        ...report,
+        reportDetails: (detailRows || []).map((detail: any) => ({
+          ...detail,
+          project: detail.projects
+        }))
+      }
     }
 
   } catch (error) {

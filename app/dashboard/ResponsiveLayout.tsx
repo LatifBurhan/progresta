@@ -308,6 +308,31 @@ export default function ResponsiveLayout({
                 )}
 
                 <Link
+                  href="/dashboard/admin/projects"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    pathname.startsWith('/dashboard/admin/projects')
+                      ? 'bg-purple-50 text-purple-700'
+                      : 'text-gray-700 hover:bg-purple-50 hover:text-purple-700'
+                  }`}
+                  onClick={() => setIsSidebarOpen(false)}
+                >
+                  <svg
+                    className="w-5 h-5 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                    />
+                  </svg>
+                  <span>📋 Kelola Project</span>
+                </Link>
+
+                <Link
                   href="/admin/divisions"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     pathname === '/admin/divisions'
@@ -357,59 +382,6 @@ export default function ResponsiveLayout({
                       />
                     </svg>
                     <span className="text-sm">⚙️ Kelola Divisi</span>
-                  </Link>
-                )}
-
-                <Link
-                  href="/admin/projects"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname === '/admin/projects'
-                      ? 'bg-orange-50 text-orange-700'
-                      : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                    />
-                  </svg>
-                  <span>📋 Manajemen Project</span>
-                </Link>
-
-                {/* PM/HRD/CEO/ADMIN can manage projects */}
-                {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (
-                  <Link
-                    href="/dashboard/admin/projects"
-                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
-                      pathname === '/dashboard/admin/projects'
-                        ? 'bg-indigo-50 text-indigo-700'
-                        : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'
-                    }`}
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    <svg
-                      className="w-4 h-4 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    <span className="text-sm">⚙️ Kelola Project</span>
                   </Link>
                 )}
 

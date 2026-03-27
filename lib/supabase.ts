@@ -18,6 +18,14 @@ export const supabaseAdmin = supabaseServiceKey
       auth: {
         autoRefreshToken: false,
         persistSession: false
+      },
+      db: {
+        schema: 'public'
+      },
+      global: {
+        headers: {
+          'Prefer': 'return=representation'
+        }
       }
     })
   : null

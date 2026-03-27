@@ -1,115 +1,134 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { X, Trash2, AlertTriangle, FileText } from 'lucide-react'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { X, Trash2, AlertTriangle, Calendar, User, Target } from "lucide-react";
 
 interface Project {
-  id: string
-  name: string
-  description: string | null
-  createdAt: string
-  updatedAt: string
-  startDate: string | null
-  endDate: string | null
-  isActive: boolean
-  divisionId: string
-  division: {
-    name: string
-    color: string | null
-  }
-  reportCount: number
+  id: string;
+  name: string;
+  tujuan: string | null;
+  description: string | null;
+  pic: string | null;
+  prioritas: string | null;
+  tanggal_mulai: string | null;
+  tanggal_selesai: string | null;
+  output_diharapkan: string | null;
+  catatan: string | null;
+  lampiran_url: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  divisions: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+  }>;
 }
 
 interface DeleteProjectModalProps {
-  open: boolean
-  project: Project | null
-  onClose: () => void
-  onSuccess: (projectId: string) => void
+  open: boolean;
+  project: Project;
+  onClose: () => void;
+  onDeleteSuccess: (deletedProjectId: string) => void;
+  onDeactivateSuccess: (updatedProject: Project) => void;
 }
 
-export default function DeleteProjectModal({ 
-  open, 
-  project, 
-  onClose, 
-  onSuccess 
-}: DeleteProjectModalProps) {
-  const [loading, setLoading] = useState(false)
-  const [confirmText, setConfirmText] = useState('')
-  const [error, setError] = useState('')
+export default function DeleteProjectModal({ open, project, onClose, onDeleteSuccess, onDeactivateSuccess }: DeleteProjectModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmName, setConfirmName] = useState("");
 
-  if (!open || !project) return null
-
-  const canDelete = project.reportCount === 0
-
-  const handleDelete = async () => {
-    if (!canDelete) {
-      setError('Project tidak dapat dihapus karena masih memiliki laporan')
-      return
-    }
-
-    if (confirmText !== 'HAPUS') {
-      setError('Ketik "HAPUS" untuk mengkonfirmasi')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const response = await fetch('/api/admin/projects/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: project.id })
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        onSuccess(project.id)
-        handleClose()
-        alert('Project berhasil dihapus!')
-      } else {
-        setError(result.message || 'Gagal menghapus project')
-      }
-    } catch (error) {
-      setError('Terjadi kesalahan sistem')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleClose = () => {
-    setConfirmText('')
-    setError('')
-    onClose()
-  }
+  if (!open) return null;
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return '-'
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    })
-  }
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID");
+  };
+
+  const handleDelete = async () => {
+    if (confirmName !== project.name) {
+      setError("Nama project yang Anda ketikkan tidak sesuai");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        onDeleteSuccess(project.id);
+        onClose();
+        alert("Project berhasil dihapus secara permanen!");
+      } else {
+        setError(result.message || "Gagal menghapus project");
+      }
+    } catch (error) {
+      setError("Terjadi kesalahan sistem");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: project.name,
+          tujuan: project.tujuan,
+          description: project.description,
+          divisionIds: project.divisions.map((d) => d.id),
+          pic: project.pic,
+          prioritas: project.prioritas,
+          tanggalMulai: project.tanggal_mulai,
+          tanggalSelesai: project.tanggal_selesai,
+          outputDiharapkan: project.output_diharapkan,
+          catatan: project.catatan,
+          lampiranUrl: project.lampiran_url,
+          status: "Non-Aktif",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        onDeactivateSuccess(result.project);
+        onClose();
+        alert("Project telah dinonaktifkan!");
+      } else {
+        setError(result.message || "Gagal menonaktifkan project");
+      }
+    } catch (error) {
+      setError("Terjadi kesalahan sistem");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-red-900 flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-red-600" />
+            <h3 className="text-lg font-semibold text-red-600 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
               Hapus Project
             </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -117,108 +136,151 @@ export default function DeleteProjectModal({
           {/* Warning */}
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-medium text-red-900 mb-2">Peringatan!</h4>
-                <p className="text-sm text-red-700 mb-3">
-                  Anda akan menghapus project berikut secara permanen:
-                </p>
-                <div className="bg-white p-3 rounded border">
-                  <div className="flex items-start gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-                      style={{ backgroundColor: project.division.color || '#3B82F6' }}
-                    >
-                      {project.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{project.name}</p>
-                      <p className="text-sm text-gray-600">{project.division.name}</p>
-                      {project.description && (
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{project.description}</p>
-                      )}
-                      <div className="mt-2 text-sm text-gray-600">
-                        <div>Mulai: {formatDate(project.startDate)}</div>
-                        <div>Selesai: {formatDate(project.endDate)}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                    <FileText className="w-4 h-4" />
-                    <span>{project.reportCount} Laporan Terkait</span>
-                  </div>
-                </div>
-                
-                {!canDelete ? (
-                  <div className="mt-3 p-2 bg-amber-100 border border-amber-300 rounded">
-                    <p className="text-sm text-amber-800">
-                      <strong>Tidak dapat dihapus!</strong> Project ini masih memiliki {project.reportCount} laporan. 
-                      Hapus semua laporan terkait terlebih dahulu atau hubungi administrator.
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-red-700 mt-3">
-                    <strong>Tindakan ini tidak dapat dibatalkan!</strong> Semua data project akan dihapus permanen.
-                  </p>
-                )}
+                <h4 className="font-medium text-red-800 mb-1">Peringatan: Tindakan Tidak Dapat Dibatalkan</h4>
+                <p className="text-sm text-red-700">Menghapus project akan menghilangkan semua data terkait secara permanen. Data yang akan dihapus meliputi informasi project, relasi dengan divisi, dan semua catatan terkait.</p>
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-600" />
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
-          {canDelete && (
-            <>
-              {/* Confirmation Input */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ketik <span className="font-bold text-red-600">"HAPUS"</span> untuk mengkonfirmasi:
-                </label>
-                <input
-                  type="text"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Ketik HAPUS"
-                />
+          {/* Project Details */}
+          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-3">Detail Project yang akan dihapus:</h4>
+
+            <div className="space-y-3">
+              {/* Project Name */}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">Nama Project</span>
+                </div>
+                <p className="text-sm text-gray-900 font-semibold">{project.name}</p>
               </div>
-            </>
-          )}
+
+              {/* Tujuan */}
+              {project.tujuan && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Tujuan:</span>
+                  <p className="text-sm text-gray-600">{project.tujuan}</p>
+                </div>
+              )}
+
+              {/* PIC */}
+              {project.pic && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <User className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-gray-700">PIC:</span>
+                    <span className="text-sm text-gray-600">{project.pic}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Status & Priority */}
+              <div className="flex gap-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Status:</span>
+                  <span
+                    className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                      project.status === "Aktif" ? "bg-blue-100 text-blue-800" : project.status === "Selesai" ? "bg-green-100 text-green-800" : project.status === "Ditunda" ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {project.status}
+                  </span>
+                </div>
+
+                {project.prioritas && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Prioritas:</span>
+                    <span
+                      className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                        project.prioritas === "Urgent"
+                          ? "bg-red-100 text-red-800"
+                          : project.prioritas === "Tinggi"
+                            ? "bg-orange-100 text-orange-800"
+                            : project.prioritas === "Sedang"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      {project.prioritas}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Timeline */}
+              {(project.tanggal_mulai || project.tanggal_selesai) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm font-medium text-gray-700">Timeline:</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {formatDate(project.tanggal_mulai)} - {formatDate(project.tanggal_selesai)}
+                  </p>
+                </div>
+              )}
+
+              {/* Divisions */}
+              {project.divisions.length > 0 && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700 block mb-2">Divisi Terlibat:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {project.divisions.map((division) => (
+                      <span key={division.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: division.color || "#3B82F6" }}>
+                        {division.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Confirmation */}
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 mb-3">
+              <strong>Opsi 1: Nonaktifkan Project</strong>
+              <br />
+              Project akan disembunyikan dari daftar aktif tetapi data tetap tersimpan.
+            </p>
+            <Button type="button" onClick={handleDeactivate} className="w-full bg-yellow-600 hover:bg-yellow-700 text-white mb-4" disabled={loading}>
+              Nonaktifkan Saja
+            </Button>
+
+            <hr className="my-4 border-yellow-200" />
+
+            <p className="text-sm text-red-800 mb-3">
+              <strong>Opsi 2: Hapus Permanen</strong>
+              <br />
+              Ketik nama project "<strong>{project.name}</strong>" untuk mengonfirmasi penghapusan permanen.
+            </p>
+            <Input type="text" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} placeholder="Ketik nama project di sini..." className="mb-3" disabled={loading} />
+            <Button type="button" onClick={handleDelete} className="w-full bg-red-600 hover:bg-red-700 text-white" disabled={loading || confirmName !== project.name}>
+              {loading ? "Sedang Memproses..." : "Ya, Hapus Permanen"}
+            </Button>
+          </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1"
-              disabled={loading}
-            >
-              Batal
+          <div className="flex justify-center">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={loading} className="text-gray-500">
+              Batal / Tutup
             </Button>
-            {canDelete ? (
-              <Button
-                onClick={handleDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                disabled={loading || confirmText !== 'HAPUS'}
-              >
-                {loading ? 'Menghapus...' : 'Hapus Project'}
-              </Button>
-            ) : (
-              <Button
-                disabled
-                className="flex-1 bg-gray-400 text-white cursor-not-allowed"
-              >
-                Tidak Dapat Dihapus
-              </Button>
-            )}
           </div>
+
+          {/* Additional Warning */}
+          <p className="text-xs text-gray-500 text-center mt-4">Pastikan Anda memiliki backup data jika diperlukan.</p>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -35,8 +35,8 @@ export async function GET(request: Request) {
     // Build where clause based on permissions and filter
     let whereClause: any = {}
 
-    if (filter === 'all' && ['PM', 'CEO', 'HRD', 'ADMIN'].includes(session.role)) {
-      // PM/CEO/HRD can see all divisions
+    if (filter === 'all') {
+      // Semua role bisa melihat semua divisi
       if (divisionId && divisionId !== 'all') {
         whereClause = {
           user: {
@@ -142,32 +142,29 @@ export async function GET(request: Request) {
       take: 50 // Limit to 50 most recent reports
     })
 
-    // Get divisions for filter dropdown (if user has permission)
+    // Get divisions & projects untuk filter (semua role)
     let divisions: Array<{id: string, name: string, color: string | null}> = []
     let projects: Array<{id: string, name: string}> = []
     
-    if (['PM', 'CEO', 'HRD', 'ADMIN'].includes(session.role)) {
-      divisions = await prisma.division.findMany({
-        where: { isActive: true },
-        select: {
-          id: true,
-          name: true,
-          color: true
-        },
-        orderBy: { name: 'asc' }
-      })
+    divisions = await prisma.division.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        color: true
+      },
+      orderBy: { name: 'asc' }
+    })
 
-      // Get projects for filter
-      projects = await prisma.project.findMany({
-        where: { isActive: true },
-        select: {
-          id: true,
-          name: true
-        },
-        orderBy: { name: 'asc' },
-        take: 20 // Limit to prevent too many options
-      })
-    }
+    projects = await prisma.project.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true
+      },
+      orderBy: { name: 'asc' },
+      take: 20
+    })
 
     return NextResponse.json({
       success: true,

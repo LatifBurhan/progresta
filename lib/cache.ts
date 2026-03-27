@@ -77,15 +77,6 @@ export const getCachedUsers = unstable_cache(
   }
 )
 
-export const getCachedUserProjects = unstable_cache(
-  async (userId: string) => {
-    // Placeholder implementation
-    return []
-  },
-  ['user-projects'],
-  { revalidate: 300, tags: ['projects'] }
-)
-
 export const getCachedLastReport = unstable_cache(
   async (userId: string) => {
     // Placeholder implementation

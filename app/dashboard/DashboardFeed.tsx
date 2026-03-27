@@ -62,7 +62,7 @@ interface DashboardFeedProps {
 export default function DashboardFeed({ userId, userRole, userDivisionId }: DashboardFeedProps) {
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'my-division' | 'all-divisions'>('my-division')
+  const [filter, setFilter] = useState<'my-division' | 'all-divisions'>('all-divisions')
   const [selectedDivision, setSelectedDivision] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProject, setSelectedProject] = useState<string>('all')
@@ -73,8 +73,7 @@ export default function DashboardFeed({ userId, userRole, userDivisionId }: Dash
     reportId: null
   })
 
-  // Determine if user can see all divisions
-  const canSeeAllDivisions = ['PM', 'CEO', 'HRD', 'ADMIN'].includes(userRole)
+  const canSeeAllDivisions = true
 
   const fetchReports = async () => {
     try {
@@ -120,9 +119,7 @@ export default function DashboardFeed({ userId, userRole, userDivisionId }: Dash
 
   useEffect(() => {
     fetchReports()
-    if (canSeeAllDivisions) {
-      fetchDivisions()
-    }
+    fetchDivisions()
   }, [filter, selectedDivision, searchQuery, selectedProject])
 
   const handleDeleteReport = async (reportId: string) => {

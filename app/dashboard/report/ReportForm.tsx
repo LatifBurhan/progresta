@@ -36,12 +36,14 @@ interface ProjectDetail {
 
 interface ReportFormProps {
   userId: string
-  projects: Array<{ id: string; name: string }>
   lastReport: any
+  availableProjects: Array<{ id: string; name: string }>
+  initialHistory: any[]
 }
-export default function ReportForm({ userId, projects, lastReport }: ReportFormProps) {
+export default function ReportForm({ userId, lastReport, availableProjects, initialHistory }: ReportFormProps) {
   const [period, setPeriod] = useState('')
   const [location, setLocation] = useState(lastReport?.location || 'Al-Wustho')
+  const [futurePlan, setFuturePlan] = useState('')
   const [projectDetails, setProjectDetails] = useState<ProjectDetail[]>([
     {
       id: '1',
@@ -56,6 +58,8 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [whatsappText, setWhatsappText] = useState('')
+  const [historyReports, setHistoryReports] = useState<any[]>(initialHistory || [])
+  const [historyProjectFilter, setHistoryProjectFilter] = useState<string>('all')
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -65,6 +69,7 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
         const parsed = JSON.parse(savedData)
         setPeriod(parsed.period || '')
         setLocation(parsed.location || lastReport?.location || 'Al-Wustho')
+        setFuturePlan(parsed.futurePlan || '')
         setProjectDetails(parsed.projectDetails || projectDetails)
       } catch (error) {
         console.error('Failed to load saved data:', error)
@@ -77,13 +82,14 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
     const dataToSave = {
       period,
       location,
+      futurePlan,
       projectDetails: projectDetails.map(p => ({
         ...p,
         evidence: null // Don't save file objects
       }))
     }
     localStorage.setItem(`report-draft-${userId}`, JSON.stringify(dataToSave))
-  }, [period, location, projectDetails, userId])
+  }, [period, location, futurePlan, projectDetails, userId])
 
   const addProjectDetail = () => {
     const newDetail: ProjectDetail = {
@@ -144,6 +150,7 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
         userId,
         period,
         location,
+        futurePlan,
         projectDetails: projectDetails.filter(p => 
           p.projectId && p.task.trim() && p.progress.trim()
         )
@@ -154,10 +161,10 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
         const waText = generateWhatsAppText({
           period,
           location,
+          projects: availableProjects,
           projectDetails: projectDetails.filter(p => 
             p.projectId && p.task.trim() && p.progress.trim()
-          ),
-          projects
+          )
         })
         setWhatsappText(waText)
         
@@ -166,6 +173,7 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
         
         // Reset form
         setPeriod('')
+        setFuturePlan('')
         setProjectDetails([{
           id: '1',
           projectId: '',
@@ -175,6 +183,10 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
           evidence: null,
           hoursSpent: 2
         }])
+
+        if (result.report) {
+          setHistoryReports(prev => [result.report, ...prev])
+        }
       } else {
         alert(result.message || 'Gagal menyimpan laporan')
       }
@@ -234,6 +246,11 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
       </div>
     )
   }
+
+  const filteredHistory = historyReports.filter((report) => {
+    if (historyProjectFilter === 'all') return true
+    return (report.reportDetails || []).some((detail: any) => detail.projectId === historyProjectFilter)
+  })
 
   return (
     <div className="space-y-6">
@@ -324,7 +341,7 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
                 {/* Project Selection */}
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Pilih Project
+                    Pilih Project Aktif
                   </label>
                   <select
                     value={detail.projectId}
@@ -332,7 +349,7 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">-- Pilih Project --</option>
-                    {projects.map((project) => (
+                    {availableProjects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
                       </option>
@@ -406,6 +423,7 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
                     <input
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
@@ -413,14 +431,32 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
                         }
                       }}
                       className="hidden"
-                      id={`evidence-${detail.id}`}
+                      id={`evidence-camera-${detail.id}`}
                     />
                     <label
-                      htmlFor={`evidence-${detail.id}`}
+                      htmlFor={`evidence-camera-${detail.id}`}
                       className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 text-sm"
                     >
                       <Camera className="w-4 h-4" />
-                      {detail.evidence ? 'Ganti Foto' : 'Ambil Foto'}
+                      Ambil Foto
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          handleImageUpload(detail.id, file)
+                        }
+                      }}
+                      className="hidden"
+                      id={`evidence-gallery-${detail.id}`}
+                    />
+                    <label
+                      htmlFor={`evidence-gallery-${detail.id}`}
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 text-sm"
+                    >
+                      Pilih Galeri
                     </label>
                     {detail.evidence && (
                       <span className="text-xs text-green-600">
@@ -428,6 +464,67 @@ export default function ReportForm({ userId, projects, lastReport }: ReportFormP
                       </span>
                     )}
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-medium mb-3">🎯 Rencana Ke Depan (Opsional)</h3>
+          <textarea
+            value={futurePlan}
+            onChange={(e) => setFuturePlan(e.target.value)}
+            placeholder="Rencana kerja berikutnya (opsional)..."
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[80px] resize-none"
+            rows={3}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-medium mb-3">📚 Riwayat Laporan</h3>
+
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Filter Project
+            </label>
+            <select
+              value={historyProjectFilter}
+              onChange={(e) => setHistoryProjectFilter(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg"
+            >
+              <option value="all">Semua Project</option>
+              {availableProjects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {filteredHistory.length === 0 && (
+              <p className="text-sm text-gray-500">Belum ada riwayat laporan.</p>
+            )}
+
+            {filteredHistory.map((report: any) => (
+              <div key={report.id} className="border rounded-lg p-3 bg-gray-50">
+                <div className="text-xs text-gray-500 mb-2">
+                  {new Date(report.reportDate).toLocaleDateString('id-ID')} • {report.period}
+                </div>
+                <div className="text-sm font-medium text-gray-800 mb-1">
+                  Total Jam: {report.totalHours} jam
+                </div>
+                <div className="space-y-1">
+                  {(report.reportDetails || []).map((detail: any) => (
+                    <div key={detail.id} className="text-sm text-gray-700">
+                      • {detail.project?.name || 'Project'}: {detail.progress}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
