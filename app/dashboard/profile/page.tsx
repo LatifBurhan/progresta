@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation'
-import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
-import ProfileForm from './ProfileForm'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -12,27 +12,56 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Loader2
 } from 'lucide-react'
 
-export default async function ProfilePage() {
-  const session = await verifySession()
-
-  if (!session) {
-    redirect('/login')
+interface UserData {
+  id: string
+  email: string
+  role: string
+  status: string
+  divisionId?: string
+  created_at?: string
+  divisions?: {
+    id: string
+    name: string
+    description?: string
+    color?: string
   }
+}
 
-  // Get user with complete information
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    include: {
-      profile: true,
-      division: true
+export default function ProfilePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [userData, setUserData] = useState<UserData | null>(null)
+
+  useEffect(() => {
+    loadUserData()
+  }, [])
+
+  const loadUserData = async () => {
+    try {
+      const res = await fetch('/api/auth/check')
+      const data = await res.json()
+      
+      if (!data.authenticated) {
+        router.push('/login')
+        return
+      }
+
+      // Fetch user details
+      const userRes = await fetch(`/api/users/${data.user.userId}`)
+      const userResult = await userRes.json()
+      
+      if (userResult.success) {
+        setUserData(userResult.data)
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error)
+    } finally {
+      setLoading(false)
     }
-  })
-
-  if (!user) {
-    redirect('/login')
   }
 
   const getRoleInfo = (role: string) => {
@@ -115,8 +144,26 @@ export default async function ProfilePage() {
     }
   }
 
-  const roleInfo = getRoleInfo(user.role)
-  const statusInfo = getStatusInfo(user.status)
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!userData) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-gray-600">Data user tidak ditemukan</p>
+        </div>
+      </div>
+    )
+  }
+
+  const roleInfo = getRoleInfo(userData.role)
+  const statusInfo = getStatusInfo(userData.status)
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -137,7 +184,7 @@ export default async function ProfilePage() {
               <Mail className="w-5 h-5 text-gray-500" />
               <div>
                 <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium break-all">{user.email}</p>
+                <p className="font-medium break-all">{userData.email}</p>
               </div>
             </div>
 
@@ -172,7 +219,7 @@ export default async function ProfilePage() {
             </div>
 
             {/* Division */}
-            {user.division && (
+            {userData.divisionId && userData.divisions && (
               <div className="flex items-start gap-3">
                 <Building className="w-5 h-5 text-gray-500 mt-1" />
                 <div className="flex-1">
@@ -181,15 +228,15 @@ export default async function ProfilePage() {
                     <Badge 
                       className="px-3 py-1 text-sm font-medium"
                       style={{ 
-                        backgroundColor: user.division.color + '20',
-                        color: user.division.color || '#6B7280',
-                        borderColor: user.division.color || '#6B7280' 
+                        backgroundColor: userData.divisions.color + '20',
+                        color: userData.divisions.color || '#6B7280',
+                        borderColor: userData.divisions.color || '#6B7280' 
                       }}
                     >
-                      {user.division.name}
+                      {userData.divisions.name}
                     </Badge>
-                    {user.division.description && (
-                      <p className="text-sm text-gray-600">{user.division.description}</p>
+                    {userData.divisions.description && (
+                      <p className="text-sm text-gray-600">{userData.divisions.description}</p>
                     )}
                   </div>
                 </div>
@@ -197,31 +244,25 @@ export default async function ProfilePage() {
             )}
 
             {/* Account Created */}
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-600">Bergabung Sejak</p>
-                <p className="font-medium">
-                  {new Intl.DateTimeFormat('id-ID', {
-                    timeZone: 'Asia/Jakarta',
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }).format(new Date(user.createdAt))}
-                </p>
+            {userData.created_at && (
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Bergabung Sejak</p>
+                  <p className="font-medium">
+                    {new Intl.DateTimeFormat('id-ID', {
+                      timeZone: 'Asia/Jakarta',
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }).format(new Date(userData.created_at))}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Profile Form */}
-        <ProfileForm 
-          profile={user.profile} 
-          userEmail={user.email}
-          userRole={user.role}
-          userStatus={user.status}
-        />
       </div>
     </div>
   )

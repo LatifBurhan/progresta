@@ -115,6 +115,9 @@ export async function GET(request: NextRequest) {
         name,
         description,
         isActive,
+        createdBy,
+        urgency,
+        isCompleted,
         project_divisions (
           division_id,
           divisions (
@@ -142,6 +145,9 @@ export async function GET(request: NextRequest) {
       name: p.name,
       description: p.description,
       isActive: p.isActive,
+      createdBy: p.createdBy || null,
+      urgency: p.urgency || 'low',
+      isCompleted: p.isCompleted || false,
       divisions: p.project_divisions?.map((pd: any) => pd.divisions).filter(Boolean) || []
     }));
 

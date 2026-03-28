@@ -46,6 +46,11 @@ export function ReportCard({
               {formatDate(report.created_at)}
             </p>
             <h3 className="font-semibold text-lg mt-1">{report.project_name}</h3>
+            {!report.can_edit && report.user_id === report.user_id && (
+              <p className="text-xs text-orange-600 mt-1">
+                Edit hanya tersedia pada hari yang sama
+              </p>
+            )}
           </div>
           
           <div className="flex gap-2">
@@ -54,6 +59,7 @@ export function ReportCard({
                 size="sm"
                 variant="outline"
                 onClick={() => onEdit(report.id)}
+                title="Edit laporan"
               >
                 <Edit className="w-4 h-4" />
               </Button>
@@ -63,6 +69,7 @@ export function ReportCard({
                 size="sm"
                 variant="destructive"
                 onClick={() => onDelete(report.id)}
+                title="Hapus laporan"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>

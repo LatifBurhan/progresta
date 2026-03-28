@@ -180,7 +180,7 @@ export async function PUT(
       // Validate user-project relationship via project_divisions
       const { data: user, error: userError } = await supabaseAdmin
         .from('users')
-        .select('division_id')
+        .select('"divisionId"')
         .eq('id', session.userId)
         .single();
 
@@ -192,7 +192,7 @@ export async function PUT(
         );
       }
 
-      const userDivisionId = (user as any).division_id || (user as any).divisionId;
+      const userDivisionId = (user as any).divisionId;
       
       if (!userDivisionId) {
         return NextResponse.json(

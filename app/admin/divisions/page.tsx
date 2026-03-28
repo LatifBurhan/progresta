@@ -1,18 +1,55 @@
-import { redirect } from 'next/navigation'
-import { verifySession } from '@/lib/session'
-import { Suspense } from 'react'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 import AdminDivisionsClient from './AdminDivisionsClient'
 
-export default async function AdminDivisionsPage() {
-  const session = await verifySession()
+export default function AdminDivisionsPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [authorized, setAuthorized] = useState(false)
 
-  if (!session) {
-    redirect('/login')
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/auth/check')
+      const data = await res.json()
+      
+      if (!data.authenticated) {
+        router.push('/login')
+        return
+      }
+
+      // Only PM, HRD, CEO, ADMIN can access
+      const adminRoles = ['PM', 'HRD', 'CEO', 'ADMIN']
+      if (!adminRoles.includes(data.user?.role)) {
+        router.push('/dashboard')
+        return
+      }
+
+      setAuthorized(true)
+    } catch (error) {
+      console.error('Auth check failed:', error)
+      router.push('/login')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Only PM, HRD, CEO, ADMIN can access
-  if (!['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role)) {
-    redirect('/dashboard')
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!authorized) {
+    return null
   }
 
   return (
@@ -27,13 +64,7 @@ export default async function AdminDivisionsPage() {
           </p>
         </div>
         
-        <Suspense fallback={
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        }>
-          <AdminDivisionsClient />
-        </Suspense>
+        <AdminDivisionsClient />
       </div>
     </div>
   )

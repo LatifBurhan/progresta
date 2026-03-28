@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
+import { logoutAction } from '@/app/actions/auth-actions'
 import { createClient } from '@/lib/supabase'
+import ResponsiveLayout from '../dashboard/ResponsiveLayout'
 
 export default async function AdminLayout({
   children,
@@ -13,26 +15,54 @@ export default async function AdminLayout({
     redirect('/login')
   }
 
-  // Check user status and role using Supabase client
-  const supabase = createClient()
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('role, status_pending')
-    .eq('id', session.userId)
-    .single()
-
-  if (error || !userData) {
-    redirect('/login')
-  }
-
-  if (userData.status_pending) {
-    redirect('/waiting-room')
-  }
-
   // Only PM, HRD, CEO, ADMIN can access admin routes
-  if (!['PM', 'HRD', 'CEO', 'ADMIN'].includes(userData.role)) {
+  if (!['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role)) {
     redirect('/dashboard')
   }
 
-  return <>{children}</>
+  // Get user profile data
+  const supabase = createClient()
+  let profile = null
+  
+  try {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id, email, role')
+      .eq('id', session.userId)
+      .single()
+
+    if (userData) {
+      profile = {
+        fotoProfil: null,
+        name: session.name,
+        user: {
+          email: userData.email,
+          role: userData.role
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error)
+    // Fallback profile
+    profile = {
+      fotoProfil: null,
+      name: session.name,
+      user: {
+        email: session.email,
+        role: session.role
+      }
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ResponsiveLayout
+        session={session}
+        profile={profile}
+        logoutAction={logoutAction}
+      >
+        {children}
+      </ResponsiveLayout>
+    </div>
+  )
 }

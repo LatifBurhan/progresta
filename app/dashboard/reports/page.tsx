@@ -16,13 +16,12 @@ export default function ReportsPage() {
   const view = searchParams.get('view')
   const projectId = searchParams.get('project_id') || ''
   
-  const [checking, setChecking] = useState(true)
-  const [authenticated, setAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [showModal, setShowModal] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
 
   useEffect(() => {
     checkAuth()
@@ -43,19 +42,14 @@ export default function ReportsPage() {
       const res = await fetch('/api/auth/check')
       const data = await res.json()
       
-      if (!data.authenticated) {
-        router.push('/login')
-      } else {
-        setAuthenticated(true)
+      if (data.authenticated) {
         // Check if user is admin (ADMIN, HRD, or CEO)
         const adminRoles = ['ADMIN', 'HRD', 'CEO']
         setIsAdmin(adminRoles.includes(data.user?.role))
+        setCurrentUserId(data.user?.id || '')
       }
     } catch (error) {
       console.error('Auth check failed:', error)
-      router.push('/login')
-    } finally {
-      setChecking(false)
     }
   }
 
@@ -77,39 +71,27 @@ export default function ReportsPage() {
   const handleFormSuccess = () => {
     setRefreshKey(prev => prev + 1) // Trigger refresh of history
     setShowModal(false)
-    router.push('/reports?view=history') // Switch to history view
+    router.push('/dashboard/reports?view=history') // Switch to history view
   }
 
   const handleFormCancel = () => {
     setShowModal(false)
-    router.push('/reports?view=history')
+    router.push('/dashboard/reports?view=history')
   }
 
   const handleCloseModal = () => {
     setShowModal(false)
-    router.push('/reports?view=history')
-  }
-
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  if (!authenticated) {
-    return null
+    router.push('/dashboard/reports?view=history')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <div className="max-w-7xl mx-auto py-8 px-4 space-y-6">
         {/* Header */}
         <div>
           {projectId && (
             <button
-              onClick={() => router.push('/reports?view=history')}
+              onClick={() => router.push('/dashboard/reports?view=history')}
               className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +111,7 @@ export default function ReportsPage() {
 
         {/* Show Project Grid if no projectId selected, otherwise show Report History */}
         {!projectId ? (
-          <ProjectGrid projects={projects} loading={loadingProjects} />
+          <ProjectGrid projects={projects} loading={loadingProjects} currentUserId={currentUserId} />
         ) : (
           <ReportHistory key={refreshKey} isAdmin={isAdmin} projectId={projectId} />
         )}
@@ -174,6 +156,32 @@ export default function ReportsPage() {
 
       {/* Toast Notifications */}
       <Toaster />
-    </div>
+
+      {/* Floating Action Button - Create Report */}
+      {view === 'history' && (
+        <button
+          onClick={() => router.push('/dashboard/reports?view=create')}
+          className="fixed bottom-20 right-6 lg:bottom-8 lg:right-8 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-30 group"
+          title="Buat Laporan Baru"
+        >
+          <svg
+            className="w-6 h-6 group-hover:scale-110 transition-transform"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          <span className="absolute -top-10 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            Buat Laporan
+          </span>
+        </button>
+      )}
+    </>
   )
 }

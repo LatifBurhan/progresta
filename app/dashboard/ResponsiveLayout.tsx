@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 type Session = {
   userId: string
@@ -28,6 +28,7 @@ export default function ResponsiveLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const isActive = (path: string) => pathname === path
 
@@ -161,6 +162,7 @@ export default function ResponsiveLayout({
           </div>
           
           <nav className="p-4 space-y-2">
+            {/* Main Menu - Available for All Users */}
             <Link
               href="/dashboard"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -187,11 +189,36 @@ export default function ResponsiveLayout({
             </Link>
 
             <Link
-              href="/reports"
+              href="/dashboard/reports?view=create"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                pathname.startsWith('/reports')
+                pathname === '/dashboard/reports' && searchParams?.get('view') === 'create'
                   ? 'bg-green-50 text-green-700'
                   : 'text-gray-700 hover:bg-green-50 hover:text-green-700'
+              }`}
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <svg
+                className="w-5 h-5 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span>Buat Laporan</span>
+            </Link>
+
+            <Link
+              href="/dashboard/reports?view=history"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                pathname === '/dashboard/reports' && searchParams?.get('view') === 'history'
+                  ? 'bg-purple-50 text-purple-700'
+                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-700'
               }`}
               onClick={() => setIsSidebarOpen(false)}
             >
@@ -208,7 +235,7 @@ export default function ResponsiveLayout({
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <span>📝 Laporan Progres</span>
+              <span>Riwayat</span>
             </Link>
 
             <Link
@@ -239,16 +266,16 @@ export default function ResponsiveLayout({
             {/* Admin Navigation - PM, HRD, CEO, ADMIN can access */}
             {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (
               <>
-                <div className="px-4 py-2 mt-4">
+                <div className="px-4 py-2 mt-6 border-t pt-4">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Admin Panel
                   </h3>
                 </div>
                 
                 <Link
-                  href="/admin/users"
+                  href="/dashboard/admin/users/manage"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname === '/admin/users'
+                    pathname === '/dashboard/admin/users/manage'
                       ? 'bg-orange-50 text-orange-700'
                       : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
                   }`}
@@ -267,64 +294,8 @@ export default function ResponsiveLayout({
                       d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                     />
                   </svg>
-                  <span>👥 Manajemen User</span>
+                  <span>Manajemen User</span>
                 </Link>
-
-                {/* HRD/CEO/ADMIN can create users */}
-                {['HRD', 'CEO', 'ADMIN'].includes(session.role) && (
-                  <Link
-                    href="/dashboard/admin/users/create"
-                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
-                      pathname === '/dashboard/admin/users/create'
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
-                    }`}
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    <svg
-                      className="w-4 h-4 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    <span className="text-sm">➕ Tambah User</span>
-                  </Link>
-                )}
-
-                {/* HRD/CEO/ADMIN can manage users */}
-                {['HRD', 'CEO', 'ADMIN'].includes(session.role) && (
-                  <Link
-                    href="/dashboard/admin/users/manage"
-                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
-                      pathname === '/dashboard/admin/users/manage'
-                        ? 'bg-green-50 text-green-700'
-                        : 'text-gray-600 hover:bg-green-50 hover:text-green-700'
-                    }`}
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    <svg
-                      className="w-4 h-4 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    <span className="text-sm">⚙️ Kelola Karyawan</span>
-                  </Link>
-                )}
 
                 <Link
                   href="/dashboard/admin/projects"
@@ -348,13 +319,13 @@ export default function ResponsiveLayout({
                       d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                     />
                   </svg>
-                  <span>📋 Kelola Project</span>
+                  <span>Kelola Project</span>
                 </Link>
 
                 <Link
-                  href="/admin/divisions"
+                  href="/dashboard/admin/divisions"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname === '/admin/divisions'
+                    pathname === '/dashboard/admin/divisions'
                       ? 'bg-orange-50 text-orange-700'
                       : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
                   }`}
@@ -373,36 +344,8 @@ export default function ResponsiveLayout({
                       d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                     />
                   </svg>
-                  <span>🏢 Manajemen Divisi</span>
+                  <span>Manajemen Divisi</span>
                 </Link>
-
-                {/* HRD/CEO/ADMIN can manage divisions */}
-                {['HRD', 'CEO', 'ADMIN'].includes(session.role) && (
-                  <Link
-                    href="/dashboard/admin/divisions"
-                    className={`flex items-center gap-3 px-4 py-3 ml-4 rounded-lg transition-colors ${
-                      pathname === '/dashboard/admin/divisions'
-                        ? 'bg-purple-50 text-purple-700'
-                        : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
-                    }`}
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    <svg
-                      className="w-4 h-4 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    <span className="text-sm">⚙️ Kelola Divisi</span>
-                  </Link>
-                )}
 
                 <Link
                   href="/admin/reports"
@@ -426,7 +369,7 @@ export default function ResponsiveLayout({
                       d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <span>📊 Export Laporan</span>
+                  <span>Export Laporan</span>
                 </Link>
               </>
             )}
@@ -455,9 +398,9 @@ export default function ResponsiveLayout({
           </Link>
 
           <Link
-            href="/reports"
+            href="/dashboard/reports?view=history"
             className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-              pathname.startsWith('/reports')
+              pathname.startsWith('/dashboard/reports')
                 ? 'text-green-600'
                 : 'text-gray-600'
             }`}
@@ -465,7 +408,7 @@ export default function ResponsiveLayout({
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span className="text-xs font-medium">Lapor</span>
+            <span className="text-xs font-medium">Laporan</span>
           </Link>
 
           {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (

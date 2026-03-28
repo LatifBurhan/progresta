@@ -55,6 +55,9 @@ export interface Project {
   name: string;
   description: string;
   isActive: boolean;
+  createdBy?: string;
+  urgency?: 'low' | 'medium' | 'high';
+  isCompleted?: boolean;
   divisions: Division[];
 }
 

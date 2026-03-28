@@ -5,10 +5,9 @@ import { useRouter } from 'next/navigation'
 import { ReportCard } from './ReportCard'
 import { PhotoViewer } from './PhotoViewer'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
-import type { ProjectReportWithDetails, Project } from '@/types/report'
-import { Loader2, Filter } from 'lucide-react'
+import type { ProjectReportWithDetails } from '@/types/report'
+import { Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -20,17 +19,15 @@ import {
 
 interface ReportHistoryProps {
   isAdmin: boolean
+  projectId?: string
 }
 
-export function ReportHistory({ isAdmin }: ReportHistoryProps) {
+export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
   const router = useRouter()
   const { toast } = useToast()
   
   const [reports, setReports] = useState<ProjectReportWithDetails[]>([])
-  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [filterMode, setFilterMode] = useState<'all' | 'project'>('all')
-  const [selectedProjectId, setSelectedProjectId] = useState('')
   
   // Photo viewer state
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false)
@@ -43,34 +40,16 @@ export function ReportHistory({ isAdmin }: ReportHistoryProps) {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    loadProjects()
     loadReports()
-  }, [])
-
-  useEffect(() => {
-    loadReports()
-  }, [filterMode, selectedProjectId])
-
-  const loadProjects = async () => {
-    try {
-      const res = await fetch('/api/reports/projects')
-      const data = await res.json()
-      
-      if (data.success) {
-        setProjects(data.data || [])
-      }
-    } catch (error) {
-      console.error('Failed to load projects:', error)
-    }
-  }
+  }, [projectId])
 
   const loadReports = async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       
-      if (filterMode === 'project' && selectedProjectId) {
-        params.append('project_id', selectedProjectId)
+      if (projectId) {
+        params.append('project_id', projectId)
       }
       
       const res = await fetch(`/api/reports/list?${params.toString()}`)
@@ -98,7 +77,7 @@ export function ReportHistory({ isAdmin }: ReportHistoryProps) {
   }
 
   const handleEdit = (reportId: string) => {
-    router.push(`/reports/edit/${reportId}`)
+    router.push(`/dashboard/reports/edit/${reportId}`)
   }
 
   const handleDeleteClick = (reportId: string) => {
@@ -151,55 +130,6 @@ export function ReportHistory({ isAdmin }: ReportHistoryProps) {
 
   return (
     <div className="space-y-6">
-      {/* Filter Section */}
-      <div className="bg-card border rounded-lg p-4 space-y-4">
-        <div className="flex items-center gap-2">
-          <Filter className="w-5 h-5 text-muted-foreground" />
-          <h3 className="font-semibold">Filter Laporan</h3>
-        </div>
-        
-        <div className="space-y-3">
-          <div className="flex gap-3">
-            <Button
-              variant={filterMode === 'all' ? 'default' : 'outline'}
-              onClick={() => {
-                setFilterMode('all')
-                setSelectedProjectId('')
-              }}
-              className="flex-1"
-            >
-              Semua Project
-            </Button>
-            <Button
-              variant={filterMode === 'project' ? 'default' : 'outline'}
-              onClick={() => setFilterMode('project')}
-              className="flex-1"
-            >
-              Per Project
-            </Button>
-          </div>
-          
-          {filterMode === 'project' && (
-            <div className="space-y-2">
-              <Label htmlFor="project-filter">Pilih Project</Label>
-              <select
-                id="project-filter"
-                value={selectedProjectId}
-                onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="">Pilih Project</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Reports List */}
       {loading ? (
         <div className="flex items-center justify-center p-12">
