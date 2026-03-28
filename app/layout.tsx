@@ -11,20 +11,20 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Dashboard Template',
-  description: 'Next.js Dashboard Template with Supabase & Prisma',
+  title: 'Progresta - Progress & Auto-Attendance',
+  description: 'Sistem Progress & Auto-Attendance untuk manajemen karyawan dan project',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Dashboard',
+    title: 'Progresta',
   },
   formatDetection: {
     telephone: false,
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icon-192x192.png',
+    icon: '/progresta.png',
+    apple: '/progresta.png',
   },
 }
 
@@ -44,8 +44,8 @@ export default function RootLayout({
   return (
     <html lang="id">
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="icon" href="/progresta.png" />
+        <link rel="apple-touch-icon" href="/progresta.png" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
       </head>

@@ -37,7 +37,7 @@ export default function ResponsiveLayout({
       <nav className="bg-white border-b shadow-sm sticky top-0 z-30">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            {/* Left: Menu Button + Title */}
+            {/* Left: Menu Button + Logo */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -57,9 +57,15 @@ export default function ResponsiveLayout({
                   />
                 </svg>
               </button>
-              <h1 className="text-lg sm:text-xl font-semibold text-gray-800">
-                Dashboard
-              </h1>
+              <div className="relative h-8 w-32 sm:h-10 sm:w-40">
+                <Image
+                  src="/progresta.png"
+                  alt="Progresta Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
             </div>
 
             {/* Right: Profile + Logout */}
@@ -141,6 +147,19 @@ export default function ResponsiveLayout({
             mt-16 lg:mt-0
           `}
         >
+          {/* Logo di Sidebar */}
+          <div className="p-4 border-b">
+            <div className="relative h-12 w-full">
+              <Image
+                src="/progresta.png"
+                alt="Progresta Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+          
           <nav className="p-4 space-y-2">
             <Link
               href="/dashboard"
@@ -168,9 +187,9 @@ export default function ResponsiveLayout({
             </Link>
 
             <Link
-              href="/dashboard/report"
+              href="/reports"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive('/dashboard/report')
+                pathname.startsWith('/reports')
                   ? 'bg-green-50 text-green-700'
                   : 'text-gray-700 hover:bg-green-50 hover:text-green-700'
               }`}
@@ -436,9 +455,9 @@ export default function ResponsiveLayout({
           </Link>
 
           <Link
-            href="/dashboard/report"
+            href="/reports"
             className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-              isActive('/dashboard/report')
+              pathname.startsWith('/reports')
                 ? 'text-green-600'
                 : 'text-gray-600'
             }`}
