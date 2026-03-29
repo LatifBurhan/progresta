@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ReportHistory } from '@/components/reports/ReportHistory'
 import { ReportForm } from '@/components/reports/ReportForm'
 import { ProjectGrid } from '@/components/reports/ProjectGrid'
+import ProjectDetailSection from '@/components/projects/ProjectDetailSection'
 import { Loader2, X } from 'lucide-react'
 import { Toaster } from '@/components/ui/toaster'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,8 @@ export default function ReportsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [loadingProjectDetail, setLoadingProjectDetail] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -36,6 +39,39 @@ export default function ReportsPage() {
       setShowModal(false)
     }
   }, [view])
+
+  // Load project detail when projectId changes
+  useEffect(() => {
+    const loadProjectDetail = async () => {
+      if (projectId) {
+        setLoadingProjectDetail(true)
+        
+        // Always fetch from API to get complete data
+        try {
+          console.log('Fetching project from API:', projectId)
+          const res = await fetch(`/api/admin/projects/${projectId}`)
+          const data = await res.json()
+          console.log('API response:', data)
+          
+          if (data.success && data.project) {
+            setSelectedProject(data.project)
+          } else {
+            console.error('Failed to load project:', data.message)
+            setSelectedProject(null)
+          }
+        } catch (error) {
+          console.error('Failed to load project detail:', error)
+          setSelectedProject(null)
+        }
+        
+        setLoadingProjectDetail(false)
+      } else {
+        setSelectedProject(null)
+      }
+    }
+
+    loadProjectDetail()
+  }, [projectId])
 
   const checkAuth = async () => {
     try {
@@ -99,22 +135,40 @@ export default function ReportsPage() {
 
         {/* Back button - Only show when viewing specific project */}
         {projectId && (
-          <button
-            onClick={() => router.push('/dashboard/reports?view=history')}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Kembali ke Daftar Project
-          </button>
+          <div>
+            <button
+              onClick={() => router.push('/dashboard/reports?view=history')}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Kembali ke Daftar Project
+            </button>
+            <h1 className="text-3xl font-bold">Riwayat Laporan</h1>
+            <p className="text-muted-foreground mt-1">
+              Pantau progres pekerjaan yang telah dilaporkan
+            </p>
+          </div>
         )}
 
         {/* Show Project Grid if no projectId selected, otherwise show Report History */}
         {!projectId ? (
           <ProjectGrid projects={projects} loading={loadingProjects} currentUserId={currentUserId} />
         ) : (
-          <ReportHistory key={refreshKey} isAdmin={isAdmin} projectId={projectId} />
+          <>
+            {/* Project Detail Section */}
+            {loadingProjectDetail ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+              </div>
+            ) : selectedProject ? (
+              <ProjectDetailSection project={selectedProject} />
+            ) : null}
+            
+            {/* Report History */}
+            <ReportHistory key={refreshKey} isAdmin={isAdmin} projectId={projectId} />
+          </>
         )}
       </div>
 

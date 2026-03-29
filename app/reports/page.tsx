@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ReportHistory } from '@/components/reports/ReportHistory'
 import { ReportForm } from '@/components/reports/ReportForm'
 import { ProjectGrid } from '@/components/reports/ProjectGrid'
+import ProjectDetailSection from '@/components/projects/ProjectDetailSection'
 import { Loader2, X } from 'lucide-react'
 import { Toaster } from '@/components/ui/toaster'
 import { Button } from '@/components/ui/button'
@@ -15,14 +16,18 @@ export default function ReportsPage() {
   const searchParams = useSearchParams()
   const view = searchParams.get('view')
   const projectId = searchParams.get('project_id') || ''
+  const showDetail = searchParams.get('show_detail') === 'true'
   
   const [checking, setChecking] = useState(true)
   const [authenticated, setAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [showModal, setShowModal] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
+  const [loadingProjectDetail, setLoadingProjectDetail] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -38,6 +43,44 @@ export default function ReportsPage() {
     }
   }, [view])
 
+  // Load project detail when projectId changes
+  useEffect(() => {
+    const loadProjectDetail = async () => {
+      if (projectId) {
+        console.log('Loading project detail for:', projectId)
+        setLoadingProjectDetail(true)
+        
+        // First check if project is already in projects array
+        let project = projects.find(p => p.id === projectId)
+        console.log('Project from cache:', project)
+        
+        // If not found, fetch from API
+        if (!project) {
+          try {
+            console.log('Fetching project from API...')
+            const res = await fetch(`/api/admin/projects/${projectId}`)
+            const data = await res.json()
+            console.log('API response:', data)
+            if (data.success && data.project) {
+              project = data.project
+            }
+          } catch (error) {
+            console.error('Failed to load project detail:', error)
+          }
+        }
+        
+        console.log('Setting selected project:', project)
+        setSelectedProject(project || null)
+        setLoadingProjectDetail(false)
+      } else {
+        console.log('No projectId, clearing selected project')
+        setSelectedProject(null)
+      }
+    }
+
+    loadProjectDetail()
+  }, [projectId, projects])
+
   const checkAuth = async () => {
     try {
       const res = await fetch('/api/auth/check')
@@ -47,6 +90,7 @@ export default function ReportsPage() {
         router.push('/login')
       } else {
         setAuthenticated(true)
+        setCurrentUserId(data.user?.id || '')
         // Check if user is admin (ADMIN, HRD, or CEO)
         const adminRoles = ['ADMIN', 'HRD', 'CEO']
         setIsAdmin(adminRoles.includes(data.user?.role))
@@ -129,9 +173,35 @@ export default function ReportsPage() {
 
         {/* Show Project Grid if no projectId selected, otherwise show Report History */}
         {!projectId ? (
-          <ProjectGrid projects={projects} loading={loadingProjects} />
+          <ProjectGrid projects={projects} loading={loadingProjects} currentUserId={currentUserId} />
         ) : (
-          <ReportHistory key={refreshKey} isAdmin={isAdmin} projectId={projectId} />
+          <>
+            {/* Project Detail Section */}
+            {(() => {
+              console.log('Rendering project detail section:', {
+                loadingProjectDetail,
+                selectedProject,
+                projectId
+              })
+              return null
+            })()}
+            
+            {loadingProjectDetail ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                <span className="ml-2 text-slate-600">Memuat detail project...</span>
+              </div>
+            ) : selectedProject ? (
+              <ProjectDetailSection project={selectedProject} />
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-yellow-800 text-sm">Debug: Project tidak ditemukan (ID: {projectId})</p>
+              </div>
+            )}
+            
+            {/* Report History */}
+            <ReportHistory key={refreshKey} isAdmin={isAdmin} projectId={projectId} />
+          </>
         )}
       </div>
 

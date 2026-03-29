@@ -54,6 +54,13 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  tujuan?: string;
+  pic?: string;
+  prioritas?: string;
+  tanggal_mulai?: string;
+  tanggal_selesai?: string;
+  status?: string;
+  lampiran_files?: string[];
   isActive: boolean;
   createdBy?: string;
   urgency?: 'low' | 'medium' | 'high';

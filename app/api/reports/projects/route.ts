@@ -111,14 +111,7 @@ export async function GET(request: NextRequest) {
     const { data: projects, error: projectsError } = await supabaseAdmin
       .from('projects')
       .select(`
-        id,
-        name,
-        description,
-        isActive,
-        createdBy,
-        urgency,
-        isCompleted,
-        created_at,
+        *,
         project_divisions (
           division_id,
           divisions (
@@ -142,13 +135,7 @@ export async function GET(request: NextRequest) {
 
     // Transform the data to match the expected format
     const transformedProjects = (projects || []).map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      isActive: p.isActive,
-      createdBy: p.createdBy || null,
-      urgency: p.urgency || 'low',
-      isCompleted: p.isCompleted || false,
+      ...p,
       divisions: p.project_divisions?.map((pd: any) => pd.divisions).filter(Boolean) || []
     }));
 

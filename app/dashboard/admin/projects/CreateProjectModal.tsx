@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Plus, Calendar, User, Target, FileText, AlertCircle, Link } from 'lucide-react'
+import { X, Plus, Calendar, User, Target, FileText, AlertCircle } from 'lucide-react'
+import FileUploadComponent from '@/components/projects/FileUploadComponent'
 
 interface Project {
   id: string
@@ -15,9 +16,7 @@ interface Project {
   prioritas: string | null
   tanggal_mulai: string | null
   tanggal_selesai: string | null
-  output_diharapkan: string | null
-  catatan: string | null
-  lampiran_url: string | null
+  lampiran_files: string[] | null
   status: string
   created_at: string
   updated_at: string
@@ -58,12 +57,15 @@ export default function CreateProjectModal({
     prioritas: '',
     tanggalMulai: '',
     tanggalSelesai: '',
-    outputDiharapkan: '',
-    catatan: '',
-    lampiranUrl: ''
+    lampiranFiles: [] as string[]
   })
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
+  const [uploadError, setUploadError] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Generate temporary project ID for file uploads
+  const tempProjectId = `temp-${Date.now()}`
 
   if (!open) return null
 
@@ -120,9 +122,7 @@ export default function CreateProjectModal({
           prioritas: formData.prioritas || null,
           tanggalMulai: formData.tanggalMulai || null,
           tanggalSelesai: formData.tanggalSelesai || null,
-          outputDiharapkan: formData.outputDiharapkan.trim() || null,
-          catatan: formData.catatan.trim() || null,
-          lampiranUrl: formData.lampiranUrl.trim() || null
+          lampiranFiles: formData.lampiranFiles.length > 0 ? formData.lampiranFiles : null
         })
       })
 
@@ -152,10 +152,10 @@ export default function CreateProjectModal({
       prioritas: '',
       tanggalMulai: '',
       tanggalSelesai: '',
-      outputDiharapkan: '',
-      catatan: '',
-      lampiranUrl: ''
+      lampiranFiles: []
     })
+    setUploadedFiles([])
+    setUploadError('')
     setError('')
     onClose()
   }
@@ -370,45 +370,23 @@ export default function CreateProjectModal({
                   </div>
                 )}
 
-                {/* Output Diharapkan */}
+                {/* File Lampiran */}
                 <div>
-                  <Label htmlFor="outputDiharapkan">Output yang Diharapkan</Label>
-                  <textarea
-                    id="outputDiharapkan"
-                    value={formData.outputDiharapkan}
-                    onChange={(e) => setFormData(prev => ({ ...prev, outputDiharapkan: e.target.value }))}
-                    placeholder="Jelaskan output/hasil yang diharapkan dari project ini..."
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    rows={3}
+                  <Label>File Lampiran</Label>
+                  <FileUploadComponent
+                    projectId={tempProjectId}
+                    existingFiles={uploadedFiles}
+                    onChange={(files) => {
+                      setUploadedFiles(files)
+                      setFormData(prev => ({ ...prev, lampiranFiles: files }))
+                      setUploadError('') // Clear error on successful upload
+                    }}
+                    onError={(error) => setUploadError(error)}
+                    disabled={loading}
                   />
-                </div>
-
-                {/* Catatan */}
-                <div>
-                  <Label htmlFor="catatan">Catatan/Keterangan</Label>
-                  <textarea
-                    id="catatan"
-                    value={formData.catatan}
-                    onChange={(e) => setFormData(prev => ({ ...prev, catatan: e.target.value }))}
-                    placeholder="Catatan tambahan atau keterangan khusus..."
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    rows={2}
-                  />
-                </div>
-
-                {/* Lampiran URL */}
-                <div>
-                  <Label htmlFor="lampiranUrl" className="flex items-center gap-2">
-                    <Link className="w-4 h-4" />
-                    Link Lampiran
-                  </Label>
-                  <Input
-                    id="lampiranUrl"
-                    type="url"
-                    value={formData.lampiranUrl}
-                    onChange={(e) => setFormData(prev => ({ ...prev, lampiranUrl: e.target.value }))}
-                    placeholder="https://drive.google.com/... atau link dokumen lainnya"
-                  />
+                  {uploadError && (
+                    <p className="text-sm text-red-600 mt-1">{uploadError}</p>
+                  )}
                 </div>
               </div>
             </div>

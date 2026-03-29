@@ -14,9 +14,7 @@ interface Project {
   prioritas: string | null;
   tanggal_mulai: string | null;
   tanggal_selesai: string | null;
-  output_diharapkan: string | null;
-  catatan: string | null;
-  lampiran_url: string | null;
+  lampiran_files: string[] | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -95,9 +93,7 @@ export default function DeleteProjectModal({ open, project, onClose, onDeleteSuc
           prioritas: project.prioritas,
           tanggalMulai: project.tanggal_mulai,
           tanggalSelesai: project.tanggal_selesai,
-          outputDiharapkan: project.output_diharapkan,
-          catatan: project.catatan,
-          lampiranUrl: project.lampiran_url,
+          lampiranFiles: project.lampiran_files,
           status: "Non-Aktif",
         }),
       });

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, tujuan, description, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, outputDiharapkan, catatan, lampiranUrl } = await request.json();
+    const { name, tujuan, description, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, lampiranFiles } = await request.json();
 
     console.log("Received create project request:", {
       name,
@@ -22,9 +22,7 @@ export async function POST(request: NextRequest) {
       prioritas,
       tanggalMulai,
       tanggalSelesai,
-      outputDiharapkan,
-      catatan,
-      lampiranUrl,
+      lampiranFiles,
     });
 
     // Validasi input
@@ -46,6 +44,32 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    // Validate lampiranFiles if provided
+    if (lampiranFiles !== null && lampiranFiles !== undefined) {
+      if (!Array.isArray(lampiranFiles)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "lampiranFiles harus berupa array",
+          },
+          { status: 400 },
+        );
+      }
+      
+      // Validate each URL is a string
+      for (const url of lampiranFiles) {
+        if (typeof url !== 'string') {
+          return NextResponse.json(
+            {
+              success: false,
+              message: "Semua URL file harus berupa string",
+            },
+            { status: 400 },
+          );
+        }
+      }
     }
 
     if (prioritas && !["Rendah", "Sedang", "Tinggi", "Urgent"].includes(prioritas)) {
@@ -94,9 +118,7 @@ export async function POST(request: NextRequest) {
         prioritas: prioritas || null,
         tanggal_mulai: tanggalMulai || null,
         tanggal_selesai: tanggalSelesai || null,
-        output_diharapkan: outputDiharapkan?.trim() || null,
-        catatan: catatan?.trim() || null,
-        lampiran_url: lampiranUrl?.trim() || null,
+        lampiran_files: lampiranFiles || null,
         status: 'Aktif',
         created_by: session.userId,
         divisionId: divisionIds[0],

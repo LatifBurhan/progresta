@@ -2,6 +2,87 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 
+// GET - Get single project
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
+  try {
+    const session = await verifySession();
+
+    if (!session) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
+    const projectId = params.id;
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Database configuration error",
+        },
+        { status: 500 },
+      );
+    }
+
+    // Fetch project with divisions
+    const { data: project, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select(`
+        *,
+        project_divisions (
+          division_id,
+          divisions (
+            id,
+            name,
+            color
+          )
+        )
+      `)
+      .eq('id', projectId)
+      .single()
+
+    if (projectError) {
+      console.error('Error fetching project:', projectError)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal mengambil data project: ' + projectError.message
+      }, { status: 500 })
+    }
+
+    if (!project) {
+      return NextResponse.json({
+        success: false,
+        message: 'Project tidak ditemukan'
+      }, { status: 404 })
+    }
+
+    // Transform the data
+    const transformedProject = {
+      ...project,
+      divisions: project.project_divisions?.map((pd: any) => pd.divisions).filter(Boolean) || []
+    };
+
+    console.log('API - Transformed project:', JSON.stringify(transformedProject, null, 2))
+
+    return NextResponse.json({
+      success: true,
+      project: transformedProject,
+    });
+  } catch (error: any) {
+    console.error("Get project error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Internal server error: " + error.message,
+      },
+      { status: 500 },
+    );
+  }
+}
+
 // PUT - Update project
 export async function PUT(
   request: NextRequest, 
@@ -17,7 +98,7 @@ export async function PUT(
 
     const projectId = params.id;
 
-    const { name, tujuan, description, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, outputDiharapkan, catatan, lampiranUrl, status } = await request.json();
+    const { name, tujuan, description, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, lampiranFiles, status } = await request.json();
 
     console.log("Received update project request:", {
       projectId,
@@ -29,9 +110,7 @@ export async function PUT(
       prioritas,
       tanggalMulai,
       tanggalSelesai,
-      outputDiharapkan,
-      catatan,
-      lampiranUrl,
+      lampiranFiles,
       status,
     });
 
@@ -54,6 +133,32 @@ export async function PUT(
         },
         { status: 400 },
       );
+    }
+
+    // Validate lampiranFiles if provided
+    if (lampiranFiles !== null && lampiranFiles !== undefined) {
+      if (!Array.isArray(lampiranFiles)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "lampiranFiles harus berupa array",
+          },
+          { status: 400 },
+        );
+      }
+      
+      // Validate each URL is a string
+      for (const url of lampiranFiles) {
+        if (typeof url !== 'string') {
+          return NextResponse.json(
+            {
+              success: false,
+              message: "Semua URL file harus berupa string",
+            },
+            { status: 400 },
+          );
+        }
+      }
     }
 
     if (prioritas && !["Rendah", "Sedang", "Tinggi", "Urgent"].includes(prioritas)) {
@@ -104,7 +209,7 @@ export async function PUT(
       }
 
       // Update project data
-      const projectData = {
+      const projectData: any = {
         name: name.trim(),
         tujuan: tujuan?.trim() || null,
         description: description?.trim() || null,
@@ -112,12 +217,14 @@ export async function PUT(
         prioritas: prioritas || null,
         tanggal_mulai: tanggalMulai || null,
         tanggal_selesai: tanggalSelesai || null,
-        output_diharapkan: outputDiharapkan?.trim() || null,
-        catatan: catatan?.trim() || null,
-        lampiran_url: lampiranUrl?.trim() || null,
         status: status || "Aktif",
         updated_at: new Date().toISOString(),
       };
+
+      // Only update lampiran_files if it's provided in the request
+      if (lampiranFiles !== undefined) {
+        projectData.lampiran_files = lampiranFiles;
+      }
 
       const { data: updatedProject, error: projectError } = await supabaseAdmin
         .from("projects")

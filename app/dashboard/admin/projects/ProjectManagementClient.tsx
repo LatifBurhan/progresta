@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, Calendar, User, Target, AlertCircle } from "lucide-react";
+import { Plus, Search, Filter, Calendar, User, Target, AlertCircle, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateProjectModal from "./CreateProjectModal";
 import EditProjectModal from "./EditProjectModal";
 import DeleteProjectModal from "./DeleteProjectModal";
+import FilePreviewModal from "@/components/projects/FilePreviewModal";
 
 interface Project {
   id: string;
@@ -17,9 +18,7 @@ interface Project {
   prioritas: string | null;
   tanggal_mulai: string | null;
   tanggal_selesai: string | null;
-  output_diharapkan: string | null;
-  catatan: string | null;
-  lampiran_url: string | null;
+  lampiran_files: string[] | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -51,6 +50,7 @@ export default function ProjectManagementClient({ projects: initialProjects, div
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [filePreviewModalOpen, setFilePreviewModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Filter projects
@@ -87,6 +87,11 @@ export default function ProjectManagementClient({ projects: initialProjects, div
   const openDeleteModal = (project: Project) => {
     setSelectedProject(project);
     setDeleteModalOpen(true);
+  };
+
+  const openFilePreview = (project: Project) => {
+    setSelectedProject(project);
+    setFilePreviewModalOpen(true);
   };
 
   const getPriorityColor = (prioritas: string | null) => {
@@ -263,6 +268,19 @@ export default function ProjectManagementClient({ projects: initialProjects, div
                   </div>
                 )}
 
+                {/* File Attachments Badge */}
+                {project.lampiran_files && project.lampiran_files.length > 0 && (
+                  <div className="mb-4">
+                    <button
+                      onClick={() => openFilePreview(project)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors border border-blue-200"
+                    >
+                      <Paperclip className="w-3 h-3" />
+                      {project.lampiran_files.length} file{project.lampiran_files.length > 1 ? 's' : ''}
+                    </button>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-2 pt-4 border-t">
                   <Button variant="outline" size="sm" onClick={() => openEditModal(project)} className="flex-1">
@@ -322,6 +340,16 @@ export default function ProjectManagementClient({ projects: initialProjects, div
             }}
             onDeleteSuccess={handleDeleteSuccess}
             onDeactivateSuccess={handleDeactivateSuccess}
+          />
+
+          <FilePreviewModal
+            open={filePreviewModalOpen}
+            files={selectedProject.lampiran_files || []}
+            projectName={selectedProject.name}
+            onClose={() => {
+              setFilePreviewModalOpen(false);
+              setSelectedProject(null);
+            }}
           />
         </>
       )}
