@@ -87,27 +87,28 @@ export default function ReportsPage() {
   return (
     <>
       <div className="max-w-7xl mx-auto py-8 px-4 space-y-6">
-        {/* Header */}
-        <div>
-          {projectId && (
-            <button
-              onClick={() => router.push('/dashboard/reports?view=history')}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Kembali ke Daftar Project
-            </button>
-          )}
-          <h1 className="text-3xl font-bold">Riwayat Progres</h1>
-          <p className="text-muted-foreground mt-1">
-            {projectId 
-              ? 'Laporan progres project yang telah dikerjakan'
-              : 'Proyek yang telah selesai dikerjakan'
-            }
-          </p>
-        </div>
+        {/* Header - Only show when viewing project grid */}
+        {!projectId && (
+          <div>
+            <h1 className="text-3xl font-bold">Riwayat Progres</h1>
+            <p className="text-muted-foreground mt-1">
+              Proyek yang telah selesai dikerjakan
+            </p>
+          </div>
+        )}
+
+        {/* Back button - Only show when viewing specific project */}
+        {projectId && (
+          <button
+            onClick={() => router.push('/dashboard/reports?view=history')}
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali ke Daftar Project
+          </button>
+        )}
 
         {/* Show Project Grid if no projectId selected, otherwise show Report History */}
         {!projectId ? (
@@ -156,32 +157,6 @@ export default function ReportsPage() {
 
       {/* Toast Notifications */}
       <Toaster />
-
-      {/* Floating Action Button - Create Report */}
-      {view === 'history' && (
-        <button
-          onClick={() => router.push('/dashboard/reports?view=create')}
-          className="fixed bottom-20 right-6 lg:bottom-8 lg:right-8 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-30 group"
-          title="Buat Laporan Baru"
-        >
-          <svg
-            className="w-6 h-6 group-hover:scale-110 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          <span className="absolute -top-10 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Buat Laporan
-          </span>
-        </button>
-      )}
     </>
   )
 }

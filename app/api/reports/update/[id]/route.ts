@@ -46,8 +46,9 @@ import type { UpdateReportRequest, UpdateReportResponse } from "@/types/report";
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     // Requirement 2.1: Validate authentication
     const session = await verifySession();

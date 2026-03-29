@@ -3,7 +3,11 @@ import { verifySession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 
 // PUT - Update project
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest, 
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
   try {
     const session = await verifySession();
 
@@ -213,7 +217,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE - Delete project
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest, 
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
   try {
     const session = await verifySession();
 

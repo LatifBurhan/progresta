@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -30,98 +30,91 @@ export default function ResponsiveLayout({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // Menutup sidebar otomatis saat navigasi di mobile
+  useEffect(() => {
+    setIsSidebarOpen(false)
+  }, [pathname, searchParams])
+
   const isActive = (path: string) => pathname === path
 
+  const roleStyles: Record<string, string> = {
+    CEO: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    HRD: 'bg-blue-50 text-blue-700 border-blue-100',
+    PM: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    ADMIN: 'bg-rose-50 text-rose-700 border-rose-100',
+    KARYAWAN: 'bg-slate-50 text-slate-700 border-slate-100',
+  }
+
   return (
-    <>
-      {/* Mobile Header */}
-      <nav className="bg-white border-b shadow-sm fixed top-0 left-0 right-0 z-50">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            {/* Left: Menu Button + Logo */}
-            <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Top Navbar */}
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 fixed top-0 left-0 right-0 z-50 h-16">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-full">
+          <div className="flex justify-between items-center h-full">
+            {/* Left Section */}
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+                className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h7" />
                 </svg>
               </button>
-              <div className="relative h-8 w-32 sm:h-10 sm:w-40">
+              
+              {/* Logo - Desktop Only */}
+              <div className="hidden lg:block relative h-9 w-36 transition-transform hover:scale-105 duration-300">
                 <Image
                   src="/progresta.png"
                   alt="Progresta Logo"
                   fill
+                  sizes="144px"
                   className="object-contain"
                   priority
                 />
               </div>
             </div>
 
-            {/* Right: Profile + Logout */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              {/* Profile Avatar */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                {profile?.fotoProfil ? (
-                  <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-gray-300 shadow-sm">
-                    <Image
-                      src={profile.fotoProfil}
-                      alt="Profile"
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 32px, 40px"
-                      unoptimized
-                    />
-                  </div>
-                ) : (
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center border-2 border-gray-300 shadow-sm">
-                    <span className="text-sm sm:text-lg font-bold text-white">
-                      {session.email.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div className="hidden sm:flex flex-col">
-                  <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">
-                    {session.email}
+            {/* Right Section */}
+            <div className="flex items-center gap-3 sm:gap-6">
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                <div className="hidden sm:flex flex-col text-right">
+                  <span className="text-sm font-semibold text-slate-900 leading-tight">
+                    {session.email.split('@')[0]}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      session.role === 'CEO' ? 'bg-purple-100 text-purple-700' :
-                      session.role === 'HRD' ? 'bg-blue-100 text-blue-700' :
-                      session.role === 'PM' ? 'bg-green-100 text-green-700' :
-                      session.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
-                      {session.role === 'CEO' && '👑'} 
-                      {session.role === 'HRD' && '👥'} 
-                      {session.role === 'PM' && '📊'} 
-                      {session.role === 'ADMIN' && '⚙️'} 
-                      {session.role === 'KARYAWAN' && '👨‍💻'} 
-                      {' '}{session.role}
-                    </span>
-                  </div>
+                  <span className={`text-[10px] uppercase tracking-wider font-bold mt-0.5 px-2 py-0.5 rounded border self-end ${roleStyles[session.role] || roleStyles.KARYAWAN}`}>
+                    {session.role}
+                  </span>
+                </div>
+
+                <div className="relative group cursor-pointer">
+                  {profile?.fotoProfil ? (
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-md group-hover:ring-blue-100 transition-all">
+                      <Image
+                        src={profile.fotoProfil}
+                        alt="Profile"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-105 transition-all">
+                      <span className="font-bold text-lg">{session.email.charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="hidden sm:block h-8 w-px bg-gray-300"></div>
-
-              <form action={logoutAction}>
+              <form action={logoutAction} className="hidden sm:block">
                 <button
                   type="submit"
-                  className="text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3 py-2 rounded-md transition-colors"
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all group"
+                  title="Logout"
                 >
-                  Logout
+                  <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                 </button>
               </form>
             </div>
@@ -129,11 +122,11 @@ export default function ResponsiveLayout({
         </div>
       </nav>
 
-      <div className="flex pt-16">
+      <div className="flex pt-16 h-screen overflow-hidden">
         {/* Sidebar Overlay (Mobile) */}
         {isSidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
@@ -142,377 +135,109 @@ export default function ResponsiveLayout({
         <aside
           className={`
             fixed lg:static top-16 bottom-0 left-0 z-40
-            w-64 bg-white border-r shadow-sm
-            transform transition-transform duration-300 ease-in-out
-            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-            overflow-y-auto
+            w-72 bg-white border-r border-slate-200
+            transform transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+            ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
+            overflow-y-auto scrollbar-hide
           `}
         >
-          {/* Logo di Sidebar - Hidden on mobile, visible on desktop */}
-          <div className="hidden lg:block p-4 border-b">
-            <div className="relative h-12 w-full">
-              <Image
-                src="/progresta.png"
-                alt="Progresta Logo"
-                fill
-                className="object-contain"
-                priority
-              />
+          <div className="p-6 space-y-8">
+            {/* Nav Group: Main */}
+            <div>
+              <p className="px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Menu Utama</p>
+              <nav className="space-y-1.5">
+                <SidebarLink href="/dashboard" icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" label="Dashboard" active={isActive('/dashboard')} />
+                <SidebarLink href="/dashboard/reports?view=create" icon="M12 4v16m8-8H4" label="Buat Laporan" active={pathname === '/dashboard/reports' && searchParams?.get('view') === 'create'} color="green" />
+                <SidebarLink href="/dashboard/reports?view=history" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Riwayat" active={pathname === '/dashboard/reports' && searchParams?.get('view') === 'history'} color="purple" />
+                <SidebarLink href="/dashboard/profile" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" label="Profil Saya" active={isActive('/dashboard/profile')} />
+              </nav>
             </div>
-          </div>
-          
-          <nav className="p-4 space-y-2">
-            {/* Main Menu - Available for All Users */}
-            <Link
-              href="/dashboard"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive('/dashboard')
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-              }`}
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <svg
-                className="w-5 h-5 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-              <span>Dashboard</span>
-            </Link>
 
-            <Link
-              href="/dashboard/reports?view=create"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                pathname === '/dashboard/reports' && searchParams?.get('view') === 'create'
-                  ? 'bg-green-50 text-green-700'
-                  : 'text-gray-700 hover:bg-green-50 hover:text-green-700'
-              }`}
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <svg
-                className="w-5 h-5 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              <span>Buat Laporan</span>
-            </Link>
-
-            <Link
-              href="/dashboard/reports?view=history"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                pathname === '/dashboard/reports' && searchParams?.get('view') === 'history'
-                  ? 'bg-purple-50 text-purple-700'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-700'
-              }`}
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <svg
-                className="w-5 h-5 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <span>Riwayat</span>
-            </Link>
-
-            <Link
-              href="/dashboard/profile"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive('/dashboard/profile')
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-              }`}
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <svg
-                className="w-5 h-5 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-              <span>Profile</span>
-            </Link>
-
-            {/* Admin Navigation - PM, HRD, CEO, ADMIN can access */}
+            {/* Nav Group: Admin */}
             {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (
-              <>
-                <div className="px-4 py-2 mt-6 border-t pt-4">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Admin Panel
-                  </h3>
-                </div>
-                
-                <Link
-                  href="/dashboard/admin/overview"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname === '/dashboard/admin/overview'
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <span>Dashboard Overview</span>
-                </Link>
-
-                <Link
-                  href="/dashboard/admin/per-user"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname === '/dashboard/admin/per-user'
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span>Dashboard Per User</span>
-                </Link>
-                
-                <Link
-                  href="/dashboard/admin/users/manage"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname === '/dashboard/admin/users/manage'
-                      ? 'bg-orange-50 text-orange-700'
-                      : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                  </svg>
-                  <span>Manajemen User</span>
-                </Link>
-
-                <Link
-                  href="/dashboard/admin/projects"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname.startsWith('/dashboard/admin/projects')
-                      ? 'bg-purple-50 text-purple-700'
-                      : 'text-gray-700 hover:bg-purple-50 hover:text-purple-700'
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                    />
-                  </svg>
-                  <span>Kelola Project</span>
-                </Link>
-
-                <Link
-                  href="/dashboard/admin/divisions"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname === '/dashboard/admin/divisions'
-                      ? 'bg-orange-50 text-orange-700'
-                      : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
-                  <span>Manajemen Divisi</span>
-                </Link>
-
-                <Link
-                  href="/admin/reports"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    pathname.startsWith('/admin/reports')
-                      ? 'bg-orange-50 text-orange-700'
-                      : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <svg
-                    className="w-5 h-5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <span>Export Laporan</span>
-                </Link>
-              </>
+              <div>
+                <p className="px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Admin Panel</p>
+                <nav className="space-y-1.5">
+                  <SidebarLink href="/dashboard/admin/overview" icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" label="Overview" active={isActive('/dashboard/admin/overview')} color="indigo" />
+                  <SidebarLink href="/dashboard/admin/per-user" icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" label="Data Per User" active={isActive('/dashboard/admin/per-user')} color="indigo" />
+                  <SidebarLink href="/dashboard/admin/users/manage" icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" label="Manajemen User" active={isActive('/dashboard/admin/users/manage')} color="orange" />
+                  <SidebarLink href="/dashboard/admin/projects" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" label="Kelola Project" active={pathname.startsWith('/dashboard/admin/projects')} color="purple" />
+                  <SidebarLink href="/dashboard/admin/divisions" icon="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" label="Manajemen Divisi" active={isActive('/dashboard/admin/divisions')} color="orange" />
+                  <SidebarLink href="/admin/reports" icon="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Export Laporan" active={pathname.startsWith('/admin/reports')} color="rose" />
+                </nav>
+              </div>
             )}
-          </nav>
+          </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto pb-16 lg:pb-0 min-h-screen">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-[#F8FAFC] custom-scrollbar relative">
+          <div className="p-4 sm:p-8 max-w-[1400px] mx-auto pb-24 lg:pb-8">
+            {children}
+          </div>
+        </main>
       </div>
 
-      {/* Floating Action Button - Tambah Laporan (All Pages) */}
+      {/* Floating Action Button */}
       <Link
         href="/dashboard/reports?view=create"
-        className="fixed bottom-20 right-6 lg:bottom-8 lg:right-8 z-30 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
-        title="Buat Laporan Baru"
+        className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-30 w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group"
       >
-        <svg
-          className="w-6 h-6 group-hover:scale-110 transition-transform"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4v16m8-8H4"
-          />
+        <svg className="w-7 h-7 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       </Link>
 
-      {/* Bottom Navigation (Mobile Only) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-30">
-        <div className="flex justify-around items-center py-2">
-          <Link
-            href="/dashboard"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-              isActive('/dashboard')
-                ? 'text-blue-600'
-                : 'text-gray-600'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            <span className="text-xs font-medium">Home</span>
-          </Link>
-
-          <Link
-            href="/dashboard/reports?view=history"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-              pathname.startsWith('/dashboard/reports')
-                ? 'text-green-600'
-                : 'text-gray-600'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span className="text-xs font-medium">Laporan</span>
-          </Link>
-
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 z-50 px-2 pb-safe">
+        <div className="flex justify-around items-center h-16">
+          <MobileNavItem href="/dashboard" icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" label="Home" active={isActive('/dashboard')} />
+          <MobileNavItem href="/dashboard/reports?view=history" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Laporan" active={pathname.includes('reports')} />
           {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (
-            <Link
-              href="/admin/users"
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                pathname.startsWith('/admin')
-                  ? 'text-orange-600'
-                  : 'text-gray-600'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              <span className="text-xs font-medium">Admin</span>
-            </Link>
+            <MobileNavItem href="/dashboard/admin/overview" icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" label="Admin" active={pathname.includes('admin')} />
           )}
-
-          <Link
-            href="/dashboard/profile"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-              isActive('/dashboard/profile')
-                ? 'text-blue-600'
-                : 'text-gray-600'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span className="text-xs font-medium">Profile</span>
-          </Link>
+          <MobileNavItem href="/dashboard/profile" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" label="Profil" active={isActive('/dashboard/profile')} />
         </div>
       </nav>
-    </>
+    </div>
+  )
+}
+
+// Reusable Components for Cleaner Code
+function SidebarLink({ href, icon, label, active, color = 'blue' }: any) {
+  const colorClasses: Record<string, string> = {
+    blue: active ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-blue-50/50 hover:text-blue-700',
+    green: active ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-emerald-50/50 hover:text-emerald-700',
+    purple: active ? 'bg-purple-50 text-purple-700' : 'text-slate-600 hover:bg-purple-50/50 hover:text-purple-700',
+    indigo: active ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-indigo-50/50 hover:text-indigo-700',
+    orange: active ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-orange-50/50 hover:text-orange-700',
+    rose: active ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-rose-50/50 hover:text-rose-700',
+  }
+
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium transition-all duration-200 group ${colorClasses[color]}`}
+    >
+      <svg className={`w-5 h-5 transition-transform group-hover:scale-110`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={icon} />
+      </svg>
+      <span className="text-[14px] tracking-tight">{label}</span>
+      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor]" />}
+    </Link>
+  )
+}
+
+function MobileNavItem({ href, icon, label, active }: any) {
+  return (
+    <Link
+      href={href}
+      className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-all ${active ? 'text-blue-600' : 'text-slate-400'}`}
+    >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2 : 1.5} d={icon} />
+      </svg>
+      <span className={`text-[10px] font-bold uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
+    </Link>
   )
 }

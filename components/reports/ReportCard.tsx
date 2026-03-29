@@ -1,9 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { Edit, Trash2, MapPin, User } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Trash2, AlertTriangle, Wrench, Camera, MoreVertical, Briefcase } from 'lucide-react'
 import type { ProjectReportWithDetails } from '@/types/report'
 
 interface ReportCardProps {
@@ -21,13 +18,14 @@ export function ReportCard({
   onDelete,
   onPhotoClick
 }: ReportCardProps) {
+  
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString)
       return new Intl.DateTimeFormat('id-ID', {
         day: '2-digit',
-        month: 'long',
-        year: 'numeric',
+        month: 'short',
+        year: '2-digit',
         hour: '2-digit',
         minute: '2-digit'
       }).format(date)
@@ -36,106 +34,118 @@ export function ReportCard({
     }
   }
 
+  // Parse photos - handle both array and JSON string
+  let photos: string[] = []
+  try {
+    // API returns foto_urls, not photos
+    const photoData = report.foto_urls || report.photos
+    if (Array.isArray(photoData)) {
+      photos = photoData
+    } else if (typeof photoData === 'string') {
+      photos = JSON.parse(photoData)
+    }
+  } catch (e) {
+    console.error('Error parsing photos:', e)
+    photos = []
+  }
+
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-4 space-y-3">
-        {/* Header: Date and Actions */}
-        <div className="flex items-start justify-between gap-2">
+    <div className="bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-bold text-slate-900 mb-1">{report.project_name}</h3>
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            <span>{formatDate(report.created_at)}</span>
+            <span>•</span>
+            <span>{report.user_name || 'Unknown User'}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            report.lokasi_kerja === 'AL-WUSTHO' || report.lokasi_kerja === 'Al-Wustho' ? 'bg-orange-100 text-orange-700' :
+            report.lokasi_kerja === 'WFA' ? 'bg-blue-100 text-blue-700' :
+            'bg-green-100 text-green-700'
+          }`}>
+            {report.lokasi_kerja}
+          </span>
+          {report.can_delete && (
+            <button 
+              onClick={() => onDelete(report.id)}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <MoreVertical className="w-5 h-5 text-slate-400" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Pekerjaan Section - GREEN */}
+      <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg mb-4">
+        <div className="flex items-start gap-2">
+          <Briefcase className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm text-muted-foreground">
-              {formatDate(report.created_at)}
-            </p>
-            <h3 className="font-semibold text-lg mt-1">{report.project_name}</h3>
-            {!report.can_edit && report.user_id === report.user_id && (
-              <p className="text-xs text-orange-600 mt-1">
-                Edit hanya tersedia pada hari yang sama
-              </p>
-            )}
-          </div>
-          
-          <div className="flex gap-2">
-            {report.can_edit && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onEdit(report.id)}
-                title="Edit laporan"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-            )}
-            {report.can_delete && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onDelete(report.id)}
-                title="Hapus laporan"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
+            <h4 className="text-sm font-bold text-green-900 mb-1">Pekerjaan</h4>
+            <p className="text-sm text-green-700 leading-relaxed">{report.pekerjaan_dikerjakan}</p>
           </div>
         </div>
+      </div>
 
-        {/* User Name (for admin view) */}
-        {isAdmin && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <User className="w-4 h-4" />
-            <span>{report.user_name}</span>
-          </div>
-        )}
-
-        {/* Location */}
-        <div className="flex items-center gap-2 text-sm">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{report.lokasi_kerja}</span>
-        </div>
-
-        {/* Work Description */}
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">Pekerjaan:</p>
-          <p className="text-sm whitespace-pre-wrap">{report.pekerjaan_dikerjakan}</p>
-        </div>
-
-        {/* Obstacles (if exists) */}
-        {report.kendala && (
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">Kendala:</p>
-            <p className="text-sm whitespace-pre-wrap text-orange-600">{report.kendala}</p>
-          </div>
-        )}
-
-        {/* Future Plans (if exists) */}
-        {report.rencana_kedepan && (
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">Rencana Kedepan:</p>
-            <p className="text-sm whitespace-pre-wrap text-blue-600">{report.rencana_kedepan}</p>
-          </div>
-        )}
-
-        {/* Photo Thumbnails */}
-        {report.foto_urls && report.foto_urls.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Foto:</p>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {report.foto_urls.map((url, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => onPhotoClick(url, report.foto_urls)}
-                  className="aspect-square rounded-lg overflow-hidden border hover:border-primary transition-colors cursor-pointer"
-                >
-                  <img
-                    src={url}
-                    alt={`Foto ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+      {/* Kendala Section - RED */}
+      {report.kendala && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-red-900 mb-1">Kendala</h4>
+              <p className="text-sm text-red-700 leading-relaxed">{report.kendala}</p>
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+
+      {/* Rencana Section - BLUE */}
+      {report.rencana_kedepan && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-4">
+          <div className="flex items-start gap-2">
+            <Wrench className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-blue-900 mb-1">Rencana</h4>
+              <p className="text-sm text-blue-700 leading-relaxed">{report.rencana_kedepan}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photos Section */}
+      {photos.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Camera className="w-4 h-4 text-slate-500" />
+            <h4 className="text-sm font-semibold text-slate-700">Dokumentasi</h4>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {photos.map((photo, index) => (
+              <button
+                key={index}
+                onClick={() => onPhotoClick(photo, photos)}
+                className="relative aspect-video rounded-lg overflow-hidden bg-slate-100 hover:opacity-90 transition-opacity group"
+              >
+                <img
+                  src={photo}
+                  alt={`Foto ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('Image load error:', photo)
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Image%3C/text%3E%3C/svg%3E'
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

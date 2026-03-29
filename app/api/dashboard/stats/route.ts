@@ -156,7 +156,67 @@ export async function GET(request: NextRequest) {
       todayProgress = Math.min(((todayReports || 0) / 3) * 100, 100);
     }
 
-    // 6. Trend Data for Chart (last 7 days, 4 weeks, 12 months, or 12 months for year)
+    // 6. Average Reports per Day (all time)
+    let avgReportsPerDay = 0;
+    if (!isAdmin || targetUserId) {
+      const { data: allReports } = await supabaseAdmin
+        .from('project_reports')
+        .select('created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+
+      if (allReports && allReports.length > 0) {
+        const firstReportDate = new Date(allReports[0].created_at);
+        const today = new Date();
+        const daysDiff = Math.ceil((today.getTime() - firstReportDate.getTime()) / (1000 * 60 * 60 * 24));
+        avgReportsPerDay = daysDiff > 0 ? allReports.length / daysDiff : 0;
+      }
+    }
+
+    // 7. Location Breakdown
+    let locationBreakdown: { name: string; value: number; color: string }[] = [];
+    if (!isAdmin || targetUserId) {
+      const { data: locationData } = await supabaseAdmin
+        .from('project_reports')
+        .select('lokasi_kerja')
+        .eq('user_id', userId);
+
+      const locationCounts: Record<string, number> = {
+        'WFA': 0,
+        'Al-Wustho': 0,
+        'Client Site': 0
+      };
+
+      (locationData || []).forEach((report: any) => {
+        locationCounts[report.lokasi_kerja] = (locationCounts[report.lokasi_kerja] || 0) + 1;
+      });
+
+      locationBreakdown = [
+        { name: 'WFA', value: locationCounts['WFA'], color: '#3b82f6' },
+        { name: 'Al-Wustho', value: locationCounts['Al-Wustho'], color: '#f97316' },
+        { name: 'Client Site', value: locationCounts['Client Site'], color: '#10b981' }
+      ];
+    }
+
+    // 8. Kendala Statistics
+    let kendalaStats = { withKendala: 0, withoutKendala: 0, percentage: 0 };
+    if (!isAdmin || targetUserId) {
+      const { data: allReportsKendala } = await supabaseAdmin
+        .from('project_reports')
+        .select('kendala')
+        .eq('user_id', userId);
+
+      const withKendala = (allReportsKendala || []).filter((r: any) => r.kendala && r.kendala.trim() !== '').length;
+      const total = allReportsKendala?.length || 0;
+      
+      kendalaStats = {
+        withKendala,
+        withoutKendala: total - withKendala,
+        percentage: total > 0 ? Math.round((withKendala / total) * 100) : 0
+      };
+    }
+
+    // 9. Trend Data for Chart (last 7 days, 4 weeks, 12 months, or 12 months for year)
     let trendData: { date: string; count: number }[] = [];
     
     if (period === 'day') {
@@ -281,6 +341,9 @@ export async function GET(request: NextRequest) {
         activeProjects,
         activeProjectsList: (!isAdmin || targetUserId) ? activeProjectsList : [],
         todayProgress: (!isAdmin || targetUserId) ? Math.round(todayProgress) : null,
+        avgReportsPerDay: (!isAdmin || targetUserId) ? Number(avgReportsPerDay.toFixed(2)) : null,
+        locationBreakdown: (!isAdmin || targetUserId) ? locationBreakdown : [],
+        kendalaStats: (!isAdmin || targetUserId) ? kendalaStats : null,
         trendData,
         period
       }

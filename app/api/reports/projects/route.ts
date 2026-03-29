@@ -118,6 +118,7 @@ export async function GET(request: NextRequest) {
         createdBy,
         urgency,
         isCompleted,
+        created_at,
         project_divisions (
           division_id,
           divisions (
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
       `)
       .in('id', projectIds)
       .eq('isActive', true)
-      .order('name', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (projectsError) {
       console.error('Error fetching projects:', projectsError);

@@ -32,8 +32,9 @@ import { deserializeFotoUrls } from "@/lib/utils/foto-urls-parser";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     // Requirement 3.1, 3.2: Validate authentication
     const session = await verifySession();

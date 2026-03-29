@@ -7,7 +7,7 @@ import { PhotoViewer } from './PhotoViewer'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import type { ProjectReportWithDetails } from '@/types/report'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Inbox, AlertCircle, Trash2, RotateCw, Plus } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -29,12 +29,10 @@ export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
   const [reports, setReports] = useState<ProjectReportWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   
-  // Photo viewer state
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false)
   const [currentPhotos, setCurrentPhotos] = useState<string[]>([])
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   
-  // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [reportToDelete, setReportToDelete] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -47,10 +45,7 @@ export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      
-      if (projectId) {
-        params.append('project_id', projectId)
-      }
+      if (projectId) params.append('project_id', projectId)
       
       const res = await fetch(`/api/reports/list?${params.toString()}`)
       const data = await res.json()
@@ -58,17 +53,12 @@ export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
       if (data.success) {
         setReports(data.data?.reports || [])
       } else {
-        toast({
-          title: 'Error',
-          description: 'Gagal memuat laporan',
-          variant: 'destructive'
-        })
+        throw new Error('Gagal mengambil data')
       }
     } catch (error) {
-      console.error('Failed to load reports:', error)
       toast({
         title: 'Error',
-        description: 'Gagal memuat laporan',
+        description: 'Gagal memuat riwayat laporan',
         variant: 'destructive'
       })
     } finally {
@@ -87,33 +77,20 @@ export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
 
   const handleDeleteConfirm = async () => {
     if (!reportToDelete) return
-    
     setDeleting(true)
     try {
       const res = await fetch(`/api/reports/delete/${reportToDelete}`, {
         method: 'DELETE'
       })
-      
       const data = await res.json()
-      
       if (data.success) {
-        toast({
-          title: 'Berhasil',
-          description: 'Laporan berhasil dihapus'
-        })
-        
-        // Reload reports
+        toast({ title: 'Berhasil', description: 'Laporan telah dihapus' })
         loadReports()
       } else {
-        throw new Error(data.error || 'Gagal menghapus laporan')
+        throw new Error(data.error || 'Gagal menghapus')
       }
-    } catch (error) {
-      console.error('Delete error:', error)
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Gagal menghapus laporan',
-        variant: 'destructive'
-      })
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
     } finally {
       setDeleting(false)
       setDeleteDialogOpen(false)
@@ -130,18 +107,43 @@ export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
 
   return (
     <div className="space-y-6">
-      {/* Reports List */}
+      
+      {/* Header with Count and Create Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-slate-900">Riwayat Laporan</h2>
+          <span className="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full font-semibold">
+            {reports.length}
+          </span>
+        </div>
+        <Button 
+          onClick={() => router.push('/dashboard/reports?view=create')}
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-medium"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Buat Laporan
+        </Button>
+      </div>
+
+      {/* Subtitle */}
+      <p className="text-slate-600 text-sm">Pantau progres pekerjaan yang telah dilaporkan</p>
+
+      {/* Reports List Area */}
       {loading ? (
-        <div className="flex items-center justify-center p-12">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
       ) : reports.length === 0 ? (
-        <div className="text-center p-12 bg-muted/50 rounded-lg">
-          <p className="text-muted-foreground">Belum ada laporan</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Inbox className="w-16 h-16 text-slate-300 mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900">Belum ada laporan</h3>
+          <p className="text-sm text-slate-500 mt-2">
+            Mulai buat laporan pertama Anda
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {reports.map(report => (
+          {reports.map((report) => (
             <ReportCard
               key={report.id}
               report={report}
@@ -162,35 +164,40 @@ export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
         onClose={() => setPhotoViewerOpen(false)}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog Makeover */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Hapus Laporan</DialogTitle>
-            <DialogDescription>
-              Apakah Anda yakin ingin menghapus laporan ini? Tindakan ini tidak dapat dibatalkan.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
+        <DialogContent className="sm:max-w-[400px] rounded-[2rem] border-none shadow-2xl p-8" aria-describedby="delete-dialog-description">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-2">
+              <Trash2 className="w-8 h-8" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">Hapus Laporan?</DialogTitle>
+              <DialogDescription id="delete-dialog-description" className="text-slate-500 font-medium pt-2">
+                Tindakan ini permanen. Data laporan yang dihapus tidak dapat dikembalikan oleh sistem.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-8">
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
               disabled={deleting}
+              className="flex-1 h-12 rounded-xl border-slate-200 font-bold text-slate-500 order-2 sm:order-1"
             >
-              Batal
+              Batalkan
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteConfirm}
               disabled={deleting}
+              className="flex-1 h-12 rounded-xl bg-rose-500 hover:bg-rose-600 font-bold shadow-lg shadow-rose-100 order-1 sm:order-2"
             >
               {deleting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Menghapus...
-                </>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menghapus</>
               ) : (
-                'Hapus'
+                'Ya, Hapus'
               )}
             </Button>
           </DialogFooter>
