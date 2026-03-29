@@ -35,7 +35,7 @@ export default function ResponsiveLayout({
   return (
     <>
       {/* Mobile Header */}
-      <nav className="bg-white border-b shadow-sm sticky top-0 z-30">
+      <nav className="bg-white border-b shadow-sm fixed top-0 left-0 right-0 z-50">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             {/* Left: Menu Button + Logo */}
@@ -129,7 +129,7 @@ export default function ResponsiveLayout({
         </div>
       </nav>
 
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="flex pt-16">
         {/* Sidebar Overlay (Mobile) */}
         {isSidebarOpen && (
           <div
@@ -141,15 +141,15 @@ export default function ResponsiveLayout({
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:static inset-y-0 left-0 z-40
+            fixed lg:static top-16 bottom-0 left-0 z-40
             w-64 bg-white border-r shadow-sm
             transform transition-transform duration-300 ease-in-out
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-            mt-16 lg:mt-0
+            overflow-y-auto
           `}
         >
-          {/* Logo di Sidebar */}
-          <div className="p-4 border-b">
+          {/* Logo di Sidebar - Hidden on mobile, visible on desktop */}
+          <div className="hidden lg:block p-4 border-b">
             <div className="relative h-12 w-full">
               <Image
                 src="/progresta.png"
@@ -427,8 +427,29 @@ export default function ResponsiveLayout({
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto pb-16 lg:pb-0">{children}</main>
+        <main className="flex-1 overflow-auto pb-16 lg:pb-0 min-h-screen">{children}</main>
       </div>
+
+      {/* Floating Action Button - Tambah Laporan (All Pages) */}
+      <Link
+        href="/dashboard/reports?view=create"
+        className="fixed bottom-20 right-6 lg:bottom-8 lg:right-8 z-30 w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+        title="Buat Laporan Baru"
+      >
+        <svg
+          className="w-6 h-6 group-hover:scale-110 transition-transform"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+      </Link>
 
       {/* Bottom Navigation (Mobile Only) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-30">

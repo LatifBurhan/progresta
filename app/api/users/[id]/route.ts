@@ -1,73 +1,85 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
-import { verifySession } from '@/lib/session'
+import { NextRequest, NextResponse } from "next/server";
+import { verifySession } from "@/lib/session";
+import { supabaseAdmin } from "@/lib/supabase";
 
+/**
+ * GET /api/users/[id]
+ * 
+ * Get user details by ID
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await verifySession()
-    
+    const session = await verifySession();
+
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: "Authentication required" },
         { status: 401 }
-      )
+      );
     }
 
-    // Users can only view their own profile unless they're admin
-    const adminRoles = ['ADMIN', 'HRD', 'CEO']
-    if (params.id !== session.userId && !adminRoles.includes(session.role)) {
+    if (!supabaseAdmin) {
       return NextResponse.json(
-        { success: false, error: 'Forbidden' },
-        { status: 403 }
-      )
+        { success: false, error: "Database configuration error" },
+        { status: 500 }
+      );
     }
 
-    const supabase = createClient()
-    
-    // Get user data
-    const { data: user, error: userError } = await supabase
+    const userId = params.id;
+
+    // Get user data - only select columns that exist
+    const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, role, status, divisionId, created_at')
-      .eq('id', params.id)
-      .single()
+      .select('id, email, role, status')
+      .eq('id', userId)
+      .single();
 
     if (userError || !user) {
+      console.error('Error fetching user:', userError);
       return NextResponse.json(
-        { success: false, error: 'User not found' },
+        { success: false, error: "User not found: " + (userError?.message || 'Unknown error') },
         { status: 404 }
-      )
+      );
     }
+
+    // Try to get divisionId separately
+    const { data: userWithDivision } = await supabaseAdmin
+      .from('users')
+      .select('"divisionId"')
+      .eq('id', userId)
+      .single();
+
+    const divisionId = userWithDivision?.divisionId;
 
     // Get division data if user has divisionId
-    let division = null
-    if (user.divisionId) {
-      const { data: divisionData } = await supabase
+    let divisionData = null;
+    if (divisionId) {
+      const { data: division } = await supabaseAdmin
         .from('divisions')
         .select('id, name, description, color')
-        .eq('id', user.divisionId)
-        .single()
+        .eq('id', divisionId)
+        .single();
       
-      division = divisionData
-    }
-
-    // Combine user and division data
-    const userData = {
-      ...user,
-      divisions: division
+      divisionData = division;
     }
 
     return NextResponse.json({
       success: true,
-      data: userData
-    })
-  } catch (error) {
-    console.error('Error fetching user:', error)
+      data: {
+        ...user,
+        divisionId: divisionId,
+        divisions: divisionData
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Get user error:", error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: "Internal server error: " + error.message },
       { status: 500 }
-    )
+    );
   }
 }

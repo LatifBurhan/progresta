@@ -13,7 +13,7 @@ ALTER TABLE public.projects DISABLE ROW LEVEL SECURITY;
 -- 4. Grant permissions untuk service role
 GRANT ALL ON public.users TO service_role;
 GRANT ALL ON public.divisions TO service_role;
-GRANT ALL ON public.projects TO service_role;
+GRANT ALL ON public.projects TO service_role;r 
 GRANT ALL ON public.reports TO service_role;
 GRANT ALL ON public.report_details TO service_role;
 GRANT ALL ON public.project_assignments TO service_role;

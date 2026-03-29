@@ -45,6 +45,8 @@ export default function ProfilePage() {
       const res = await fetch('/api/auth/check')
       const data = await res.json()
       
+      console.log('Auth check response:', data) // Debug log
+      
       if (!data.authenticated) {
         router.push('/login')
         return
@@ -54,11 +56,17 @@ export default function ProfilePage() {
       const userRes = await fetch(`/api/users/${data.user.userId}`)
       const userResult = await userRes.json()
       
+      console.log('User data response:', userResult) // Debug log
+      
       if (userResult.success) {
         setUserData(userResult.data)
+      } else {
+        console.error('Failed to load user:', userResult.error)
+        alert('Error: ' + userResult.error)
       }
     } catch (error) {
       console.error('Failed to load user data:', error)
+      alert('Network error: ' + error)
     } finally {
       setLoading(false)
     }

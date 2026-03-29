@@ -38,20 +38,6 @@ export default function LoginPage() {
     const password = formData.get('password') as string
 
     try {
-      // Simple test login for debugging
-      if (email === 'alwustho1001@gmail.com' && password === 'test123') {
-        // Create a simple session for testing
-        await fetch('/api/auth/test-login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, role: 'HRD' })
-        })
-        
-        router.push('/dashboard')
-        router.refresh()
-        return
-      }
-
       const result = await loginAction(null, formData)
 
       if (result.success) {
@@ -139,18 +125,6 @@ export default function LoginPage() {
                   Daftar di sini
                 </Link>
               </p>
-            </div>
-
-            {/* Demo Accounts */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-              <div className="text-xs text-blue-800">
-                <p className="font-medium mb-2">🧪 Test Login:</p>
-                <div className="space-y-1">
-                  <p><strong>Email:</strong> alwustho1001@gmail.com</p>
-                  <p><strong>Password:</strong> test123</p>
-                </div>
-                <p className="mt-2 text-blue-600">Gunakan kredensial ini untuk testing</p>
-              </div>
             </div>
           </form>
         </CardContent>
