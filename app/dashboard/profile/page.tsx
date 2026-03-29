@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { 
   User, 
   Mail, 
@@ -13,7 +12,8 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Loader2
+  Loader2,
+  Fingerprint
 } from 'lucide-react'
 
 interface UserData {
@@ -44,233 +44,164 @@ export default function ProfilePage() {
     try {
       const res = await fetch('/api/auth/check')
       const data = await res.json()
-      
-      console.log('Auth check response:', data) // Debug log
-      
       if (!data.authenticated) {
         router.push('/login')
         return
       }
 
-      // Fetch user details
       const userRes = await fetch(`/api/users/${data.user.userId}`)
       const userResult = await userRes.json()
-      
-      console.log('User data response:', userResult) // Debug log
-      
       if (userResult.success) {
         setUserData(userResult.data)
-      } else {
-        console.error('Failed to load user:', userResult.error)
-        alert('Error: ' + userResult.error)
       }
     } catch (error) {
       console.error('Failed to load user data:', error)
-      alert('Network error: ' + error)
     } finally {
       setLoading(false)
     }
   }
 
   const getRoleInfo = (role: string) => {
-    switch (role) {
-      case 'CEO':
-        return {
-          label: 'Chief Executive Officer',
-          description: 'Akses penuh ke semua divisi dan dashboard perusahaan',
-          color: 'bg-purple-100 text-purple-800 border-purple-200',
-          icon: '👑'
-        }
-      case 'HRD':
-        return {
-          label: 'Human Resource Development',
-          description: 'Mengelola karyawan, approval akun, dan monitoring produktivitas',
-          color: 'bg-blue-100 text-blue-800 border-blue-200',
-          icon: '👥'
-        }
-      case 'PM':
-        return {
-          label: 'Project Manager',
-          description: 'Monitoring project, kendala tim, dan koordinasi antar divisi',
-          color: 'bg-green-100 text-green-800 border-green-200',
-          icon: '📊'
-        }
-      case 'ADMIN':
-        return {
-          label: 'Administrator',
-          description: 'Akses penuh sistem untuk maintenance dan konfigurasi',
-          color: 'bg-red-100 text-red-800 border-red-200',
-          icon: '⚙️'
-        }
-      case 'KARYAWAN':
-        return {
-          label: 'Karyawan',
-          description: 'Melaporkan progres kerja dan melihat feed divisi',
-          color: 'bg-gray-100 text-gray-800 border-gray-200',
-          icon: '👨‍💻'
-        }
-      default:
-        return {
-          label: role,
-          description: 'Role tidak dikenal',
-          color: 'bg-gray-100 text-gray-800 border-gray-200',
-          icon: '❓'
-        }
+    const roles: Record<string, any> = {
+      CEO: { label: 'CEO', icon: '👑', color: 'bg-indigo-50 text-indigo-700 border-indigo-100', full: 'Chief Executive Officer' },
+      HRD: { label: 'HRD', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100', full: 'Human Resource' },
+      PM: { label: 'PM', icon: '📊', color: 'bg-emerald-50 text-emerald-700 border-emerald-100', full: 'Project Manager' },
+      ADMIN: { label: 'Admin', icon: '⚙️', color: 'bg-rose-50 text-rose-700 border-rose-100', full: 'System Administrator' },
+      KARYAWAN: { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-700 border-slate-100', full: 'Karyawan' },
     }
+    return roles[role] || { label: role, icon: '👤', color: 'bg-gray-50', full: role }
   }
 
   const getStatusInfo = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return {
-          label: 'Aktif',
-          description: 'Akun aktif dan dapat menggunakan semua fitur',
-          color: 'bg-green-100 text-green-800',
-          icon: <CheckCircle className="w-4 h-4" />
-        }
-      case 'PENDING':
-        return {
-          label: 'Menunggu Approval',
-          description: 'Akun menunggu persetujuan dari HRD/Admin',
-          color: 'bg-yellow-100 text-yellow-800',
-          icon: <Clock className="w-4 h-4" />
-        }
-      case 'INACTIVE':
-        return {
-          label: 'Non-Aktif',
-          description: 'Akun dinonaktifkan, hubungi HRD untuk aktivasi',
-          color: 'bg-red-100 text-red-800',
-          icon: <XCircle className="w-4 h-4" />
-        }
-      default:
-        return {
-          label: status,
-          description: 'Status tidak dikenal',
-          color: 'bg-gray-100 text-gray-800',
-          icon: <XCircle className="w-4 h-4" />
-        }
+    const statuses: Record<string, any> = {
+      ACTIVE: { label: 'Aktif', color: 'bg-emerald-500', icon: <CheckCircle className="w-3 h-3" /> },
+      PENDING: { label: 'Pending', color: 'bg-amber-500', icon: <Clock className="w-3 h-3" /> },
+      INACTIVE: { label: 'Non-Aktif', color: 'bg-rose-500', icon: <XCircle className="w-3 h-3" /> },
     }
+    return statuses[status] || { label: status, color: 'bg-slate-400', icon: <XCircle className="w-3 h-3" /> }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <p className="text-slate-400 text-sm font-medium animate-pulse">Memuat profil...</p>
+    </div>
+  )
 
-  if (!userData) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-center text-gray-600">Data user tidak ditemukan</p>
-        </div>
-      </div>
-    )
-  }
+  if (!userData) return <div className="p-8 text-center text-slate-500">Data tidak ditemukan</div>
 
   const roleInfo = getRoleInfo(userData.role)
   const statusInfo = getStatusInfo(userData.status)
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Profile Saya</h1>
-        
-        {/* Account Information Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-blue-500" />
-              Informasi Akun
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Email */}
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium break-all">{userData.email}</p>
-              </div>
-            </div>
+    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20 md:pb-10">
+      {/* Header Profile - Compact */}
+      <div className="flex items-center gap-4 md:gap-6 px-2">
+        <div className="relative">
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-100">
+            {userData.email.charAt(0).toUpperCase()}
+          </div>
+          <div className={`absolute -bottom-1 -right-1 p-1.5 rounded-xl border-4 border-[#F8FAFC] ${statusInfo.color} text-white shadow-sm`}>
+            {statusInfo.icon}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight leading-none">
+            {userData.email.split('@')[0]}
+          </h1>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${roleInfo.color}`}>
+              {roleInfo.icon} {roleInfo.label}
+            </span>
+          </div>
+        </div>
+      </div>
 
-            {/* Role */}
-            <div className="flex items-start gap-3">
-              <User className="w-5 h-5 text-gray-500 mt-1" />
-              <div className="flex-1">
-                <p className="text-sm text-gray-600 mb-2">Role & Akses</p>
-                <div className="space-y-2">
-                  <Badge className={`${roleInfo.color} px-3 py-1 text-sm font-medium`}>
-                    {roleInfo.icon} {roleInfo.label}
-                  </Badge>
-                  <p className="text-sm text-gray-600">{roleInfo.description}</p>
-                </div>
-              </div>
-            </div>
+      {/* Info Grid - 2 Column on Mobile */}
+      <div className="grid grid-cols-2 gap-3">
+        <InfoCard 
+          label="Status Akun" 
+          value={statusInfo.label} 
+          icon={<Shield className="w-4 h-4 text-blue-500" />} 
+          sub={userData.status === 'ACTIVE' ? 'Terverifikasi' : 'Menunggu'}
+        />
+        <InfoCard 
+          label="Divisi" 
+          value={userData.divisions?.name || 'Umum'} 
+          icon={<Building className="w-4 h-4 text-emerald-500" />} 
+          sub="Penempatan"
+          color={userData.divisions?.color}
+        />
+      </div>
 
-            {/* Status */}
-            <div className="flex items-start gap-3">
-              <div className="mt-1">
-                {statusInfo.icon}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-600 mb-2">Status Akun</p>
-                <div className="space-y-2">
-                  <Badge className={`${statusInfo.color} px-3 py-1 text-sm font-medium`}>
-                    {statusInfo.label}
-                  </Badge>
-                  <p className="text-sm text-gray-600">{statusInfo.description}</p>
-                </div>
-              </div>
-            </div>
+      {/* Detail List Card */}
+      <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] overflow-hidden">
+        <CardContent className="p-0">
+          <div className="divide-y divide-slate-50">
+            <DetailItem 
+              icon={<Mail className="w-4 h-4" />} 
+              label="Email Address" 
+              value={userData.email} 
+            />
+            <DetailItem 
+              icon={<Fingerprint className="w-4 h-4" />} 
+              label="User ID" 
+              value={userData.id} 
+              isCode
+            />
+            <DetailItem 
+              icon={<Calendar className="w-4 h-4" />} 
+              label="Bergabung" 
+              value={userData.created_at 
+                ? new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', day: 'numeric' }).format(new Date(userData.created_at))
+                : 'Tidak tersedia'
+              } 
+            />
+            <DetailItem 
+              icon={<User className="w-4 h-4" />} 
+              label="Jabatan" 
+              value={roleInfo.full} 
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Division */}
-            {userData.divisionId && userData.divisions && (
-              <div className="flex items-start gap-3">
-                <Building className="w-5 h-5 text-gray-500 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600 mb-2">Divisi</p>
-                  <div className="space-y-2">
-                    <Badge 
-                      className="px-3 py-1 text-sm font-medium"
-                      style={{ 
-                        backgroundColor: userData.divisions.color + '20',
-                        color: userData.divisions.color || '#6B7280',
-                        borderColor: userData.divisions.color || '#6B7280' 
-                      }}
-                    >
-                      {userData.divisions.name}
-                    </Badge>
-                    {userData.divisions.description && (
-                      <p className="text-sm text-gray-600">{userData.divisions.description}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+      {/* Security/Action Hint */}
+      <p className="text-center text-[11px] text-slate-400 font-medium px-6">
+        Jika ada kesalahan data atau ingin merubah password, silakan hubungi tim <span className="text-blue-500 font-bold tracking-tight">IT Support</span> atau HRD Al-Wustho.
+      </p>
+    </div>
+  )
+}
 
-            {/* Account Created */}
-            {userData.created_at && (
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-600">Bergabung Sejak</p>
-                  <p className="font-medium">
-                    {new Intl.DateTimeFormat('id-ID', {
-                      timeZone: 'Asia/Jakarta',
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    }).format(new Date(userData.created_at))}
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+// Sub-components for Clean Layout
+function InfoCard({ label, value, icon, sub, color }: any) {
+  return (
+    <Card className="border-none shadow-lg shadow-slate-200/40 rounded-3xl overflow-hidden group">
+      <CardContent className="p-4 flex flex-col items-center text-center space-y-1">
+        <div className="p-2 bg-slate-50 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+          {icon}
+        </div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+        <p className="text-sm font-black text-slate-800 truncate w-full" style={color ? { color } : {}}>
+          {value}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DetailItem({ icon, label, value, isCode }: { icon: any, label: string, value: string, isCode?: boolean }) {
+  return (
+    <div className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition-colors">
+      <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-0.5">{label}</p>
+        <p className={`text-[13px] font-semibold text-slate-700 truncate ${isCode ? 'font-mono text-[11px] bg-slate-100 px-1.5 py-0.5 rounded-md inline-block max-w-full' : ''}`}>
+          {value}
+        </p>
       </div>
     </div>
   )

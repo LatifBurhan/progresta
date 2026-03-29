@@ -1,7 +1,14 @@
 'use client'
 
-import { Trash2, AlertTriangle, Wrench, Camera, MoreVertical, Briefcase } from 'lucide-react'
+import { useState } from 'react'
+import { Trash2, AlertTriangle, Wrench, Camera, MoreVertical, Briefcase, Edit } from 'lucide-react'
 import type { ProjectReportWithDetails } from '@/types/report'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface ReportCardProps {
   report: ProjectReportWithDetails
@@ -18,6 +25,7 @@ export function ReportCard({
   onDelete,
   onPhotoClick
 }: ReportCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
   
   const formatDate = (dateString: string) => {
     try {
@@ -37,8 +45,8 @@ export function ReportCard({
   // Parse photos - handle both array and JSON string
   let photos: string[] = []
   try {
-    // API returns foto_urls, not photos
-    const photoData = report.foto_urls || report.photos
+    // API returns foto_urls
+    const photoData = report.foto_urls
     if (Array.isArray(photoData)) {
       photos = photoData
     } else if (typeof photoData === 'string') {
@@ -63,19 +71,48 @@ export function ReportCard({
         </div>
         <div className="flex items-center gap-2">
           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            report.lokasi_kerja === 'AL-WUSTHO' || report.lokasi_kerja === 'Al-Wustho' ? 'bg-orange-100 text-orange-700' :
+            report.lokasi_kerja === 'Al-Wustho' ? 'bg-orange-100 text-orange-700' :
             report.lokasi_kerja === 'WFA' ? 'bg-blue-100 text-blue-700' :
             'bg-green-100 text-green-700'
           }`}>
             {report.lokasi_kerja}
           </span>
-          {report.can_delete && (
-            <button 
-              onClick={() => onDelete(report.id)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <MoreVertical className="w-5 h-5 text-slate-400" />
-            </button>
+          {(report.can_edit || report.can_delete) && (
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <button 
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <MoreVertical className="w-5 h-5 text-slate-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {report.can_edit && (
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onEdit(report.id)
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Laporan
+                  </DropdownMenuItem>
+                )}
+                {report.can_delete && (
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onDelete(report.id)
+                    }}
+                    className="cursor-pointer text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Hapus Laporan
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>

@@ -2,9 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Circle, Users, Calendar, Clock, ArrowRight, briefcase } from 'lucide-react'
+import { CheckCircle2, Circle, Users, Calendar, Clock, ArrowRight, Filter } from 'lucide-react'
 import type { Project } from '@/types/report'
 import { useToast } from '@/components/ui/use-toast'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface ProjectWithStats extends Project {
   reportCount?: number
@@ -29,6 +35,15 @@ export function ProjectGrid({ projects, loading, currentUserId }: ProjectGridPro
   const [completedProjects, setCompletedProjects] = useState<Set<string>>(
     new Set(projects.filter(p => p.isCompleted).map(p => p.id))
   )
+  const [statusFilter, setStatusFilter] = useState<'active' | 'all' | 'completed'>('active')
+
+  // Filter projects based on status
+  const filteredProjects = projects.filter(project => {
+    const isCompleted = completedProjects.has(project.id)
+    if (statusFilter === 'active') return !isCompleted
+    if (statusFilter === 'completed') return isCompleted
+    return true // 'all'
+  })
 
   const handleProjectClick = (projectId: string) => {
     router.push(`/dashboard/reports?view=history&project_id=${projectId}`)
@@ -79,21 +94,94 @@ export function ProjectGrid({ projects, loading, currentUserId }: ProjectGridPro
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 md:h-64 bg-slate-50 border border-slate-100 rounded-2xl md:rounded-[2rem] animate-pulse"></div>
-        ))}
+      <div className="space-y-4">
+        {/* Filter Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="h-6 w-32 bg-slate-100 rounded animate-pulse"></div>
+          <div className="h-10 w-40 bg-slate-100 rounded-lg animate-pulse"></div>
+        </div>
+        
+        {/* Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 md:h-64 bg-slate-50 border border-slate-100 rounded-2xl md:rounded-[2rem] animate-pulse"></div>
+          ))}
+        </div>
       </div>
     )
   }
 
+  const getFilterLabel = () => {
+    switch (statusFilter) {
+      case 'active': return 'Project Aktif'
+      case 'completed': return 'Project Selesai'
+      case 'all': return 'Semua Project'
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-      {projects.map((project) => {
-        const isCompleted = completedProjects.has(project.id)
-        const canEdit = currentUserId === project.createdBy
+    <div className="space-y-4">
+      {/* Filter Header */}
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-slate-600">
+          Menampilkan <span className="font-bold text-slate-900">{filteredProjects.length}</span> project
+        </p>
         
-        return (
+        {/* Filter Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+              <Filter className="w-4 h-4 text-slate-600" />
+              <span className="text-sm font-medium text-slate-700">{getFilterLabel()}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem 
+              onClick={() => setStatusFilter('active')}
+              className={`cursor-pointer ${statusFilter === 'active' ? 'bg-blue-50 text-blue-700 font-semibold' : ''}`}
+            >
+              <Circle className="w-4 h-4 mr-2 text-blue-500" />
+              Project Aktif
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setStatusFilter('completed')}
+              className={`cursor-pointer ${statusFilter === 'completed' ? 'bg-emerald-50 text-emerald-700 font-semibold' : ''}`}
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" />
+              Project Selesai
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setStatusFilter('all')}
+              className={`cursor-pointer ${statusFilter === 'all' ? 'bg-slate-50 text-slate-700 font-semibold' : ''}`}
+            >
+              <Users className="w-4 h-4 mr-2 text-slate-500" />
+              Semua Project
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Project Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+        {filteredProjects.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              {statusFilter === 'active' && <Circle className="w-8 h-8 text-slate-300" />}
+              {statusFilter === 'completed' && <CheckCircle2 className="w-8 h-8 text-slate-300" />}
+              {statusFilter === 'all' && <Users className="w-8 h-8 text-slate-300" />}
+            </div>
+            <p className="text-slate-500 font-medium">
+              {statusFilter === 'active' && 'Tidak ada project aktif'}
+              {statusFilter === 'completed' && 'Tidak ada project yang selesai'}
+              {statusFilter === 'all' && 'Tidak ada project'}
+            </p>
+          </div>
+        ) : (
+          filteredProjects.map((project) => {
+            const isCompleted = completedProjects.has(project.id)
+            const canEdit = currentUserId === project.createdBy
+            
+            return (
           <div
             key={project.id}
             onClick={() => handleProjectClick(project.id)}
@@ -190,8 +278,10 @@ export function ProjectGrid({ projects, loading, currentUserId }: ProjectGridPro
             {/* Glass Shine Effect (Desktop) */}
             <div className="hidden md:block absolute -right-12 -bottom-12 w-32 h-32 bg-slate-100 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </div>
-        )
-      })}
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }
