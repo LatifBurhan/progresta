@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, Calendar, User, Target, AlertCircle, Paperclip } from "lucide-react";
+import { 
+  Plus, Search, Filter, Calendar, User, Target, 
+  Paperclip, Layers, ChevronRight, LayoutGrid, Sparkles, Briefcase
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateProjectModal from "./CreateProjectModal";
@@ -9,32 +12,26 @@ import EditProjectModal from "./EditProjectModal";
 import DeleteProjectModal from "./DeleteProjectModal";
 import FilePreviewModal from "@/components/projects/FilePreviewModal";
 
-interface Project {
-  id: string;
-  name: string;
-  tujuan: string | null;
-  description: string | null;
-  pic: string | null;
-  prioritas: string | null;
-  tanggal_mulai: string | null;
-  tanggal_selesai: string | null;
-  lampiran_files: string[] | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  divisions: Array<{
-    id: string;
-    name: string;
-    color: string | null;
-  }>;
-}
-
 interface Division {
   id: string;
   name: string;
-  color: string | null;
-  is_active: boolean;
+  color?: string;
+  is_active?: boolean;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  tujuan?: string;
+  pic?: string;
+  prioritas?: string;
+  status: string;
+  tanggal_mulai?: string;
+  tanggal_selesai?: string;
+  lampiran_files?: string[];
+  divisions?: Division[];
+  created_at?: string;
 }
 
 interface ProjectManagementClientProps {
@@ -53,265 +50,262 @@ export default function ProjectManagementClient({ projects: initialProjects, div
   const [filePreviewModalOpen, setFilePreviewModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Filter projects
   const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) || project.description?.toLowerCase().includes(searchQuery.toLowerCase()) || project.pic?.toLowerCase().includes(searchQuery.toLowerCase());
-
+    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         project.description?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         project.pic?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
     const matchesPrioritas = prioritasFilter === "all" || project.prioritas === prioritasFilter;
-
     return matchesSearch && matchesStatus && matchesPrioritas;
   });
 
-  const handleCreateSuccess = (newProject: Project) => {
-    setProjects((prev) => [newProject, ...prev]);
-  };
+  const handleCreateSuccess = (newProject: Project) => setProjects((prev) => [newProject, ...prev]);
+  const handleEditSuccess = (updatedProject: Project) => setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)));
+  const handleDeleteSuccess = (deletedProjectId: string) => setProjects((prev) => prev.filter((p) => p.id !== deletedProjectId));
+  const handleDeactivateSuccess = (updatedProject: Project) => setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)));
 
-  const handleEditSuccess = (updatedProject: Project) => {
-    setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)));
-  };
+  const openEditModal = (project: Project) => { setSelectedProject(project); setEditModalOpen(true); };
+  const openFilePreview = (project: Project) => { setSelectedProject(project); setFilePreviewModalOpen(true); };
 
-  const handleDeleteSuccess = (deletedProjectId: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== deletedProjectId));
-  };
-
-  const handleDeactivateSuccess = (updatedProject: Project) => {
-    setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)));
-  };
-
-  const openEditModal = (project: Project) => {
-    setSelectedProject(project);
-    setEditModalOpen(true);
-  };
-
-  const openDeleteModal = (project: Project) => {
-    setSelectedProject(project);
-    setDeleteModalOpen(true);
-  };
-
-  const openFilePreview = (project: Project) => {
-    setSelectedProject(project);
-    setFilePreviewModalOpen(true);
-  };
-
-  const getPriorityColor = (prioritas: string | null) => {
+  const getPriorityStyle = (prioritas: string | null) => {
     switch (prioritas) {
-      case "Urgent":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "Tinggi":
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case "Sedang":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "Rendah":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "Urgent": return "bg-rose-50 text-rose-600 border-rose-100";
+      case "Tinggi": return "bg-orange-50 text-orange-600 border-orange-100";
+      case "Sedang": return "bg-amber-50 text-amber-600 border-amber-100";
+      default: return "bg-slate-50 text-slate-500 border-slate-100";
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case "Aktif":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Selesai":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "Ditunda":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "Dibatalkan":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "Aktif": 
+        return {
+          border: "border-blue-200 hover:border-blue-300",
+          bg: "bg-blue-50/30",
+          shadow: "hover:shadow-blue-500/10"
+        };
+      case "Selesai": 
+        return {
+          border: "border-emerald-200 hover:border-emerald-300",
+          bg: "bg-emerald-50/30",
+          shadow: "hover:shadow-emerald-500/10"
+        };
+      case "Ditunda": 
+        return {
+          border: "border-amber-200 hover:border-amber-300",
+          bg: "bg-amber-50/30",
+          shadow: "hover:shadow-amber-500/10"
+        };
+      case "Dibatalkan": 
+        return {
+          border: "border-rose-200 hover:border-rose-300",
+          bg: "bg-rose-50/30",
+          shadow: "hover:shadow-rose-500/10"
+        };
+      case "Non-Aktif":
+        return {
+          border: "border-orange-200 hover:border-orange-300",
+          bg: "bg-orange-50/30",
+          shadow: "hover:shadow-orange-500/10"
+        };
+      default: 
+        return {
+          border: "border-slate-200 hover:border-slate-300",
+          bg: "bg-slate-50/30",
+          shadow: "hover:shadow-slate-500/10"
+        };
     }
   };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("id-ID");
-  };
-
-  const calculateDuration = (startDate: string | null, endDate: string | null) => {
-    if (!startDate || !endDate) return null;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays;
+    return new Date(dateString).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kelola Project</h1>
-          <p className="text-gray-600 mt-1">Kelola semua project perusahaan dengan lengkap</p>
+    <div className="space-y-8 animate-in fade-in duration-700 text-slate-900">
+      
+      {/* Header Section - Modern & Minimalist */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-blue-600 mb-1">
+            <div className="p-2 bg-blue-50 rounded-xl">
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Management System</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            Kelola Project
+            <Sparkles className="w-6 h-6 text-amber-400 hidden sm:block" />
+          </h1>
+          <p className="text-sm font-medium text-slate-500 max-w-md">
+            Konfigurasi, monitoring, dan delegasi project tim Al-Wustho secara terpusat.
+          </p>
         </div>
 
-        <Button onClick={() => setCreateModalOpen(true)} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Tambah Project Baru
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg border shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input placeholder="Cari project..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
-          </div>
-
-          {/* Status Filter */}
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">Semua Status</option>
-            <option value="Aktif">Aktif</option>
-            <option value="Non-Aktif">Non-Aktif</option>
-            <option value="Selesai">Selesai</option>
-            <option value="Ditunda">Ditunda</option>
-            <option value="Dibatalkan">Dibatalkan</option>
-          </select>
-
-          {/* Priority Filter */}
-          <select value={prioritasFilter} onChange={(e) => setPrioritasFilter(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">Semua Prioritas</option>
-            <option value="Urgent">Urgent</option>
-            <option value="Tinggi">Tinggi</option>
-            <option value="Sedang">Sedang</option>
-            <option value="Rendah">Rendah</option>
-          </select>
-
-          {/* Stats */}
-          <div className="text-sm text-gray-600">
-            Menampilkan {filteredProjects.length} dari {projects.length} project
+        {/* Badge Info - Shortcut info untuk admin */}
+        <div className="flex gap-3">
+          <div className="bg-white border border-slate-100 px-4 py-2 rounded-2xl shadow-sm hidden sm:block">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Total Active</p>
+            <p className="text-sm font-black text-slate-900">{projects.length} Projects</p>
           </div>
         </div>
       </div>
+      
+      {/* Dashboard Control Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
 
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="flex flex-col sm:flex-row gap-3">
+           <div className="relative group flex-1 sm:min-w-[350px]">
+             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+             <Input 
+               placeholder="Cari nama project atau PIC..." 
+               value={searchQuery} 
+               onChange={(e) => setSearchQuery(e.target.value)} 
+               className="pl-12 h-13 rounded-2xl border-slate-200 bg-white shadow-sm focus:ring-4 focus:ring-blue-50 transition-all text-base font-medium"
+             />
+           </div>
+           <Button 
+            onClick={() => setCreateModalOpen(true)} 
+            className="h-13 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xl shadow-blue-100 gap-2 active:scale-95 transition-all text-sm uppercase tracking-wider"
+           >
+             <Plus className="w-5 h-5" />
+             <span>Project Baru</span>
+           </Button>
+        </div>
+      </div>
+
+      {/* 2. Intelligent Filters */}
+      <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-2 px-3 text-slate-500 border-r border-slate-100 mr-2">
+          <Filter className="w-4 h-4" />
+          <span className="text-xs font-bold uppercase tracking-widest">Filter</span>
+        </div>
+        
+        <select 
+          value={statusFilter} 
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-slate-50 border border-slate-100 text-sm font-semibold text-slate-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer hover:bg-slate-100 transition-all"
+        >
+          <option value="all">Semua Status</option>
+          <option value="Aktif">Aktif</option>
+          <option value="Selesai">Selesai</option>
+          <option value="Ditunda">Ditunda</option>
+        </select>
+
+        <select 
+          value={prioritasFilter} 
+          onChange={(e) => setPrioritasFilter(e.target.value)}
+          className="bg-slate-50 border border-slate-100 text-sm font-semibold text-slate-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer hover:bg-slate-100 transition-all"
+        >
+          <option value="all">Semua Prioritas</option>
+          <option value="Urgent">Urgent</option>
+          <option value="Tinggi">Tinggi</option>
+          <option value="Sedang">Sedang</option>
+          <option value="Rendah">Rendah</option>
+        </select>
+
+        <div className="ml-auto hidden md:block px-4 py-2 bg-blue-50 rounded-xl">
+           <p className="text-xs font-bold text-blue-600 uppercase tracking-tight">
+             Ditemukan: {filteredProjects.length} Project
+           </p>
+        </div>
+      </div>
+
+      {/* 3. Main Project Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredProjects.map((project) => {
-          const duration = calculateDuration(project.tanggal_mulai, project.tanggal_selesai);
-
+          const statusStyle = getStatusStyle(project.status);
           return (
-            <div key={project.id} className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{project.name}</h3>
+          <div 
+            key={project.id} 
+            onClick={() => openEditModal(project)}
+            className={`group relative flex flex-col ${statusStyle.bg} border-2 ${statusStyle.border} rounded-[2.5rem] p-6 md:p-8 transition-all duration-300 hover:shadow-2xl ${statusStyle.shadow} md:hover:-translate-y-2 cursor-pointer overflow-hidden`}
+          >
+            <div className="flex-1 space-y-6">
+              {/* Header Info */}
+              <div className="space-y-2">
+                <h3 className="text-lg md:text-xl font-extrabold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
+                  {project.name}
+                </h3>
+              </div>
 
-                    {/* Status & Priority */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>{project.status}</span>
-                      {project.prioritas && <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(project.prioritas)}`}>{project.prioritas}</span>}
+              {/* Context / Goal Section - Increased Visibility */}
+              <div className="bg-white/60 p-4 rounded-[1.5rem] border border-slate-100">
+                 <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-4 h-4 text-blue-500" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Main Objective</span>
+                 </div>
+                 <p className="text-sm md:text-base text-slate-600 line-clamp-2 leading-relaxed font-medium italic">
+                   "{project.tujuan || 'Fokus pada penyelesaian target operasional tim.'}"
+                 </p>
+              </div>
+
+              {/* Specs Grid - Normalized Weight */}
+              <div className="grid grid-cols-2 gap-6 py-1">
+                 <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                       <User className="w-4 h-4" /> Lead PIC
                     </div>
-                  </div>
-                </div>
-
-                {/* Tujuan */}
-                {project.tujuan && (
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Target className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-700">Tujuan</span>
+                    <p className="text-sm md:text-base font-semibold text-slate-700 truncate">{project.pic || 'Latif'}</p>
+                 </div>
+                 <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                       <Calendar className="w-4 h-4" /> Target
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">{project.tujuan}</p>
-                  </div>
-                )}
-
-                {/* PIC */}
-                {project.pic && (
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-700">PIC:</span>
-                      <span className="text-sm text-gray-600">{project.pic}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Timeline */}
-                {(project.tanggal_mulai || project.tanggal_selesai) && (
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Calendar className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-700">Timeline</span>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {formatDate(project.tanggal_mulai)} - {formatDate(project.tanggal_selesai)}
-                      {duration && <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">{duration} hari</span>}
-                    </div>
-                  </div>
-                )}
-
-                {/* Divisions */}
-                {project.divisions && project.divisions.length > 0 && (
-                  <div className="mb-4">
-                    <div className="text-sm font-medium text-gray-700 mb-2">Divisi Terlibat:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {project.divisions.map((division) => (
-                        <span key={division.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: division.color || "#3B82F6" }}>
-                          {division.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Description */}
-                {project.description && (
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 line-clamp-3">{project.description}</p>
-                  </div>
-                )}
-
-                {/* File Attachments Badge */}
-                {project.lampiran_files && project.lampiran_files.length > 0 && (
-                  <div className="mb-4">
-                    <button
-                      onClick={() => openFilePreview(project)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors border border-blue-200"
-                    >
-                      <Paperclip className="w-3 h-3" />
-                      {project.lampiran_files.length} file{project.lampiran_files.length > 1 ? 's' : ''}
-                    </button>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t">
-                  <Button variant="outline" size="sm" onClick={() => openEditModal(project)} className="flex-1">
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => openDeleteModal(project)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                    Hapus
-                  </Button>
-                </div>
+                    <p className="text-sm md:text-base font-semibold text-slate-700">{formatDate(project.tanggal_selesai)}</p>
+                 </div>
               </div>
             </div>
-          );
+
+            {/* Bottom Section */}
+            <div className="mt-8 pt-5 border-t border-slate-200/50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${getPriorityStyle(project.prioritas)}`}>
+                  {project.prioritas || 'Normal'}
+                </span>
+                {project.lampiran_files && project.lampiran_files.length > 0 && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); openFilePreview(project); }}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-100 text-slate-500 rounded-lg text-[10px] font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" /> {project.lampiran_files.length}
+                  </button>
+                )}
+              </div>
+              
+              <div className="w-10 h-10 rounded-2xl bg-white/60 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-blue-200 transition-all">
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+          </div>
+        );
         })}
       </div>
 
-      {/* Empty State */}
+      {/* 4. Empty State */}
       {filteredProjects.length === 0 && (
-        <div className="text-center py-12">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{projects.length === 0 ? "Belum ada project" : "Tidak ada project yang sesuai filter"}</h3>
-          <p className="text-gray-600 mb-4">{projects.length === 0 ? "Mulai dengan membuat project pertama Anda" : "Coba ubah filter atau kata kunci pencarian"}</p>
-          {projects.length === 0 && (
-            <Button onClick={() => setCreateModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Tambah Project Pertama
-            </Button>
-          )}
+        <div className="flex flex-col items-center justify-center py-32 px-6 bg-white border-2 border-dashed border-slate-100 rounded-[3rem] text-center space-y-4 shadow-inner">
+          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 shadow-sm">
+            <Search className="w-10 h-10" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-extrabold text-slate-900">Project Tidak Ditemukan</h3>
+            <p className="text-base text-slate-400 font-medium max-w-sm mx-auto leading-relaxed">
+              Kami tidak dapat menemukan data yang sesuai dengan filter atau kata kunci yang Anda masukkan.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => {setSearchQuery(""); setStatusFilter("all"); setPrioritasFilter("all");}} 
+            className="mt-6 rounded-2xl border-slate-200 px-8 py-6 h-auto font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95"
+          >
+            Reset Semua Filter
+          </Button>
         </div>
       )}
 
-      {/* Modals */}
+      {/* Modals Container */}
       <CreateProjectModal open={createModalOpen} divisions={divisions} onClose={() => setCreateModalOpen(false)} onSuccess={handleCreateSuccess} />
 
       {selectedProject && (
@@ -320,36 +314,22 @@ export default function ProjectManagementClient({ projects: initialProjects, div
             open={editModalOpen}
             project={selectedProject}
             divisions={divisions}
-            onClose={() => {
-              setEditModalOpen(false);
-              setSelectedProject(null);
-            }}
+            onClose={() => { setEditModalOpen(false); setSelectedProject(null); }}
             onSuccess={handleEditSuccess}
-            onDelete={() => {
-              setEditModalOpen(false);
-              setDeleteModalOpen(true);
-            }}
+            onDelete={() => { setEditModalOpen(false); setDeleteModalOpen(true); }}
           />
-
           <DeleteProjectModal
             open={deleteModalOpen}
             project={selectedProject}
-            onClose={() => {
-              setDeleteModalOpen(false);
-              setSelectedProject(null);
-            }}
+            onClose={() => { setDeleteModalOpen(false); setSelectedProject(null); }}
             onDeleteSuccess={handleDeleteSuccess}
             onDeactivateSuccess={handleDeactivateSuccess}
           />
-
           <FilePreviewModal
             open={filePreviewModalOpen}
             files={selectedProject.lampiran_files || []}
             projectName={selectedProject.name}
-            onClose={() => {
-              setFilePreviewModalOpen(false);
-              setSelectedProject(null);
-            }}
+            onClose={() => { setFilePreviewModalOpen(false); setSelectedProject(null); }}
           />
         </>
       )}

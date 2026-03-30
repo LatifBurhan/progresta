@@ -1,458 +1,340 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { X, Plus, Calendar, User, Target, FileText, AlertCircle } from 'lucide-react'
-import FileUploadComponent from '@/components/projects/FileUploadComponent'
-
-interface Project {
-  id: string
-  name: string
-  tujuan: string | null
-  description: string | null
-  pic: string | null
-  prioritas: string | null
-  tanggal_mulai: string | null
-  tanggal_selesai: string | null
-  lampiran_files: string[] | null
-  status: string
-  created_at: string
-  updated_at: string
-  created_by: string | null
-  divisions: Array<{
-    id: string
-    name: string
-    color: string | null
-  }>
-}
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { X, Plus, Calendar, User, Target, FileText, AlertCircle, Briefcase, Flag, Hash, Layers, Clock, Sparkles, CheckCircle2, Paperclip } from "lucide-react";
+import FileUploadComponent from "@/components/projects/FileUploadComponent";
 
 interface Division {
-  id: string
-  name: string
-  color: string | null
-  is_active: boolean
+  id: string;
+  name: string;
+  color: string;
 }
 
 interface CreateProjectModalProps {
-  open: boolean
-  divisions: Division[]
-  onClose: () => void
-  onSuccess: (newProject: Project) => void
+  open: boolean;
+  divisions: Division[];
+  onClose: () => void;
+  onSuccess: (project: any) => void;
 }
 
-export default function CreateProjectModal({ 
-  open, 
-  divisions,
-  onClose, 
-  onSuccess 
-}: CreateProjectModalProps) {
+export default function CreateProjectModal({ open, divisions, onClose, onSuccess }: CreateProjectModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    tujuan: '',
-    description: '',
+    name: "",
+    tujuan: "",
+    description: "",
     divisionIds: [] as string[],
-    pic: '',
-    prioritas: '',
-    tanggalMulai: '',
-    tanggalSelesai: '',
-    lampiranFiles: [] as string[]
-  })
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
-  const [uploadError, setUploadError] = useState<string>('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+    pic: "",
+    prioritas: "",
+    tanggalMulai: "",
+    tanggalSelesai: "",
+    lampiranFiles: [] as string[],
+  });
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Generate temporary project ID for file uploads
-  const tempProjectId = `temp-${Date.now()}`
+  const tempProjectId = `temp-${Date.now()}`;
 
-  if (!open) return null
+  if (!open) return null;
 
   const calculateDuration = () => {
-    if (!formData.tanggalMulai || !formData.tanggalSelesai) return null
-    
-    const start = new Date(formData.tanggalMulai)
-    const end = new Date(formData.tanggalSelesai)
-    
-    if (end <= start) return null
-    
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    return diffDays
-  }
+    if (!formData.tanggalMulai || !formData.tanggalSelesai) return null;
+    const start = new Date(formData.tanggalMulai);
+    const end = new Date(formData.tanggalSelesai);
+    if (end <= start) return null;
+    return Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const handleDivisionToggle = (divisionId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      divisionIds: prev.divisionIds.includes(divisionId) ? prev.divisionIds.filter((id) => id !== divisionId) : [...prev.divisionIds, divisionId],
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!formData.name.trim()) {
-      setError('Nama project wajib diisi')
-      return
-    }
+    e.preventDefault();
+    if (!formData.name.trim()) return setError("Nama project wajib diisi");
+    if (!formData.divisionIds.length) return setError("Minimal satu divisi wajib dipilih");
 
-    if (!formData.divisionIds.length) {
-      setError('Minimal satu divisi wajib dipilih')
-      return
-    }
-
-    if (formData.tanggalMulai && formData.tanggalSelesai) {
-      const start = new Date(formData.tanggalMulai)
-      const end = new Date(formData.tanggalSelesai)
-      
-      if (end <= start) {
-        setError('Tanggal selesai harus setelah tanggal mulai')
-        return
-      }
-    }
-
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
 
     try {
-      const response = await fetch('/api/admin/projects/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/admin/projects/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...formData,
           name: formData.name.trim(),
           tujuan: formData.tujuan.trim() || null,
           description: formData.description.trim() || null,
-          divisionIds: formData.divisionIds,
-          pic: formData.pic.trim() || null,
-          prioritas: formData.prioritas || null,
-          tanggalMulai: formData.tanggalMulai || null,
-          tanggalSelesai: formData.tanggalSelesai || null,
-          lampiranFiles: formData.lampiranFiles.length > 0 ? formData.lampiranFiles : null
-        })
-      })
+          lampiranFiles: formData.lampiranFiles.length > 0 ? formData.lampiranFiles : null,
+        }),
+      });
 
-      const result = await response.json()
-
+      const result = await response.json();
       if (result.success) {
-        onSuccess(result.project)
-        handleClose()
-        alert('Project berhasil dibuat!')
+        onSuccess(result.project);
+        handleClose();
       } else {
-        setError(result.message || 'Gagal membuat project')
+        setError(result.message || "Gagal membuat project");
       }
-    } catch (error) {
-      setError('Terjadi kesalahan sistem')
+    } catch (err) {
+      setError("Terjadi kesalahan sistem");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      tujuan: '',
-      description: '',
-      divisionIds: [],
-      pic: '',
-      prioritas: '',
-      tanggalMulai: '',
-      tanggalSelesai: '',
-      lampiranFiles: []
-    })
-    setUploadedFiles([])
-    setUploadError('')
-    setError('')
-    onClose()
-  }
+    setFormData({ name: "", tujuan: "", description: "", divisionIds: [], pic: "", prioritas: "", tanggalMulai: "", tanggalSelesai: "", lampiranFiles: [] });
+    setUploadedFiles([]);
+    setUploadError("");
+    setError("");
+    onClose();
+  };
 
-  const duration = calculateDuration()
-  const selectedDivisions = divisions.filter(d => formData.divisionIds.includes(d.id))
-
-  const handleDivisionToggle = (divisionId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      divisionIds: prev.divisionIds.includes(divisionId)
-        ? prev.divisionIds.filter(id => id !== divisionId)
-        : [...prev.divisionIds, divisionId]
-    }))
-  }
+  const duration = calculateDuration();
+  const selectedDivisions = divisions.filter((d: Division) => formData.divisionIds.includes(d.id));
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-blue-600" />
-              Tambah Project Baru
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={handleClose} />
 
+      {/* Modal Container */}
+      <div className="relative bg-white w-full sm:max-w-[98vw] h-[98vh] sm:h-[98vh] sm:max-h-[98vh] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-500">
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-100 ring-4 ring-blue-50">
+              <Plus className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Inisiasi Project</h2>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Sistem Administrasi Al-Wustho</p>
+            </div>
+          </div>
+          <button onClick={handleClose} className="p-2.5 rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar bg-[#FDFDFD]">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600" />
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-8 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 animate-in shake duration-300">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-bold">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-4">
-                {/* Project Name */}
-                <div>
-                  <Label htmlFor="name" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Nama Project *
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Contoh: Website Company Profile"
-                    required
-                  />
+          <form id="project-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            {/* LEFT COLUMN: Main Info */}
+            <div className="lg:col-span-7 space-y-10">
+              {/* Group 1: Identitas */}
+              <section className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
+                  <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Identitas Utama</h4>
                 </div>
 
-                {/* Tujuan */}
-                <div>
-                  <Label htmlFor="tujuan" className="flex items-center gap-2">
-                    <Target className="w-4 h-4" />
-                    Tujuan Project
-                  </Label>
-                  <textarea
-                    id="tujuan"
-                    value={formData.tujuan}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tujuan: e.target.value }))}
-                    placeholder="Jelaskan tujuan dari project ini..."
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    rows={3}
-                  />
-                </div>
+                <div className="space-y-5">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Nama Project *</Label>
+                    <div className="relative group">
+                      <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                      <Input
+                        className="pl-11 h-14 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm"
+                        placeholder="Contoh: Digitalization System 2.0"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                  </div>
 
-                {/* Description */}
-                <div>
-                  <Label htmlFor="description">Deskripsi Project</Label>
-                  <textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Deskripsi detail tentang project ini..."
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    rows={4}
-                  />
-                </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase tracking-wider">Tujuan Utama</Label>
+                    <div className="relative group">
+                      <Target className="absolute left-4 top-4 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+                      <textarea
+                        className="w-full pl-11 pr-4 py-4 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all text-sm font-medium shadow-sm min-h-[100px] outline-none"
+                        placeholder="Apa output yang ingin dicapai?"
+                        value={formData.tujuan}
+                        onChange={(e) => setFormData({ ...formData, tujuan: e.target.value })}
+                      />
+                    </div>
+                  </div>
 
-                {/* PIC */}
-                <div>
-                  <Label htmlFor="pic" className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    PIC (Person In Charge)
-                  </Label>
-                  <Input
-                    id="pic"
-                    type="text"
-                    value={formData.pic}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pic: e.target.value }))}
-                    placeholder="Nama PIC yang bertanggung jawab"
-                  />
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase tracking-wider">Konteks / Deskripsi</Label>
+                    <div className="relative group">
+                      <FileText className="absolute left-4 top-4 w-4 h-4 text-slate-300 group-focus-within:text-slate-500 transition-colors" />
+                      <textarea
+                        className="w-full pl-11 pr-4 py-4 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-100 transition-all text-sm font-medium shadow-sm min-h-[140px] outline-none"
+                        placeholder="Detail pengerjaan project..."
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
+                    </div>
+                  </div>
                 </div>
+              </section>
 
-                {/* Priority */}
-                <div>
-                  <Label htmlFor="prioritas">Prioritas</Label>
-                  <select
-                    id="prioritas"
-                    value={formData.prioritas}
-                    onChange={(e) => setFormData(prev => ({ ...prev, prioritas: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">-- Pilih Prioritas --</option>
-                    <option value="Rendah">Rendah</option>
-                    <option value="Sedang">Sedang</option>
-                    <option value="Tinggi">Tinggi</option>
-                    <option value="Urgent">Urgent</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-4">
-                {/* Divisions Multi-Select */}
-                <div>
-                  <Label>Divisi yang Terlibat *</Label>
-                  <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
-                    {divisions.map((division) => (
-                      <div key={division.id} className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id={`division-${division.id}`}
-                          checked={formData.divisionIds.includes(division.id)}
-                          onChange={() => handleDivisionToggle(division.id)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <label 
-                          htmlFor={`division-${division.id}`}
-                          className="flex items-center space-x-2 cursor-pointer flex-1"
-                        >
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: division.color || '#3B82F6' }}
-                          />
-                          <span className="text-sm font-medium text-gray-700">
-                            {division.name}
-                          </span>
-                        </label>
+              {/* Group 2: Preview (App-like Card) */}
+              {formData.name && selectedDivisions.length > 0 && (
+                <section className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl animate-in fade-in zoom-in">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 blur-[80px]" />
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live Preview Card</span>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl font-black">{formData.name.charAt(0).toUpperCase()}</div>
+                      <div className="flex-1">
+                        <h4 className="text-xl font-black tracking-tight leading-none mb-2">{formData.name}</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedDivisions.map((d: Division) => (
+                            <span key={d.id} className="text-[9px] font-black px-2 py-0.5 rounded bg-white/10 border border-white/10 uppercase tracking-tighter">
+                              {d.name}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  {formData.divisionIds.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {selectedDivisions.map((division) => (
-                        <span
-                          key={division.id}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
-                          style={{ backgroundColor: division.color || '#3B82F6' }}
-                        >
-                          {division.name}
-                          <button
-                            type="button"
-                            onClick={() => handleDivisionToggle(division.id)}
-                            className="ml-1 hover:bg-black hover:bg-opacity-20 rounded-full p-0.5"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
                     </div>
-                  )}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* RIGHT COLUMN: Settings & Attachments */}
+            <div className="lg:col-span-5 space-y-10">
+              {/* Group 3: Timeline & Priority */}
+              <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-indigo-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Timeline & Urgency</span>
                 </div>
 
-                {/* Timeline */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="tanggalMulai" className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Tanggal Mulai
-                    </Label>
-                    <Input
-                      id="tanggalMulai"
-                      type="date"
-                      value={formData.tanggalMulai}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tanggalMulai: e.target.value }))}
-                    />
+                  <div className="space-y-1.5 text-center">
+                    <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mulai</Label>
+                    <Input type="date" className="h-12 rounded-xl border-slate-50 bg-slate-50/50" value={formData.tanggalMulai} onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })} />
                   </div>
-
-                  <div>
-                    <Label htmlFor="tanggalSelesai">Tanggal Selesai</Label>
-                    <Input
-                      id="tanggalSelesai"
-                      type="date"
-                      value={formData.tanggalSelesai}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tanggalSelesai: e.target.value }))}
-                      min={formData.tanggalMulai || undefined}
-                    />
+                  <div className="space-y-1.5 text-center">
+                    <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Selesai</Label>
+                    <Input type="date" className="h-12 rounded-xl border-slate-50 bg-slate-50/50" value={formData.tanggalSelesai} onChange={(e) => setFormData({ ...formData, tanggalSelesai: e.target.value })} />
                   </div>
                 </div>
 
-                {/* Duration Display */}
                 {duration && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <div className="flex items-center gap-2 text-blue-700">
-                      <Calendar className="w-4 h-4" />
-                      <span className="font-medium">Durasi: {duration} hari</span>
-                    </div>
+                  <div className="flex items-center justify-center gap-2 p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-xs font-black uppercase tracking-widest">Est. {duration} Hari Kerja</span>
                   </div>
                 )}
 
-                {/* File Lampiran */}
-                <div>
-                  <Label>File Lampiran</Label>
-                  <FileUploadComponent
-                    projectId={tempProjectId}
-                    existingFiles={uploadedFiles}
-                    onChange={(files) => {
-                      setUploadedFiles(files)
-                      setFormData(prev => ({ ...prev, lampiranFiles: files }))
-                      setUploadError('') // Clear error on successful upload
-                    }}
-                    onError={(error) => setUploadError(error)}
-                    disabled={loading}
-                  />
-                  {uploadError && (
-                    <p className="text-sm text-red-600 mt-1">{uploadError}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Preview */}
-            {formData.name && selectedDivisions.length > 0 && (
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <Label className="text-sm font-medium text-gray-700 mb-3 block">Preview Project:</Label>
-                <div className="flex items-start gap-3">
-                  <div 
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-                    style={{ backgroundColor: selectedDivisions[0].color || '#3B82F6' }}
-                  >
-                    {formData.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{formData.name}</h4>
-                    {formData.tujuan && (
-                      <p className="text-sm text-gray-600 mb-2">{formData.tujuan}</p>
-                    )}
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {selectedDivisions.map((division) => (
-                        <span
-                          key={division.id}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white"
-                          style={{ backgroundColor: division.color || '#3B82F6' }}
-                        >
-                          {division.name}
-                        </span>
-                      ))}
-                    </div>
-                    {formData.pic && (
-                      <p className="text-sm text-gray-600">PIC: {formData.pic}</p>
-                    )}
-                    {formData.prioritas && (
-                      <span className="inline-block mt-1 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                        {formData.prioritas}
-                      </span>
-                    )}
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Prioritas Project</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["Rendah", "Sedang", "Tinggi", "Urgent"].map((prio) => (
+                      <button
+                        key={prio}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, prioritas: prio })}
+                        className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${
+                          formData.prioritas === prio ? "border-blue-600 bg-blue-600 text-white shadow-lg" : "border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-200"
+                        }`}
+                      >
+                        {prio}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="flex-1"
-                disabled={loading}
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={loading}
-              >
-                {loading ? 'Membuat...' : 'Buat Project'}
-              </Button>
+                <div className="space-y-1.5 pt-2">
+                  <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Lead PIC</Label>
+                  <div className="relative group">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                    <Input className="pl-10 h-12 rounded-xl border-slate-50 bg-slate-50/50" placeholder="Nama Penanggung Jawab" value={formData.pic} onChange={(e) => setFormData({ ...formData, pic: e.target.value })} />
+                  </div>
+                </div>
+              </section>
+
+              {/* Group 4: Divisi Terlibat */}
+              <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-6">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-blue-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Distribusi Divisi *</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto no-scrollbar">
+                  {divisions.map((division) => (
+                    <button
+                      key={division.id}
+                      type="button"
+                      onClick={() => handleDivisionToggle(division.id)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all active:scale-95 ${
+                        formData.divisionIds.includes(division.id) ? "border-slate-900 bg-slate-900 text-white shadow-xl" : "border-slate-50 bg-slate-50 text-slate-500 hover:border-slate-200"
+                      }`}
+                    >
+                      <Hash className={`w-3 h-3 ${formData.divisionIds.includes(division.id) ? "text-blue-400" : "text-slate-300"}`} />
+                      <span className="text-[11px] font-black uppercase tracking-tight">{division.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* Group 5: Asset / Lampiran */}
+              <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4 text-amber-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Project Assets</span>
+                </div>
+                <FileUploadComponent
+                  projectId={tempProjectId}
+                  existingFiles={uploadedFiles}
+                  onChange={(files) => {
+                    setUploadedFiles(files);
+                    setFormData((prev) => ({ ...prev, lampiranFiles: files }));
+                  }}
+                  onError={(err) => setUploadError(err)}
+                  disabled={loading}
+                />
+              </section>
             </div>
           </form>
         </div>
+
+        {/* Action Footer */}
+        <div className="px-8 py-8 bg-white border-t border-slate-50 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto">
+            <Button type="button" variant="ghost" onClick={handleClose} disabled={loading} className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-slate-50 active:scale-95">
+              Batalkan
+            </Button>
+            <Button
+              type="submit"
+              form="project-form"
+              disabled={loading}
+              className="flex-[2] h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 transition-all hover:-translate-y-1 active:scale-[0.98] disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 animate-spin" /> <span>Mengunggah...</span>
+                </div>
+              ) : (
+                "Inisiasi Project Baru"
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
-  )
+  );
 }

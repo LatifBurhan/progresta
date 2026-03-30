@@ -4,36 +4,29 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Edit, Calendar, User, Target, FileText, AlertCircle } from "lucide-react";
+import { X, Edit, User, Hash, Layers, Clock, Trash2, ShieldAlert, Paperclip, ExternalLink } from "lucide-react";
 import FileUploadComponent from "@/components/projects/FileUploadComponent";
-
-interface Project {
-  id: string;
-  name: string;
-  tujuan: string | null;
-  description: string | null;
-  pic: string | null;
-  prioritas: string | null;
-  tanggal_mulai: string | null;
-  tanggal_selesai: string | null;
-  lampiran_files: string[] | null;
-  lampiran_url: string | null; // For legacy data
-  status: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  divisions: Array<{
-    id: string;
-    name: string;
-    color: string | null;
-  }>;
-}
+import { getFileIcon } from "@/lib/storage/project-file-upload";
 
 interface Division {
   id: string;
   name: string;
-  color: string | null;
-  is_active: boolean;
+  color?: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  tujuan?: string;
+  description?: string;
+  pic?: string;
+  prioritas?: string;
+  tanggal_mulai?: string;
+  tanggal_selesai?: string;
+  status: string;
+  lampiran_files?: string[];
+  lampiran_url?: string;
+  divisions?: Division[];
 }
 
 interface EditProjectModalProps {
@@ -41,7 +34,7 @@ interface EditProjectModalProps {
   project: Project;
   divisions: Division[];
   onClose: () => void;
-  onSuccess: (updatedProject: Project) => void;
+  onSuccess: (project: Project) => void;
   onDelete: () => void;
 }
 
@@ -59,22 +52,16 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
     status: "",
   });
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-  const [uploadError, setUploadError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Initialize form data when project changes
   useEffect(() => {
     if (project) {
-      // Handle legacy data conversion
-      let files: string[] = []
+      let files: string[] = [];
       if (project.lampiran_files) {
-        files = Array.isArray(project.lampiran_files) 
-          ? project.lampiran_files 
-          : [project.lampiran_files]
+        files = Array.isArray(project.lampiran_files) ? project.lampiran_files : [project.lampiran_files];
       } else if (project.lampiran_url) {
-        // Legacy single URL
-        files = [project.lampiran_url]
+        files = [project.lampiran_url];
       }
 
       setFormData({
@@ -95,43 +82,16 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
 
   if (!open) return null;
 
-  const calculateDuration = () => {
-    if (!formData.tanggalMulai || !formData.tanggalSelesai) return null;
-
-    const start = new Date(formData.tanggalMulai);
-    const end = new Date(formData.tanggalSelesai);
-
-    if (end <= start) return null;
-
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays;
+  const handleDivisionToggle = (divisionId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      divisionIds: prev.divisionIds.includes(divisionId) ? prev.divisionIds.filter((id) => id !== divisionId) : [...prev.divisionIds, divisionId],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.name.trim()) {
-      setError("Nama project wajib diisi");
-      return;
-    }
-
-    if (!formData.divisionIds.length) {
-      setError("Minimal satu divisi wajib dipilih");
-      return;
-    }
-
-    if (formData.tanggalMulai && formData.tanggalSelesai) {
-      const start = new Date(formData.tanggalMulai);
-      const end = new Date(formData.tanggalSelesai);
-
-      if (end <= start) {
-        setError("Tanggal selesai harus setelah tanggal mulai");
-        return;
-      }
-    }
-
+    if (!formData.name.trim()) return setError("Nama project wajib diisi");
     setLoading(true);
     setError("");
 
@@ -140,252 +100,278 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...formData,
           name: formData.name.trim(),
-          tujuan: formData.tujuan.trim() || null,
-          description: formData.description.trim() || null,
-          divisionIds: formData.divisionIds,
-          pic: formData.pic.trim() || null,
-          prioritas: formData.prioritas || null,
-          tanggalMulai: formData.tanggalMulai || null,
-          tanggalSelesai: formData.tanggalSelesai || null,
           lampiranFiles: formData.lampiranFiles.length > 0 ? formData.lampiranFiles : null,
-          status: formData.status,
         }),
       });
 
       const result = await response.json();
-
       if (result.success) {
         onSuccess(result.project);
         onClose();
-        alert("Project berhasil diupdate!");
       } else {
         setError(result.message || "Gagal mengupdate project");
       }
-    } catch (error) {
+    } catch (err) {
       setError("Terjadi kesalahan sistem");
     } finally {
       setLoading(false);
     }
   };
 
-  const duration = calculateDuration();
-  const selectedDivisions = divisions.filter((d) => formData.divisionIds.includes(d.id));
+  const isImage = (url: string) => {
+    return /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url);
+  };
 
-  const handleDivisionToggle = (divisionId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      divisionIds: prev.divisionIds.includes(divisionId) ? prev.divisionIds.filter((id) => id !== divisionId) : [...prev.divisionIds, divisionId],
-    }));
+  const getFileName = (url: string) => {
+    try {
+      const decoded = decodeURIComponent(url);
+      return decoded.split("/").pop() || "File";
+    } catch {
+      return "File";
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Edit className="w-5 h-5 text-blue-600" />
-              Edit Project: {project.name}
-            </h3>
-            <Button variant="ghost" size="sm" onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 text-slate-900">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
 
+      <div className="relative bg-white w-full sm:max-w-[98vw] h-[98vh] sm:h-[98vh] sm:max-h-[98vh] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-500">
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 ring-4 ring-indigo-50">
+              <Edit className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">Perbarui Project</h2>
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">ID: {project.id.slice(0, 8)}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2.5 rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 transition-all">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar bg-[#FDFDFD]">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600" />
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-8 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 animate-in shake duration-300">
+              <ShieldAlert className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-semibold">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-4">
-                {/* Project Name */}
-                <div>
-                  <Label htmlFor="name" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Nama Project *
-                  </Label>
-                  <Input id="name" type="text" value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} placeholder="Contoh: Website Company Profile" required />
+          <form id="edit-project-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            {/* LEFT COLUMN */}
+            <div className="lg:col-span-7 space-y-10">
+              <section className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
+                  <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Informasi Dasar</h4>
                 </div>
 
-                {/* Status */}
-                <div>
-                  <Label htmlFor="status">Status Project</Label>
-                  <select
-                    id="status"
-                    value={formData.status}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="Aktif">Aktif</option>
-                    <option value="Non-Aktif">Non-Aktif</option>
-                    <option value="Selesai">Selesai</option>
-                    <option value="Ditunda">Ditunda</option>
-                    <option value="Dibatalkan">Dibatalkan</option>
-                  </select>
-                </div>
-
-                {/* Tujuan */}
-                <div>
-                  <Label htmlFor="tujuan" className="flex items-center gap-2">
-                    <Target className="w-4 h-4" />
-                    Tujuan Project
-                  </Label>
-                  <textarea
-                    id="tujuan"
-                    value={formData.tujuan}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, tujuan: e.target.value }))}
-                    placeholder="Jelaskan tujuan dari project ini..."
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    rows={3}
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <Label htmlFor="description">Deskripsi Project</Label>
-                  <textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                    placeholder="Deskripsi detail tentang project ini..."
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    rows={4}
-                  />
-                </div>
-
-                {/* PIC */}
-                <div>
-                  <Label htmlFor="pic" className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    PIC (Person In Charge)
-                  </Label>
-                  <Input id="pic" type="text" value={formData.pic} onChange={(e) => setFormData((prev) => ({ ...prev, pic: e.target.value }))} placeholder="Nama PIC yang bertanggung jawab" />
-                </div>
-
-                {/* Priority */}
-                <div>
-                  <Label htmlFor="prioritas">Prioritas</Label>
-                  <select
-                    id="prioritas"
-                    value={formData.prioritas}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, prioritas: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">-- Pilih Prioritas --</option>
-                    <option value="Rendah">Rendah</option>
-                    <option value="Sedang">Sedang</option>
-                    <option value="Tinggi">Tinggi</option>
-                    <option value="Urgent">Urgent</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-4">
-                {/* Divisions Multi-Select */}
-                <div>
-                  <Label>Divisi yang Terlibat *</Label>
-                  <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
-                    {divisions.map((division) => (
-                      <div key={division.id} className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id={`division-${division.id}`}
-                          checked={formData.divisionIds.includes(division.id)}
-                          onChange={() => handleDivisionToggle(division.id)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <label htmlFor={`division-${division.id}`} className="flex items-center space-x-2 cursor-pointer flex-1">
-                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: division.color || "#3B82F6" }} />
-                          <span className="text-sm font-medium text-gray-700">{division.name}</span>
-                        </label>
-                      </div>
-                    ))}
+                <div className="space-y-5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 ml-1">Nama Project *</Label>
+                    <Input className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-indigo-100 transition-all font-medium" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                   </div>
-                  {formData.divisionIds.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {selectedDivisions.map((division) => (
-                        <span key={division.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: division.color || "#3B82F6" }}>
-                          {division.name}
-                          <button type="button" onClick={() => handleDivisionToggle(division.id)} className="ml-1 hover:bg-black hover:bg-opacity-20 rounded-full p-0.5">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 ml-1">Status Progres</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {["Aktif", "Ditunda", "Selesai", "Non-Aktif", "Dibatalkan"].map((st) => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, status: st })}
+                          className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-tight border-2 transition-all ${
+                            formData.status === st ? "border-slate-800 bg-slate-800 text-white shadow-md" : "border-slate-100 bg-white text-slate-400 hover:border-slate-200"
+                          }`}
+                        >
+                          {st}
+                        </button>
                       ))}
                     </div>
-                  )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 ml-1">Tujuan</Label>
+                    <textarea
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-sm font-normal min-h-[100px] outline-none leading-relaxed"
+                      value={formData.tujuan}
+                      onChange={(e) => setFormData({ ...formData, tujuan: e.target.value })}
+                      placeholder="Jelaskan tujuan project..."
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 ml-1">Deskripsi Detail</Label>
+                    <textarea
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-100 transition-all text-sm font-normal min-h-[140px] outline-none leading-relaxed"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Tambahkan detail rincian pekerjaan..."
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* RIGHT COLUMN */}
+            <div className="lg:col-span-5 space-y-10">
+              <section className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm space-y-6">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-indigo-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Timeline & Prioritas</span>
                 </div>
 
-                {/* Timeline */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="tanggalMulai" className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Tanggal Mulai
-                    </Label>
-                    <Input id="tanggalMulai" type="date" value={formData.tanggalMulai} onChange={(e) => setFormData((prev) => ({ ...prev, tanggalMulai: e.target.value }))} />
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Mulai</Label>
+                    <Input type="date" className="h-11 rounded-xl border-slate-100 bg-slate-50/50 font-medium" value={formData.tanggalMulai} onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })} />
                   </div>
-
-                  <div>
-                    <Label htmlFor="tanggalSelesai">Tanggal Selesai</Label>
-                    <Input id="tanggalSelesai" type="date" value={formData.tanggalSelesai} onChange={(e) => setFormData((prev) => ({ ...prev, tanggalSelesai: e.target.value }))} min={formData.tanggalMulai || undefined} />
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Selesai</Label>
+                    <Input type="date" className="h-11 rounded-xl border-slate-100 bg-slate-50/50 font-medium" value={formData.tanggalSelesai} onChange={(e) => setFormData({ ...formData, tanggalSelesai: e.target.value })} />
                   </div>
                 </div>
 
-                {/* Duration Display */}
-                {duration && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <div className="flex items-center gap-2 text-blue-700">
-                      <Calendar className="w-4 h-4" />
-                      <span className="font-medium">Durasi: {duration} hari</span>
-                    </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-600 ml-1">Prioritas</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["Rendah", "Sedang", "Tinggi", "Urgent"].map((prio) => (
+                      <button
+                        key={prio}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, prioritas: prio })}
+                        className={`py-2 rounded-xl text-[10px] font-bold uppercase border-2 transition-all ${
+                          formData.prioritas === prio ? "border-indigo-600 bg-indigo-600 text-white shadow-md" : "border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-200"
+                        }`}
+                      >
+                        {prio}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-600 ml-1">PIC (Person In Charge)</Label>
+                  <div className="relative group">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                    <Input className="pl-10 h-11 rounded-xl border-slate-100 bg-slate-50/50 font-medium" value={formData.pic} onChange={(e) => setFormData({ ...formData, pic: e.target.value })} />
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm space-y-6">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-blue-500" />
+                  <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Divisi Terlibat</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {divisions.map((division) => (
+                    <button
+                      key={division.id}
+                      type="button"
+                      onClick={() => handleDivisionToggle(division.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all ${
+                        formData.divisionIds.includes(division.id) ? "border-slate-800 bg-slate-800 text-white shadow-md" : "border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-200"
+                      }`}
+                    >
+                      <Hash className={`w-3 h-3 ${formData.divisionIds.includes(division.id) ? "text-indigo-300" : "text-slate-300"}`} />
+                      <span className="text-[11px] font-bold uppercase tracking-tight">{division.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="w-4 h-4 text-amber-500" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Project Assets</span>
+                  </div>
+                  {uploadedFiles.length > 0 && <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-50 text-blue-600 uppercase tracking-tighter">{uploadedFiles.length} File Terlampir</span>}
+                </div>
+
+                {/* VISUAL PREVIEW OF EXISTING ASSETS */}
+                {uploadedFiles.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-2 bg-slate-50/50 rounded-2xl border border-slate-100 max-h-60 overflow-y-auto custom-scrollbar">
+                    {uploadedFiles.map((url, idx) => {
+                      const fileName = getFileName(url);
+                      const isImg = isImage(url);
+                      const { icon, color } = getFileIcon(fileName);
+
+                      return (
+                        <div key={idx} className="group relative aspect-square rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                          {isImg ? (
+                            <img src={url} alt={fileName} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-3 gap-2">
+                              <span className={`text-3xl ${color}`}>{icon}</span>
+                              <span className="text-[9px] font-bold text-slate-400 uppercase text-center line-clamp-1">{fileName.split(".").pop()} File</span>
+                            </div>
+                          )}
+
+                          {/* Overlay on hover */}
+                          <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-colors" title="Buka File">
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </div>
+
+                          {/* Filename tooltip-like footer */}
+                          <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-white/90 backdrop-blur-sm border-t border-slate-100">
+                            <p className="text-[8px] font-bold text-slate-600 truncate uppercase tracking-tighter text-center">{fileName}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* File Lampiran */}
-                <div>
-                  <Label>File Lampiran</Label>
+                <div className="pt-2">
                   <FileUploadComponent
                     projectId={project.id}
                     existingFiles={uploadedFiles}
                     onChange={(files) => {
-                      setUploadedFiles(files)
-                      setFormData(prev => ({ ...prev, lampiranFiles: files }))
-                      setUploadError('') // Clear error on successful upload
+                      setUploadedFiles(files);
+                      setFormData((prev) => ({ ...prev, lampiranFiles: files }));
                     }}
-                    onError={(error) => setUploadError(error)}
+                    onError={(err) => setError(err)}
                     disabled={loading}
                   />
-                  {uploadError && (
-                    <p className="text-sm text-red-600 mt-1">{uploadError}</p>
-                  )}
                 </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t mt-4">
-              <Button type="button" variant="ghost" onClick={onDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50 sm:mr-auto" disabled={loading}>
-                Hapus Project
-              </Button>
-
-              <div className="flex gap-3 flex-1 sm:flex-none">
-                <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:w-32" disabled={loading}>
-                  Batal
-                </Button>
-                <Button type="submit" className="flex-1 sm:w-48 bg-blue-900 hover:bg-blue-800" disabled={loading}>
-                  {loading ? "Menyimpan..." : "Simpan Perubahan"}
-                </Button>
-              </div>
+              </section>
             </div>
           </form>
+        </div>
+
+        {/* Action Footer */}
+        <div className="px-8 py-8 bg-white border-t border-slate-50 shrink-0">
+          <div className="flex flex-col sm:flex-row items-center gap-4 max-w-7xl mx-auto w-full">
+            <Button type="button" variant="ghost" onClick={onDelete} disabled={loading} className="w-full sm:w-auto h-12 rounded-xl font-bold text-[11px] uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Hapus Project
+            </Button>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:ml-auto sm:w-auto">
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="h-12 px-8 rounded-xl font-bold text-[11px] uppercase tracking-widest text-slate-400 border-slate-200">
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                form="edit-project-form"
+                disabled={loading}
+                className="h-12 px-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all hover:-translate-y-0.5"
+              >
+                {loading ? <Clock className="w-4 h-4 animate-spin" /> : "Simpan Perubahan"}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

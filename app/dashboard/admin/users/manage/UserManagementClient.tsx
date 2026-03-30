@@ -1,56 +1,38 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import Image from 'next/image'
 import Link from 'next/link'
 import { 
-  User, 
-  Mail, 
-  Phone, 
-  Briefcase,
-  Search,
-  Filter,
-  MoreVertical,
-  Shield,
-  Building,
-  Edit,
-  Trash2,
-  UserCheck,
-  UserX,
-  Plus,
-  ArrowLeft
+  User, Phone, Briefcase, Search, 
+  Building, Edit, Trash2, UserCheck, 
+  UserX, Plus, ArrowLeft
 } from 'lucide-react'
 import EditUserModal from './EditUserModal'
 import DeleteUserModal from './DeleteUserModal'
 import UserActionModal from './UserActionModal'
+
+interface UserProfile {
+  name?: string
+  position?: string
+  phone?: string
+  fotoProfil?: string
+}
+
+interface Division {
+  id: string
+  name: string
+}
 
 interface UserData {
   id: string
   email: string
   role: string
   status: string
-  createdAt: string
-  divisionId: string | null
-  profile: {
-    name: string | null
-    fotoProfil: string | null
-    phone: string | null
-    position: string | null
-  } | null
-  division?: {
-    name: string
-    color: string | null
-  } | null
-}
-
-interface Division {
-  id: string
-  name: string
-  color: string | null
+  profile?: UserProfile
+  division?: Division
 }
 
 interface UserManagementClientProps {
@@ -68,24 +50,13 @@ export default function UserManagementClient({
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [roleFilter, setRoleFilter] = useState<'all' | 'KARYAWAN' | 'PM' | 'HRD' | 'CEO' | 'ADMIN'>('all')
-  const [editModal, setEditModal] = useState<{
-    open: boolean
-    user: UserData | null
-  }>({ open: false, user: null })
-  const [deleteModal, setDeleteModal] = useState<{
-    open: boolean
-    user: UserData | null
-  }>({ open: false, user: null })
-  const [actionModal, setActionModal] = useState<{
-    open: boolean
-    user: UserData | null
-    action: 'activate' | 'deactivate' | null
-  }>({ open: false, user: null, action: null })
+  
+  const [editModal, setEditModal] = useState<{ open: boolean; user: UserData | null }>({ open: false, user: null })
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; user: UserData | null }>({ open: false, user: null })
+  const [actionModal, setActionModal] = useState<{ open: boolean; user: UserData | null; action: 'activate' | 'deactivate' | null }>({ open: false, user: null, action: null })
 
   const handleEditSuccess = (updatedUser: UserData) => {
-    setAllUsers(prev => prev.map(u => 
-      u.id === updatedUser.id ? updatedUser : u
-    ))
+    setAllUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u))
     setEditModal({ open: false, user: null })
   }
 
@@ -101,297 +72,244 @@ export default function UserManagementClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, action })
       })
-
-      const result = await response.json()
-      
-      if (result.success) {
-        setAllUsers(prev => prev.map(u => 
-          u.id === userId 
-            ? { ...u, status: action === 'activate' ? 'ACTIVE' : 'INACTIVE' }
-            : u
-        ))
-        
+      if (response.ok) {
+        setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, status: action === 'activate' ? 'ACTIVE' : 'INACTIVE' } : u))
         setActionModal({ open: false, user: null, action: null })
-        alert(`User berhasil ${action === 'activate' ? 'diaktifkan' : 'dinonaktifkan'}!`)
-      } else {
-        alert(result.message || `Gagal ${action} user`)
       }
-    } catch (error) {
-      console.error('User action error:', error)
-      alert(`Terjadi kesalahan saat ${action} user`)
-    }
+    } catch (error) { console.error(error) }
   }
 
   const filteredUsers = allUsers.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.profile?.position?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         false
-    
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'active' && user.status === 'ACTIVE') ||
-                         (statusFilter === 'inactive' && user.status === 'INACTIVE')
-    
+                         user.profile?.position?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' && user.status === 'ACTIVE') || (statusFilter === 'inactive' && user.status === 'INACTIVE')
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
-    
     return matchesSearch && matchesStatus && matchesRole
   })
 
   const getRoleBadge = (role: string) => {
-    const badges = {
-      'CEO': { label: '👑 CEO', color: 'bg-purple-100 text-purple-800' },
-      'HRD': { label: '👥 HRD', color: 'bg-blue-100 text-blue-800' },
-      'PM': { label: '📊 PM', color: 'bg-green-100 text-green-800' },
-      'ADMIN': { label: '⚙️ Admin', color: 'bg-red-100 text-red-800' },
-      'KARYAWAN': { label: '👨‍💻 Karyawan', color: 'bg-gray-100 text-gray-800' }
+    const config: any = {
+      'CEO': { label: 'CEO', icon: '👑', color: 'bg-purple-50 text-purple-700 border-purple-100' },
+      'HRD': { label: 'HRD', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+      'PM': { label: 'Manager', icon: '📊', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+      'ADMIN': { label: 'Admin', icon: '⚙️', color: 'bg-rose-50 text-rose-700 border-rose-100' },
+      'KARYAWAN': { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-600 border-slate-200' }
     }
-    return badges[role as keyof typeof badges] || { label: role, color: 'bg-gray-100 text-gray-800' }
-  }
-
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      'ACTIVE': { label: '✅ Aktif', color: 'bg-green-100 text-green-800' },
-      'INACTIVE': { label: '❌ Non-Aktif', color: 'bg-red-100 text-red-800' }
-    }
-    return badges[status as keyof typeof badges] || { label: status, color: 'bg-gray-100 text-gray-800' }
+    return config[role] || { label: role, icon: '👤', color: 'bg-gray-50 text-gray-600 border-gray-200' }
   }
 
   const canEditUser = (user: UserData) => {
     // ADMIN can edit anyone
     if (currentUserRole === 'ADMIN') return true
-    
-    // CEO can edit anyone except ADMIN
-    if (currentUserRole === 'CEO' && user.role !== 'ADMIN') return true
-    
-    // HRD can edit KARYAWAN and PM
-    if (currentUserRole === 'HRD' && ['KARYAWAN', 'PM'].includes(user.role)) return true
-    
+    // HRD and CEO can edit KARYAWAN and PM
+    if (['HRD', 'CEO'].includes(currentUserRole) && ['KARYAWAN', 'PM'].includes(user.role)) return true
     return false
   }
 
   const canDeleteUser = (user: UserData) => {
     // Only ADMIN can delete users
-    return currentUserRole === 'ADMIN'
+    if (currentUserRole === 'ADMIN') return true
+    return false
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-4 mb-2">
-            <Link href="/admin/users">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Kembali
+    <div className="space-y-8 animate-in fade-in duration-700">
+      
+      {/* 1. Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/admin/overview">
+              <Button variant="ghost" size="icon" className="rounded-full bg-white shadow-sm border border-slate-200 hover:bg-slate-50">
+                <ArrowLeft className="w-5 h-5 text-slate-600" />
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Kelola Karyawan</h1>
+            <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Manajemen Personel</h1>
           </div>
-          <p className="text-gray-600">
-            Kelola data karyawan, edit informasi, dan atur status karyawan
+          <p className="text-base font-medium text-slate-500 max-w-2xl leading-relaxed">
+            Otoritas data karyawan, pengaturan hak akses, dan monitoring status keaktifan tim Al-Wustho.
           </p>
         </div>
+        
         <Link href="/dashboard/admin/users/create">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Karyawan
+          <Button className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xl shadow-blue-200 gap-3 active:scale-95 transition-all">
+            <Plus className="w-6 h-6" />
+            <span className="text-base">Daftarkan Karyawan</span>
           </Button>
         </Link>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Cari nama, email, atau posisi..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            {/* Status Filter */}
-            <div className="flex gap-2">
-              <Button
-                variant={statusFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('all')}
+      {/* 2. Advanced Control Bar */}
+      <div className="flex flex-col lg:flex-row gap-4 bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+          <Input
+            placeholder="Cari nama, email, atau jabatan..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 h-14 rounded-2xl border-none bg-slate-50 focus:ring-4 focus:ring-blue-50 transition-all text-base font-medium"
+          />
+        </div>
+        
+        <div className="flex flex-wrap gap-2 items-center bg-slate-50 p-2 rounded-2xl">
+          {/* Status Segmented Control */}
+          <div className="flex bg-white rounded-xl p-1 shadow-sm border border-slate-100">
+            {(['all', 'active', 'inactive'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-tight transition-all ${
+                  statusFilter === s ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
+                }`}
               >
-                Semua
-              </Button>
-              <Button
-                variant={statusFilter === 'active' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('active')}
-              >
-                Aktif
-              </Button>
-              <Button
-                variant={statusFilter === 'inactive' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter('inactive')}
-              >
-                Non-Aktif
-              </Button>
-            </div>
-
-            {/* Role Filter */}
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Semua Role</option>
-              <option value="KARYAWAN">Karyawan</option>
-              <option value="PM">Project Manager</option>
-              <option value="HRD">HRD</option>
-              <option value="CEO">CEO</option>
-              <option value="ADMIN">Admin</option>
-            </select>
+                {s === 'all' ? 'Semua' : s === 'active' ? 'Aktif' : 'Non-Aktif'}
+              </button>
+            ))}
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Users List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Daftar Karyawan ({filteredUsers.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredUsers.length === 0 ? (
-            <div className="text-center py-8">
-              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Tidak ada karyawan yang ditemukan</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredUsers.map((user) => (
-                <Card key={user.id} className="border border-gray-200 hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    {/* User Avatar & Basic Info */}
-                    <div className="flex items-center gap-3 mb-3">
-                      {user.profile?.fotoProfil ? (
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                          <Image
-                            src={user.profile.fotoProfil}
-                            alt={user.profile.name || user.email}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
-                            unoptimized
-                          />
+          {/* Role Filter Custom Select */}
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value as any)}
+            className="h-11 bg-white border border-slate-100 text-sm font-bold text-slate-600 rounded-xl px-4 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer shadow-sm"
+          >
+            <option value="all">Semua Otoritas</option>
+            <option value="KARYAWAN">Staff / Karyawan</option>
+            <option value="PM">Project Manager</option>
+            <option value="HRD">HRD</option>
+            <option value="CEO">CEO</option>
+            <option value="ADMIN">Super Admin</option>
+          </select>
+        </div>
+      </div>
+
+      {/* 3. Modern List Layout */}
+      <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-50 text-slate-400 font-black text-[11px] uppercase tracking-[0.2em]">
+                <th className="px-8 py-6">Informasi Personel</th>
+                <th className="px-8 py-6">Otoritas & Penempatan</th>
+                <th className="px-8 py-6">Kontak & Detail</th>
+                <th className="px-8 py-6 text-right">Manajemen Akun</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-24 text-center">
+                    <User className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">Personel Tidak Ditemukan</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => {
+                  const roleBadge = getRoleBadge(user.role);
+                  return (
+                    <tr key={user.id} className="group hover:bg-slate-50/30 transition-colors">
+                      {/* Avatar & Identitas */}
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-5">
+                          <div className="relative shrink-0">
+                            {user.profile?.fotoProfil ? (
+                              <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-md">
+                                <Image src={user.profile.fotoProfil} alt="profile" fill className="object-cover" unoptimized />
+                              </div>
+                            ) : (
+                              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-xl font-black shadow-lg">
+                                {(user.profile?.name || user.email).charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${user.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-extrabold text-slate-900 text-lg group-hover:text-blue-600 transition-colors truncate">
+                              {user.profile?.name || user.email.split('@')[0]}
+                            </h3>
+                            <p className="text-sm font-medium text-slate-400 truncate">{user.email}</p>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                          <span className="text-lg font-bold text-white">
-                            {(user.profile?.name || user.email).charAt(0).toUpperCase()}
-                          </span>
+                      </td>
+
+                      {/* Role & Divisi */}
+                      <td className="px-8 py-6">
+                        <div className="space-y-2">
+                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${roleBadge.color}`}>
+                            <span>{roleBadge.icon}</span>
+                            {roleBadge.label}
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
+                            <Building className="w-4 h-4 text-slate-300" />
+                            {user.division?.name || 'Lembaga Umum'}
+                          </div>
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">
-                          {user.profile?.name || user.email.split('@')[0]}
-                        </h3>
-                        <p className="text-sm text-gray-600">{user.email}</p>
-                      </div>
-                    </div>
+                      </td>
 
-                    {/* Role & Status Badges */}
-                    <div className="flex gap-2 mb-3">
-                      <Badge className={getRoleBadge(user.role).color}>
-                        {getRoleBadge(user.role).label}
-                      </Badge>
-                      <Badge className={getStatusBadge(user.status).color}>
-                        {getStatusBadge(user.status).label}
-                      </Badge>
-                    </div>
+                      {/* Kontak & Position */}
+                      <td className="px-8 py-6">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-slate-700 text-sm font-bold">
+                            <Briefcase className="w-4 h-4 text-slate-300" />
+                            {user.profile?.position || 'Anggota Tim'}
+                          </div>
+                          {user.profile?.phone && (
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                              <Phone className="w-3.5 h-3.5" />
+                              {user.profile.phone}
+                            </div>
+                          )}
+                        </div>
+                      </td>
 
-                    {/* Additional Info */}
-                    {user.profile?.position && (
-                      <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-                        <Briefcase className="w-3 h-3" />
-                        {user.profile.position}
-                      </p>
-                    )}
-                    
-                    {user.profile?.phone && (
-                      <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-                        <Phone className="w-3 h-3" />
-                        {user.profile.phone}
-                      </p>
-                    )}
+                      {/* Actions */}
+                      <td className="px-8 py-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {canEditUser(user) && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setEditModal({ open: true, user })}
+                              className="h-11 w-11 rounded-xl border-slate-100 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setActionModal({ open: true, user, action: user.status === 'ACTIVE' ? 'deactivate' : 'activate' })}
+                            className={`h-11 w-11 rounded-xl border-slate-100 transition-all ${
+                              user.status === 'ACTIVE' ? "text-amber-500 hover:bg-amber-50" : "text-emerald-500 hover:bg-emerald-50"
+                            }`}
+                          >
+                            {user.status === 'ACTIVE' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                          </Button>
 
-                    {user.division && (
-                      <p className="text-sm text-gray-600 mb-3 flex items-center gap-1">
-                        <Building className="w-3 h-3" />
-                        {user.division.name}
-                      </p>
-                    )}
+                          {canDeleteUser(user) && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setDeleteModal({ open: true, user })}
+                              className="h-11 w-11 rounded-xl border-slate-100 text-rose-500 hover:bg-rose-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2 border-t">
-                      {canEditUser(user) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditModal({ open: true, user })}
-                          className="flex-1"
-                        >
-                          <Edit className="w-3 h-3 mr-1" />
-                          Edit
-                        </Button>
-                      )}
-                      
-                      {user.status === 'ACTIVE' ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setActionModal({ open: true, user, action: 'deactivate' })}
-                          className="text-orange-600 hover:text-orange-700"
-                        >
-                          <UserX className="w-3 h-3 mr-1" />
-                          Nonaktif
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setActionModal({ open: true, user, action: 'activate' })}
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          <UserCheck className="w-3 h-3 mr-1" />
-                          Aktifkan
-                        </Button>
-                      )}
-
-                      {canDeleteUser(user) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setDeleteModal({ open: true, user })}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Modals */}
+      {/* Modals Container */}
       <EditUserModal
         open={editModal.open}
         user={editModal.user}

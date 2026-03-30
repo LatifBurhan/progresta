@@ -152,15 +152,19 @@ export default function FileUploadComponent({
         const result = await uploadProjectFile(file, projectId)
 
         // Update state with success
-        setFiles(prev => prev.map(f => 
-          f.id === fileId 
-            ? { ...f, status: 'success', url: result.publicUrl }
-            : f
-        ))
-
-        // Notify parent with updated URLs
-        const updatedUrls = [...files.filter(f => f.status === 'success').map(f => f.url), result.publicUrl]
-        onChange(updatedUrls)
+        setFiles(prev => {
+          const updated = prev.map(f => 
+            f.id === fileId 
+              ? { ...f, status: 'success' as const, url: result.publicUrl }
+              : f
+          )
+          
+          // Notify parent with ALL successful file URLs
+          const allSuccessUrls = updated.filter(f => f.status === 'success').map(f => f.url)
+          onChange(allSuccessUrls)
+          
+          return updated
+        })
 
       } catch (error: any) {
         // Update state with error

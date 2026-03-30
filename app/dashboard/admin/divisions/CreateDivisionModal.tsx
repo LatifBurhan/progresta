@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, Layers, Palette, FileText, Clock, AlertCircle } from 'lucide-react'
 
 interface Division {
   id: string
@@ -101,125 +101,157 @@ export default function CreateDivisionModal({
   ]
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-blue-600" />
-              Tambah Divisi Baru
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={handleClose} />
+      
+      {/* Modal Container */}
+      <div className="relative bg-white w-full sm:max-w-[98vw] h-[98vh] sm:h-[98vh] sm:max-h-[98vh] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-10 duration-500">
+        
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-100 ring-4 ring-blue-50">
+              <Plus className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Tambah Divisi Baru</h2>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Manajemen Struktur Organisasi</p>
+            </div>
           </div>
+          <button onClick={handleClose} className="p-2.5 rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
 
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar bg-[#FDFDFD]">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-8 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 animate-in shake duration-300">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-bold">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name */}
-            <div>
-              <Label htmlFor="name">Nama Divisi *</Label>
-              <Input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Contoh: IT Development, Marketing, HR"
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <Label htmlFor="description">Deskripsi</Label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Deskripsi singkat tentang divisi ini..."
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                rows={3}
-              />
-            </div>
-
-            {/* Color */}
-            <div>
-              <Label>Warna Divisi</Label>
-              <div className="mt-2 grid grid-cols-5 gap-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, color: color.value }))}
-                    className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                      formData.color === color.value 
-                        ? 'border-gray-800 scale-110' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Warna akan digunakan untuk identifikasi visual divisi
-              </p>
-            </div>
-
-            {/* Preview */}
-            <div className="border rounded-lg p-3 bg-gray-50">
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Preview:</Label>
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: formData.color }}
-                >
-                  {formData.name.charAt(0).toUpperCase() || 'D'}
+          <form id="create-division-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            
+            {/* LEFT COLUMN: Main Info */}
+            <div className="lg:col-span-7 space-y-10">
+              <section className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
+                  <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Identitas Divisi</h4>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {formData.name || 'Nama Divisi'}
-                  </p>
-                  {formData.description && (
-                    <p className="text-sm text-gray-600 line-clamp-1">
-                      {formData.description}
-                    </p>
-                  )}
+
+                <div className="space-y-5">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Nama Divisi *</Label>
+                    <div className="relative group">
+                      <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                      <Input
+                        className="pl-11 h-14 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm"
+                        placeholder="Contoh: IT Development"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Deskripsi Divisi</Label>
+                    <div className="relative group">
+                      <FileText className="absolute left-4 top-4 w-4 h-4 text-slate-300 group-focus-within:text-slate-500 transition-colors" />
+                      <textarea
+                        className="w-full pl-11 pr-4 py-4 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-100 transition-all text-sm font-medium shadow-sm min-h-[140px] outline-none"
+                        placeholder="Detail tanggung jawab divisi..."
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </section>
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
+            {/* RIGHT COLUMN: Style Settings */}
+            <div className="lg:col-span-5 space-y-10">
+              <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Palette className="w-4 h-4 text-amber-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identitas Visual</span>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Warna Divisi</Label>
+                  <div className="grid grid-cols-5 gap-3">
+                    {colorOptions.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, color: color.value }))}
+                        className={`w-full aspect-square rounded-xl border-4 transition-all hover:scale-105 active:scale-95 ${
+                          formData.color === color.value 
+                            ? 'border-slate-900 shadow-lg' 
+                            : 'border-white shadow-sm hover:border-slate-100'
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase mb-3 block">Preview Label</Label>
+                  <div className="p-6 rounded-[2rem] border-2 border-dashed border-slate-200 flex items-center justify-center">
+                    <div 
+                      className="flex items-center gap-3 px-6 py-3 rounded-2xl shadow-xl animate-in zoom-in duration-300"
+                      style={{ backgroundColor: formData.color }}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-black text-lg">
+                        {formData.name.charAt(0).toUpperCase() || 'D'}
+                      </div>
+                      <span className="text-white font-black uppercase tracking-wider text-sm">
+                        {formData.name || 'Nama Divisi'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </form>
+        </div>
+
+        {/* Action Footer */}
+        <div className="px-8 py-8 bg-white border-t border-slate-50 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto">
+            <div className="flex gap-4 w-full">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={handleClose}
-                className="flex-1"
                 disabled={loading}
+                className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-slate-50 active:scale-95"
               >
-                Batal
+                Batalkan
               </Button>
               <Button
                 type="submit"
-                className="flex-1"
+                form="create-division-form"
                 disabled={loading}
+                className="flex-[2] h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 transition-all hover:-translate-y-1 active:scale-[0.98] disabled:opacity-50"
               >
-                {loading ? 'Membuat...' : 'Buat Divisi'}
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Clock className="w-4 h-4 animate-spin" /> <span>Membuat...</span>
+                  </div>
+                ) : (
+                  'Buat Divisi Baru'
+                )}
               </Button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
