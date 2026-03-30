@@ -18,8 +18,8 @@ export default async function CreateUserPage() {
     redirect('/dashboard')
   }
 
-  // Get all divisions using Supabase client
-  let divisions = []
+  // Get all divisions with department info using Supabase client
+  let divisions: Array<{ id: string; name: string; color: string | null; department_id: string }> = []
   
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -28,7 +28,8 @@ export default async function CreateUserPage() {
     
     const { data, error } = await supabase
       .from('divisions')
-      .select('id, name, color')
+      .select('id, name, color, department_id')
+      .eq('isActive', true)
       .order('name', { ascending: true })
     
     if (error) {

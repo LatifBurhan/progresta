@@ -10,20 +10,30 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // Get user name
+  // Get user name from Supabase Auth user_metadata
   let userName = session.email
   try {
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('name')
-      .eq('id', session.userId)
-      .single()
+    // First try to get from Auth user metadata
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(session.userId)
     
-    if (user) {
-      userName = user.name || session.email
+    if (!authError && authUser?.user?.user_metadata?.name) {
+      userName = authUser.user.user_metadata.name
+    } else {
+      // Fallback: try to get from users table (for backward compatibility)
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('id', session.userId)
+        .single()
+      
+      if (user) {
+        // User exists in database, use email as fallback
+        userName = session.email.split('@')[0]
+      }
     }
   } catch (error) {
     console.error('Error fetching user name:', error)
+    userName = session.email.split('@')[0]
   }
 
   return (

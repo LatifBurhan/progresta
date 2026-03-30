@@ -32,19 +32,71 @@ export async function GET(request: NextRequest) {
       .eq('id', session.userId)
       .single();
 
+    let userRole: string;
+
     if (currentUserError || !currentUser) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 }
-      );
+      // Fallback to Supabase Auth when user not found in database
+      console.log('User not found in database, attempting fallback to Supabase Auth...');
+      
+      try {
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(
+          session.userId
+        );
+
+        if (authError || !authUser || !authUser.user) {
+          console.error('User not found in Auth:', authError);
+          return NextResponse.json(
+            { success: false, error: "User not found in database or authentication system" },
+            { status: 404 }
+          );
+        }
+
+        // Try to get role from user_metadata, if not available, default to ADMIN
+        userRole = authUser.user.user_metadata?.role || 'ADMIN';
+        console.log('Using role from Supabase Auth:', userRole);
+
+        // Auto-create user in database for future requests
+        try {
+          const { error: insertError } = await supabaseAdmin
+            .from('users')
+            .insert({
+              id: authUser.user.id,
+              email: authUser.user.email,
+              role: userRole,
+              status: 'ACTIVE',
+              divisionId: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+
+          if (insertError) {
+            console.error('Failed to auto-create user in database:', insertError);
+            // Continue anyway, user can still access via Auth
+          } else {
+            console.log('Auto-created user in database:', authUser.user.id);
+          }
+        } catch (insertErr) {
+          console.error('Error auto-creating user:', insertErr);
+          // Continue anyway
+        }
+      } catch (fallbackError) {
+        console.error('Fallback to Auth failed:', fallbackError);
+        return NextResponse.json(
+          { success: false, error: "User not found" },
+          { status: 404 }
+        );
+      }
+    } else {
+      // User found in database, use existing flow
+      userRole = currentUser.role;
     }
 
     // Check if user is admin
-    const isAdmin = ['ADMIN', 'HRD', 'CEO'].includes(currentUser.role);
+    const isAdmin = ['ADMIN', 'HRD', 'CEO'].includes(userRole);
 
     if (!isAdmin) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized - Admin access required. Your role: " + currentUser.role },
+        { success: false, error: "Unauthorized - Admin access required. Your role: " + userRole },
         { status: 403 }
       );
     }

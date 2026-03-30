@@ -22,10 +22,24 @@ export default async function DivisionManagePage() {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, supabaseKey)
     
-    // Get all divisions (both active and inactive)
+    // Get all divisions (both active and inactive) with department data
     const { data: divisions, error } = await supabase
       .from('divisions')
-      .select('id, name, description, color, createdAt, updatedAt, isActive')
+      .select(`
+        id, 
+        name, 
+        description, 
+        color, 
+        createdAt, 
+        updatedAt, 
+        isActive,
+        department_id,
+        departments:department_id (
+          id,
+          name,
+          color
+        )
+      `)
       .order('name', { ascending: true })
 
     if (error) {
@@ -56,6 +70,8 @@ export default async function DivisionManagePage() {
           isActive: division.isActive,
           userCount: userCount || 0,
           projectCount: projectCount || 0,
+          department_id: division.department_id,
+          departments: division.departments,
         }
       })
 

@@ -44,6 +44,7 @@ export default function CreateDivisionModal({
   })
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [error, setError] = useState('')
 
   // Fetch departments when modal opens
@@ -54,14 +55,24 @@ export default function CreateDivisionModal({
   }, [open])
 
   const fetchDepartments = async () => {
+    setLoadingDepartments(true)
     try {
       const response = await fetch('/api/admin/departments')
       const result = await response.json()
-      if (result.success) {
+      
+      console.log('Departments API response:', result) // Debug log
+      
+      if (result.success && result.departments) {
         setDepartments(result.departments)
+      } else {
+        console.error('Failed to fetch departments:', result.message)
+        setError('Gagal memuat data departemen')
       }
     } catch (error) {
       console.error('Failed to fetch departments:', error)
+      setError('Gagal memuat data departemen')
+    } finally {
+      setLoadingDepartments(false)
     }
   }
 

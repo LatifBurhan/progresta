@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Plus, Calendar, User, Target, FileText, AlertCircle, Briefcase, Flag, Hash, Layers, Clock, Sparkles, CheckCircle2, Paperclip } from "lucide-react";
+import { X, Plus, Calendar, User, Target, FileText, AlertCircle, Briefcase, Flag, Hash, Layers, Clock, Sparkles, CheckCircle2, Paperclip, Building2 } from "lucide-react";
 import FileUploadComponent from "@/components/projects/FileUploadComponent";
+
+interface Department {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface Division {
   id: string;
   name: string;
   color: string;
+  department_id: string;
 }
 
 interface CreateProjectModalProps {
@@ -21,10 +28,12 @@ interface CreateProjectModalProps {
 }
 
 export default function CreateProjectModal({ open, divisions, onClose, onSuccess }: CreateProjectModalProps) {
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     tujuan: "",
     description: "",
+    departmentIds: [] as string[],
     divisionIds: [] as string[],
     pic: "",
     prioritas: "",
@@ -37,9 +46,32 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Fetch departments on mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await fetch("/api/admin/departments");
+        const result = await response.json();
+        if (result.success) {
+          setDepartments(result.departments);
+        }
+      } catch (err) {
+        console.error("Failed to fetch departments:", err);
+      }
+    };
+    if (open) {
+      fetchDepartments();
+    }
+  }, [open]);
+
   const tempProjectId = `temp-${Date.now()}`;
 
   if (!open) return null;
+
+  // Filter divisions based on selected departments
+  const filteredDivisions = formData.departmentIds.length > 0
+    ? divisions.filter(d => formData.departmentIds.includes(d.department_id))
+    : [];
 
   const calculateDuration = () => {
     if (!formData.tanggalMulai || !formData.tanggalSelesai) return null;
@@ -47,6 +79,26 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
     const end = new Date(formData.tanggalSelesai);
     if (end <= start) return null;
     return Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const handleDepartmentToggle = (departmentId: string) => {
+    setFormData((prev) => {
+      const newDepartmentIds = prev.departmentIds.includes(departmentId)
+        ? prev.departmentIds.filter((id) => id !== departmentId)
+        : [...prev.departmentIds, departmentId];
+      
+      // Remove divisions that are not in the selected departments
+      const validDivisionIds = prev.divisionIds.filter(divId => {
+        const division = divisions.find(d => d.id === divId);
+        return division && newDepartmentIds.includes(division.department_id);
+      });
+
+      return {
+        ...prev,
+        departmentIds: newDepartmentIds,
+        divisionIds: validDivisionIds,
+      };
+    });
   };
 
   const handleDivisionToggle = (divisionId: string) => {
@@ -59,6 +111,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return setError("Nama project wajib diisi");
+    if (!formData.departmentIds.length) return setError("Minimal satu departemen wajib dipilih");
     if (!formData.divisionIds.length) return setError("Minimal satu divisi wajib dipilih");
 
     setLoading(true);
@@ -92,7 +145,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
   };
 
   const handleClose = () => {
-    setFormData({ name: "", tujuan: "", description: "", divisionIds: [], pic: "", prioritas: "", tanggalMulai: "", tanggalSelesai: "", lampiranFiles: [] });
+    setFormData({ name: "", tujuan: "", description: "", departmentIds: [], divisionIds: [], pic: "", prioritas: "", tanggalMulai: "", tanggalSelesai: "", lampiranFiles: [] });
     setUploadedFiles([]);
     setUploadError("");
     setError("");
@@ -100,7 +153,8 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
   };
 
   const duration = calculateDuration();
-  const selectedDivisions = divisions.filter((d: Division) => formData.divisionIds.includes(d.id));
+  const selectedDepartments = departments.filter((d: Department) => formData.departmentIds.includes(d.id));
+  const selectedDivisions = filteredDivisions.filter((d: Division) => formData.divisionIds.includes(d.id));
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -187,7 +241,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
               </section>
 
               {/* Group 2: Preview (App-like Card) */}
-              {formData.name && selectedDivisions.length > 0 && (
+              {formData.name && selectedDepartments.length > 0 && selectedDivisions.length > 0 && (
                 <section className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl animate-in fade-in zoom-in">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 blur-[80px]" />
                   <div className="relative z-10 space-y-4">
@@ -199,12 +253,21 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                       <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl font-black">{formData.name.charAt(0).toUpperCase()}</div>
                       <div className="flex-1">
                         <h4 className="text-xl font-black tracking-tight leading-none mb-2">{formData.name}</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedDivisions.map((d: Division) => (
-                            <span key={d.id} className="text-[9px] font-black px-2 py-0.5 rounded bg-white/10 border border-white/10 uppercase tracking-tighter">
-                              {d.name}
-                            </span>
-                          ))}
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            {selectedDepartments.map((dept: Department) => (
+                              <span key={dept.id} className="text-[9px] font-black px-2 py-0.5 rounded bg-white/20 border border-white/20 uppercase tracking-tighter" style={{ backgroundColor: dept.color + '40' }}>
+                                {dept.name}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {selectedDivisions.map((d: Division) => (
+                              <span key={d.id} className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 border border-white/10 uppercase tracking-tighter">
+                                {d.name}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -267,28 +330,61 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                 </div>
               </section>
 
-              {/* Group 4: Divisi Terlibat */}
+              {/* Group 4: Departemen & Divisi Terlibat */}
               <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-6">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-blue-500" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Distribusi Divisi *</span>
+                  <Building2 className="w-4 h-4 text-purple-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Departemen Terlibat *</span>
                 </div>
 
-                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto no-scrollbar">
-                  {divisions.map((division) => (
+                <div className="flex flex-wrap gap-2">
+                  {departments.map((department) => (
                     <button
-                      key={division.id}
+                      key={department.id}
                       type="button"
-                      onClick={() => handleDivisionToggle(division.id)}
+                      onClick={() => handleDepartmentToggle(department.id)}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all active:scale-95 ${
-                        formData.divisionIds.includes(division.id) ? "border-slate-900 bg-slate-900 text-white shadow-xl" : "border-slate-50 bg-slate-50 text-slate-500 hover:border-slate-200"
+                        formData.departmentIds.includes(department.id) ? "border-slate-900 bg-slate-900 text-white shadow-xl" : "border-slate-50 bg-slate-50 text-slate-500 hover:border-slate-200"
                       }`}
                     >
-                      <Hash className={`w-3 h-3 ${formData.divisionIds.includes(division.id) ? "text-blue-400" : "text-slate-300"}`} />
-                      <span className="text-[11px] font-black uppercase tracking-tight">{division.name}</span>
+                      <Building2 className={`w-3 h-3 ${formData.departmentIds.includes(department.id) ? "text-purple-400" : "text-slate-300"}`} />
+                      <span className="text-[11px] font-black uppercase tracking-tight">{department.name}</span>
                     </button>
                   ))}
                 </div>
+
+                {formData.departmentIds.length > 0 && (
+                  <>
+                    <div className="border-t border-slate-100 pt-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Layers className="w-4 h-4 text-blue-500" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Divisi dari Departemen Terpilih *</span>
+                      </div>
+
+                      {filteredDivisions.length === 0 ? (
+                        <div className="text-center py-4 text-slate-400 text-xs">
+                          Tidak ada divisi di departemen yang dipilih
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto no-scrollbar">
+                          {filteredDivisions.map((division) => (
+                            <button
+                              key={division.id}
+                              type="button"
+                              onClick={() => handleDivisionToggle(division.id)}
+                              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all active:scale-95 ${
+                                formData.divisionIds.includes(division.id) ? "border-blue-600 bg-blue-600 text-white shadow-xl" : "border-slate-50 bg-slate-50 text-slate-500 hover:border-slate-200"
+                              }`}
+                            >
+                              <Hash className={`w-3 h-3 ${formData.divisionIds.includes(division.id) ? "text-blue-200" : "text-slate-300"}`} />
+                              <span className="text-[11px] font-black uppercase tracking-tight">{division.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </section>
 
               {/* Group 5: Asset / Lampiran */}

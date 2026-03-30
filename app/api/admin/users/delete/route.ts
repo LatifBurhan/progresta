@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export async function DELETE(request: NextRequest) {
@@ -25,12 +24,21 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId }
-    })
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        success: false,
+        message: 'Database configuration error'
+      }, { status: 500 })
+    }
 
-    if (!existingUser) {
+    // Check if user exists in database
+    const { data: existingUser, error: fetchError } = await supabaseAdmin
+      .from('users')
+      .select('id, email, role')
+      .eq('id', userId)
+      .single()
+
+    if (fetchError || !existingUser) {
       return NextResponse.json({ 
         success: false, 
         message: 'User tidak ditemukan' 
@@ -45,44 +53,49 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Delete user from database first
-    await prisma.user.delete({
-      where: { id: userId }
-    })
-
-    // Delete user from Supabase Auth if admin client available
-    if (supabaseAdmin) {
-      try {
-        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-        if (authError) {
-          console.error('Supabase Auth delete error:', authError)
-          // Continue even if auth deletion fails
-        }
-      } catch (error: any) {
-        console.error('Supabase Auth delete failed:', error)
-        // Continue even if auth deletion fails
+    // Delete user from Supabase Auth first
+    try {
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+      if (authError) {
+        console.error('Supabase Auth delete error:', authError)
+        return NextResponse.json({
+          success: false,
+          message: 'Gagal menghapus user dari sistem autentikasi: ' + authError.message
+        }, { status: 500 })
       }
+    } catch (error: any) {
+      console.error('Supabase Auth delete failed:', error)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal menghapus user dari sistem autentikasi'
+      }, { status: 500 })
+    }
+
+    // Delete user from database
+    const { error: dbError } = await supabaseAdmin
+      .from('users')
+      .delete()
+      .eq('id', userId)
+
+    if (dbError) {
+      console.error('Database delete error:', dbError)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal menghapus user dari database: ' + dbError.message
+      }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
-      message: 'User berhasil dihapus'
+      message: 'User berhasil dihapus secara permanen'
     })
 
   } catch (error: any) {
     console.error('Delete user error:', error)
     
-    // Handle specific Prisma errors
-    if (error.code === 'P2025') {
-      return NextResponse.json({
-        success: false,
-        message: 'User tidak ditemukan'
-      }, { status: 404 })
-    }
-
     return NextResponse.json({
       success: false,
-      message: 'Terjadi kesalahan internal server'
+      message: 'Terjadi kesalahan internal server: ' + error.message
     }, { status: 500 })
   }
 }

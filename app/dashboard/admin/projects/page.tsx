@@ -43,10 +43,10 @@ export default async function ProjectManagePage() {
         }));
       }
 
-      // Fetch all divisions
+      // Fetch all divisions with department_id
       const { data: divisionsResult, error: divisionsError } = await supabaseAdmin
         .from("divisions")
-        .select("*")
+        .select("id, name, color, department_id, isActive")
         .order("name");
 
       if (!divisionsError) {

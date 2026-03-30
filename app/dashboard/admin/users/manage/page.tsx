@@ -63,10 +63,11 @@ export default async function UserManagePage() {
       }))
     }
 
-    // Get all divisions
+    // Get all divisions with department info
     const { data: divisionsData, error: divisionsError } = await supabase
       .from('divisions')
-      .select('id, name, color')
+      .select('id, name, color, department_id')
+      .eq('isActive', true)
       .order('name', { ascending: true })
 
     if (divisionsError) {

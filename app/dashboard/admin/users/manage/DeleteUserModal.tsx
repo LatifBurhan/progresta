@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { X, Trash2, AlertTriangle } from 'lucide-react'
+import { X, Trash2, AlertTriangle, ShieldAlert } from 'lucide-react'
 
 interface UserData {
   id: string
@@ -62,9 +62,7 @@ export default function DeleteUserModal({
 
       if (result.success) {
         onSuccess(user.id)
-        onClose()
-        alert('User berhasil dihapus!')
-        setConfirmText('')
+        handleClose()
       } else {
         setError(result.message || 'Gagal menghapus user')
       }
@@ -82,85 +80,148 @@ export default function DeleteUserModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-red-900 flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-red-600" />
-              Hapus User
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={handleClose} />
 
-          {/* Warning */}
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="font-medium text-red-900 mb-2">Peringatan!</h4>
-                <p className="text-sm text-red-700 mb-3">
-                  Anda akan menghapus user berikut secara permanen:
-                </p>
-                <div className="bg-white p-3 rounded border">
-                  <p className="font-medium text-gray-900">
-                    {user.profile?.name || user.email.split('@')[0]}
-                  </p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
-                  <p className="text-sm text-gray-600">Role: {user.role}</p>
+      {/* Modal */}
+      <div className="relative bg-white rounded-[2rem] max-w-lg w-full shadow-2xl animate-in zoom-in slide-in-from-bottom-10 duration-500">
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white rounded-t-[2rem]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-100 ring-4 ring-rose-50">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold tracking-tight text-slate-900">Hapus User Permanen</h2>
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">Tindakan Tidak Dapat Dibatalkan</p>
+            </div>
+          </div>
+          <button onClick={handleClose} className="p-2.5 rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 transition-all">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-8 space-y-6">
+          {/* Critical Warning */}
+          <div className="p-6 bg-rose-50 border-2 border-rose-200 rounded-2xl">
+            <div className="flex items-start gap-4">
+              <div className="shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-rose-600 flex items-center justify-center">
+                  <ShieldAlert className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-sm text-red-700 mt-3">
-                  <strong>Tindakan ini tidak dapat dibatalkan!</strong> Semua data user termasuk profil akan dihapus, namun laporan yang dibuat user akan tetap ada.
+              </div>
+              <div className="flex-1 space-y-3">
+                <h4 className="font-black text-rose-900 text-lg uppercase tracking-tight">Peringatan Kritis!</h4>
+                <p className="text-sm font-semibold text-rose-700 leading-relaxed">
+                  Anda akan menghapus user berikut secara <span className="font-black">PERMANEN</span> dari sistem:
+                </p>
+                
+                {/* User Info Card */}
+                <div className="bg-white p-4 rounded-xl border border-rose-200 shadow-sm space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-rose-700 flex items-center justify-center text-white text-lg font-black">
+                      {(user.profile?.name || user.email).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-slate-900 truncate">
+                        {user.profile?.name || user.email.split('@')[0]}
+                      </p>
+                      <p className="text-xs font-medium text-slate-500 truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    <span className="text-[10px] font-black px-2 py-1 rounded bg-slate-100 text-slate-600 uppercase tracking-wider">
+                      {user.role}
+                    </span>
+                    {user.division && (
+                      <span className="text-[10px] font-bold px-2 py-1 rounded bg-blue-50 text-blue-600 uppercase tracking-tight">
+                        {user.division.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                    <p className="text-xs font-bold text-rose-700">
+                      User akan dihapus dari sistem autentikasi dan database
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                    <p className="text-xs font-bold text-rose-700">
+                      Profil, akses, dan data personal akan hilang permanen
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                    <p className="text-xs font-bold text-rose-700">
+                      Laporan yang dibuat user akan tetap ada (tidak terhapus)
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-sm font-black text-rose-900 pt-2 uppercase tracking-tight">
+                  ⚠️ Tindakan ini tidak dapat dibatalkan!
                 </p>
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-rose-600 animate-in shake duration-300">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-bold">{error}</p>
             </div>
           )}
 
           {/* Confirmation Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ketik <span className="font-bold text-red-600">"HAPUS"</span> untuk mengkonfirmasi:
+          <div className="space-y-3">
+            <label className="block text-sm font-black text-slate-700 uppercase tracking-tight">
+              Ketik <span className="text-rose-600 font-black text-base">"HAPUS"</span> untuk mengkonfirmasi:
             </label>
             <input
               type="text"
               value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition-all text-base font-bold text-center uppercase tracking-widest"
               placeholder="Ketik HAPUS"
+              disabled={loading}
             />
           </div>
+        </div>
 
-          {/* Actions */}
+        {/* Footer Actions */}
+        <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 rounded-b-[2rem]">
           <div className="flex gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
-              className="flex-1"
+              className="flex-1 h-12 rounded-xl font-bold text-sm uppercase tracking-widest border-slate-200"
               disabled={loading}
             >
-              Batal
+              Batalkan
             </Button>
             <Button
               onClick={handleDelete}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              className="flex-1 h-12 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm uppercase tracking-widest shadow-lg shadow-rose-100 transition-all disabled:opacity-50"
               disabled={loading || confirmText !== 'HAPUS'}
             >
-              {loading ? 'Menghapus...' : 'Hapus User'}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Menghapus...</span>
+                </div>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Hapus Permanen
+                </>
+              )}
             </Button>
           </div>
         </div>

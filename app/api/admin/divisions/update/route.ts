@@ -15,12 +15,19 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { divisionId, name, description, color } = await request.json()
+    const { divisionId, name, description, color, departmentId } = await request.json()
 
     if (!divisionId || !name || !name.trim()) {
       return NextResponse.json({ 
         success: false, 
         message: 'Division ID dan nama divisi wajib diisi' 
+      }, { status: 400 })
+    }
+
+    if (!departmentId) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Departemen wajib dipilih' 
       }, { status: 400 })
     }
 
@@ -64,7 +71,9 @@ export async function PUT(request: NextRequest) {
       .update({
         name: name.trim(),
         description: description?.trim() || null,
-        color: color || '#3B82F6'
+        color: color || '#3B82F6',
+        department_id: departmentId,
+        updatedAt: new Date().toISOString()
       })
       .eq('id', divisionId)
       .select()

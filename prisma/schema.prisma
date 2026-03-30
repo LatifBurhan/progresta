@@ -14,11 +14,12 @@ model User {
   id            String    @id @db.Uuid
   email         String    @unique
   // name field tidak ada di database, jadi dihapus
-  role          String    @default("Karyawan") // Sesuai constraint database
-  divisionId    String?   @map("division_id") @db.Uuid
+  role          String    @default("KARYAWAN") // Sesuai constraint database (uppercase)
+  divisionId    String?   @map("divisionId") @db.Uuid // Map ke divisionId (camelCase di database)
   statusPending Boolean   @default(true) @map("status_pending")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  status        String    @default("ACTIVE") // Add status field
+  createdAt     DateTime  @default(now()) @map("createdAt")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updatedAt")
   
   // Relations
   division      Division? @relation(fields: [divisionId], references: [id])

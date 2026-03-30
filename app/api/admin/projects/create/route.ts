@@ -11,12 +11,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, tujuan, description, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, lampiranFiles } = await request.json();
+    const { name, tujuan, description, departmentIds, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, lampiranFiles } = await request.json();
 
     console.log("Received create project request:", {
       name,
       tujuan,
       description,
+      departmentIds,
       divisionIds,
       pic,
       prioritas,
@@ -31,6 +32,16 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message: "Nama project wajib diisi",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!departmentIds || !Array.isArray(departmentIds) || departmentIds.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Minimal satu departemen wajib dipilih",
         },
         { status: 400 },
       );
@@ -164,6 +175,38 @@ export async function POST(request: NextRequest) {
         }, { status: 500 })
       }
 
+      // Insert project_department_divisions for multi-department support
+      // Get department_id for each division
+      const { data: divisionsData, error: divisionsFetchError } = await supabaseAdmin
+        .from('divisions')
+        .select('id, department_id')
+        .in('id', divisionIds)
+
+      if (divisionsFetchError || !divisionsData) {
+        console.error('Failed to fetch divisions data:', divisionsFetchError)
+        await supabaseAdmin.from('projects').delete().eq('id', newProject.id)
+        return NextResponse.json({
+          success: false,
+          message: 'Gagal mengambil data divisi'
+        }, { status: 500 })
+      }
+
+      // Create project_department_divisions entries
+      const projectDepartmentDivisions = divisionsData.map(division => ({
+        project_id: newProject.id,
+        department_id: division.department_id,
+        division_id: division.id
+      }))
+
+      const { error: pddError } = await supabaseAdmin
+        .from('project_department_divisions')
+        .insert(projectDepartmentDivisions)
+
+      if (pddError) {
+        console.error('Project department divisions creation failed:', pddError)
+        // Continue anyway as this is supplementary data
+      }
+
       // Get the complete project with divisions
       const { data: completeProject, error: fetchError } = await supabaseAdmin
         .from('projects')
@@ -199,7 +242,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Project berhasil dibuat dengan ${divisionIds.length} divisi!`,
+        message: `Project berhasil dibuat dengan ${departmentIds.length} departemen dan ${divisionIds.length} divisi!`,
         project: transformedProject
       })
     } catch (dbError: any) {

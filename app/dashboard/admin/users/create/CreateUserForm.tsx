@@ -1,24 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { UserPlus, Eye, EyeOff } from 'lucide-react'
+import { UserPlus, Eye, EyeOff, Building2, Layers } from 'lucide-react'
+
+interface Department {
+  id: string
+  name: string
+  color: string
+}
 
 interface Division {
   id: string
   name: string
   color: string | null
+  department_id: string
 }
 
 interface CreateUserFormProps {
   divisions: Division[]
 }
 
-export default function CreateUserForm({ divisions }: CreateUserFormProps) {
+export default function CreateUserForm({ divisions: allDivisions }: CreateUserFormProps) {
   const router = useRouter()
   const [formData, setFormData] = useState({
     email: '',
@@ -27,17 +34,56 @@ export default function CreateUserForm({ divisions }: CreateUserFormProps) {
     phone: '',
     position: '',
     role: 'KARYAWAN',
+    departmentId: '',
     divisionId: ''
   })
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [filteredDivisions, setFilteredDivisions] = useState<Division[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  // Fetch departments on mount
+  useEffect(() => {
+    fetchDepartments()
+  }, [])
+
+  // Filter divisions when department changes
+  useEffect(() => {
+    if (formData.departmentId) {
+      const filtered = allDivisions.filter(div => div.department_id === formData.departmentId)
+      setFilteredDivisions(filtered)
+      // Reset division selection if current division is not in filtered list
+      if (formData.divisionId && !filtered.find(d => d.id === formData.divisionId)) {
+        setFormData(prev => ({ ...prev, divisionId: '' }))
+      }
+    } else {
+      setFilteredDivisions([])
+      setFormData(prev => ({ ...prev, divisionId: '' }))
+    }
+  }, [formData.departmentId, allDivisions])
+
+  const fetchDepartments = async () => {
+    setLoadingDepartments(true)
+    try {
+      const response = await fetch('/api/admin/departments')
+      const result = await response.json()
+      if (result.success && result.departments) {
+        setDepartments(result.departments)
+      }
+    } catch (error) {
+      console.error('Failed to fetch departments:', error)
+    } finally {
+      setLoadingDepartments(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.email || !formData.password || !formData.name || !formData.divisionId) {
+    if (!formData.email || !formData.password || !formData.name || !formData.departmentId || !formData.divisionId) {
       setError('Semua field wajib harus diisi')
       return
     }
@@ -55,7 +101,15 @@ export default function CreateUserForm({ divisions }: CreateUserFormProps) {
       const response = await fetch('/api/admin/users/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          phone: formData.phone,
+          position: formData.position,
+          role: formData.role,
+          divisionId: formData.divisionId
+        })
       })
 
       const result = await response.json()
@@ -70,6 +124,7 @@ export default function CreateUserForm({ divisions }: CreateUserFormProps) {
           phone: '',
           position: '',
           role: 'KARYAWAN',
+          departmentId: '',
           divisionId: ''
         })
         // Redirect after 1.5 seconds
@@ -227,23 +282,57 @@ export default function CreateUserForm({ divisions }: CreateUserFormProps) {
             </div>
           </div>
 
-          {/* Division Selection */}
-          <div>
-            <Label htmlFor="division">Divisi *</Label>
-            <select
-              id="division"
-              value={formData.divisionId}
-              onChange={(e) => setFormData(prev => ({ ...prev, divisionId: e.target.value }))}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="">Pilih Divisi</option>
-              {divisions.map((division) => (
-                <option key={division.id} value={division.id}>
-                  {division.name}
+          {/* Department & Division Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Department Selection */}
+            <div>
+              <Label htmlFor="department" className="flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Departemen *
+              </Label>
+              <select
+                id="department"
+                value={formData.departmentId}
+                onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Pilih Departemen</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Division Selection */}
+            <div>
+              <Label htmlFor="division" className="flex items-center gap-2">
+                <Layers className="w-4 h-4" />
+                Divisi *
+              </Label>
+              <select
+                id="division"
+                value={formData.divisionId}
+                onChange={(e) => setFormData(prev => ({ ...prev, divisionId: e.target.value }))}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                required
+                disabled={!formData.departmentId}
+              >
+                <option value="">
+                  {formData.departmentId ? 'Pilih Divisi' : 'Pilih Departemen Dulu'}
                 </option>
-              ))}
-            </select>
+                {filteredDivisions.map((division) => (
+                  <option key={division.id} value={division.id}>
+                    {division.name}
+                  </option>
+                ))}
+              </select>
+              {!formData.departmentId && (
+                <p className="text-xs text-gray-500 mt-1">Pilih departemen terlebih dahulu</p>
+              )}
+            </div>
           </div>
 
           {/* Submit Button */}

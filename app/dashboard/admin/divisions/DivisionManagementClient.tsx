@@ -15,11 +15,19 @@ import DeleteDivisionModal from './DeleteDivisionModal'
 interface Division {
   id: string
   name: string
-  description?: string
-  color?: string
+  description: string | null
+  color: string | null
+  createdAt: string
+  updatedAt: string
   isActive: boolean
   userCount: number
   projectCount: number
+  department_id?: string
+  departments?: {
+    id: string
+    name: string
+    color: string
+  }
 }
 
 interface DivisionManagementClientProps {
@@ -160,13 +168,23 @@ export default function DivisionManagementClient({ divisions: initialDivisions, 
                           <h3 className="font-extrabold text-slate-900 text-lg md:text-xl group-hover:text-blue-600 transition-colors">
                             {division.name}
                           </h3>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {division.departments && (
+                              <span 
+                                className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded text-white"
+                                style={{ backgroundColor: division.departments.color || '#3B82F6' }}
+                              >
+                                {division.departments.name}
+                              </span>
+                            )}
                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
                               division.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
                             }`}>
-                              {division.isActive ? 'Operational' : 'Disabled'}
+                              {division.isActive ? 'Active' : 'Disabled'}
                             </span>
-                            <p className="text-sm text-slate-400 font-medium line-clamp-1">{division.description || 'No description provided'}</p>
+                            {division.description && (
+                              <p className="text-sm text-slate-400 font-medium line-clamp-1">{division.description}</p>
+                            )}
                           </div>
                         </div>
                       </div>

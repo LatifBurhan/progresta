@@ -98,13 +98,14 @@ export async function PUT(
 
     const projectId = params.id;
 
-    const { name, tujuan, description, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, lampiranFiles, status } = await request.json();
+    const { name, tujuan, description, departmentIds, divisionIds, pic, prioritas, tanggalMulai, tanggalSelesai, lampiranFiles, status } = await request.json();
 
     console.log("Received update project request:", {
       projectId,
       name,
       tujuan,
       description,
+      departmentIds,
       divisionIds,
       pic,
       prioritas,
@@ -245,8 +246,10 @@ export async function PUT(
       }
 
       if (divisionIds && divisionIds.length > 0) {
+        // Delete old project_divisions
         await supabaseAdmin.from("project_divisions").delete().eq("project_id", projectId);
 
+        // Insert new project_divisions
         const projectDivisions = divisionIds.map((divisionId: string) => ({
           project_id: projectId,
           division_id: divisionId,
@@ -256,6 +259,34 @@ export async function PUT(
 
         if (divisionsError) {
           console.error("Project divisions update failed:", divisionsError);
+        }
+
+        // Update project_department_divisions
+        // Delete old entries
+        await supabaseAdmin.from("project_department_divisions").delete().eq("project_id", projectId);
+
+        // Get department_id for each division
+        const { data: divisionsData, error: divisionsFetchError } = await supabaseAdmin
+          .from('divisions')
+          .select('id, department_id')
+          .in('id', divisionIds)
+
+        if (!divisionsFetchError && divisionsData) {
+          // Create new project_department_divisions entries
+          const projectDepartmentDivisions = divisionsData.map(division => ({
+            project_id: projectId,
+            department_id: division.department_id,
+            division_id: division.id
+          }))
+
+          const { error: pddError } = await supabaseAdmin
+            .from('project_department_divisions')
+            .insert(projectDepartmentDivisions)
+
+          if (pddError) {
+            console.error('Project department divisions update failed:', pddError)
+            // Continue anyway as this is supplementary data
+          }
         }
       }
 

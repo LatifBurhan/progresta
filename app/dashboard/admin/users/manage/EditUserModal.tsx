@@ -4,7 +4,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Edit, Eye, EyeOff, Mail, User as UserIcon, Phone, Briefcase, Lock, Shield, Layers, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { X, Edit, Eye, EyeOff, Mail, User as UserIcon, Phone, Briefcase, Lock, Shield, Layers, CheckCircle2, AlertCircle, Clock, Building2 } from "lucide-react";
+
+interface Department {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface UserData {
   id: string;
@@ -29,6 +35,7 @@ interface Division {
   id: string;
   name: string;
   color: string | null;
+  department_id: string;
 }
 
 interface EditUserModalProps {
@@ -39,43 +46,87 @@ interface EditUserModalProps {
   onSuccess: (updatedUser: UserData) => void;
 }
 
-export default function EditUserModal({ open, user, divisions, onClose, onSuccess }: EditUserModalProps) {
+export default function EditUserModal({ open, user, divisions: allDivisions, onClose, onSuccess }: EditUserModalProps) {
   const [formData, setFormData] = useState({
     email: "",
     name: "",
     phone: "",
     position: "",
     role: "KARYAWAN",
+    departmentId: "",
     divisionId: "",
     password: "",
     changePassword: false,
   });
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [filteredDivisions, setFilteredDivisions] = useState<Division[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
+  // Fetch departments on mount
+  useEffect(() => {
+    if (open) {
+      fetchDepartments();
+    }
+  }, [open]);
+
+  // Filter divisions when department changes
+  useEffect(() => {
+    if (formData.departmentId) {
+      const filtered = allDivisions.filter(div => div.department_id === formData.departmentId);
+      setFilteredDivisions(filtered);
+      // Reset division selection if current division is not in filtered list
+      if (formData.divisionId && !filtered.find(d => d.id === formData.divisionId)) {
+        setFormData(prev => ({ ...prev, divisionId: '' }));
+      }
+    } else {
+      setFilteredDivisions([]);
+    }
+  }, [formData.departmentId, allDivisions]);
+
   useEffect(() => {
     if (user) {
+      // Find user's division to get department_id
+      const userDivision = allDivisions.find(d => d.id === user.divisionId);
+      
       setFormData({
         email: user.email,
         name: user.profile?.name || "",
         phone: user.profile?.phone || "",
         position: user.profile?.position || "",
         role: user.role,
+        departmentId: userDivision?.department_id || "",
         divisionId: user.divisionId || "",
         password: "",
         changePassword: false,
       });
     }
-  }, [user]);
+  }, [user, allDivisions]);
+
+  const fetchDepartments = async () => {
+    setLoadingDepartments(true);
+    try {
+      const response = await fetch("/api/admin/departments");
+      const result = await response.json();
+      if (result.success && result.departments) {
+        setDepartments(result.departments);
+      }
+    } catch (error) {
+      console.error("Failed to fetch departments:", error);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
 
   if (!open || !user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.email || !formData.name || !formData.divisionId) {
-      setError("Email, nama, dan divisi wajib diisi");
+    if (!formData.email || !formData.name || !formData.departmentId || !formData.divisionId) {
+      setError("Email, nama, departemen, dan divisi wajib diisi");
       return;
     }
 
@@ -102,6 +153,8 @@ export default function EditUserModal({ open, user, divisions, onClose, onSucces
         updateData.password = formData.password;
       }
 
+      console.log('Sending update data:', updateData); // Debug log
+
       const response = await fetch("/api/admin/users/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -109,6 +162,7 @@ export default function EditUserModal({ open, user, divisions, onClose, onSucces
       });
 
       const result = await response.json();
+      console.log('Update result:', result); // Debug log
 
       if (result.success) {
         onSuccess(result.user);
@@ -118,6 +172,7 @@ export default function EditUserModal({ open, user, divisions, onClose, onSucces
         setError(result.message || "Gagal mengupdate user");
       }
     } catch (error) {
+      console.error('Update error:', error); // Debug log
       setError("Terjadi kesalahan sistem");
     } finally {
       setLoading(false);
@@ -319,25 +374,61 @@ export default function EditUserModal({ open, user, divisions, onClose, onSucces
 
               {/* Division Selection */}
               <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-6">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-blue-500" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Penempatan Divisi *</span>
+                {/* Department Selection */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-blue-500" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Departemen *</span>
+                  </div>
+                  <select
+                    value={formData.departmentId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-50 bg-slate-50 focus:border-blue-500 focus:bg-white transition-all text-sm font-bold outline-none"
+                    required
+                  >
+                    <option value="">Pilih Departemen</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto no-scrollbar">
-                  {divisions.map((division) => (
-                    <button
-                      key={division.id}
-                      type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, divisionId: division.id }))}
-                      className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all active:scale-95 ${
-                        formData.divisionId === division.id ? "border-slate-900 bg-slate-900 text-white shadow-xl" : "border-slate-50 bg-slate-50 text-slate-500 hover:border-slate-200"
-                      }`}
-                    >
-                      <CheckCircle2 className={`w-3.5 h-3.5 ${formData.divisionId === division.id ? "text-blue-400" : "text-slate-300"}`} />
-                      <span className="text-[11px] font-black uppercase tracking-tight">{division.name}</span>
-                    </button>
-                  ))}
+                {/* Division Selection */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-blue-500" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Penempatan Divisi *</span>
+                  </div>
+
+                  {!formData.departmentId ? (
+                    <div className="p-4 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 text-center">
+                      <p className="text-xs font-bold text-slate-400">Pilih departemen terlebih dahulu</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto no-scrollbar">
+                      {filteredDivisions.length === 0 ? (
+                        <div className="w-full p-4 rounded-xl bg-amber-50 border-2 border-amber-200 text-center">
+                          <p className="text-xs font-bold text-amber-600">Tidak ada divisi di departemen ini</p>
+                        </div>
+                      ) : (
+                        filteredDivisions.map((division) => (
+                          <button
+                            key={division.id}
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, divisionId: division.id }))}
+                            className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all active:scale-95 ${
+                              formData.divisionId === division.id ? "border-slate-900 bg-slate-900 text-white shadow-xl" : "border-slate-50 bg-slate-50 text-slate-500 hover:border-slate-200"
+                            }`}
+                          >
+                            <CheckCircle2 className={`w-3.5 h-3.5 ${formData.divisionId === division.id ? "text-blue-400" : "text-slate-300"}`} />
+                            <span className="text-[11px] font-black uppercase tracking-tight">{division.name}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
             </div>
