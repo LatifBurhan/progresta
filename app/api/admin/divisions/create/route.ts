@@ -16,12 +16,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { name, description, color } = await request.json()
+    const { name, description, color, departmentId } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ 
         success: false, 
         message: 'Nama divisi wajib diisi' 
+      }, { status: 400 })
+    }
+
+    if (!departmentId) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Departemen wajib dipilih' 
       }, { status: 400 })
     }
 
@@ -47,10 +54,11 @@ export async function POST(request: NextRequest) {
     const { data: newDivision, error } = await supabase
       .from('divisions')
       .insert([{
-        id: uuidv4(), // Generate UUID using uuid package
+        id: uuidv4(),
         name: name.trim(),
         description: description?.trim() || null,
         color: color || '#3B82F6',
+        department_id: departmentId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isActive: true

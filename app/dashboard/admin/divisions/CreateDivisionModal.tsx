@@ -1,10 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { X, Plus, Layers, Palette, FileText, Clock, AlertCircle } from 'lucide-react'
+import { X, Plus, Layers, Palette, FileText, Clock, AlertCircle, Building2 } from 'lucide-react'
+
+interface Department {
+  id: string
+  name: string
+  color: string
+}
 
 interface Division {
   id: string
@@ -16,6 +22,7 @@ interface Division {
   isActive: boolean
   userCount: number
   projectCount: number
+  department_id?: string
 }
 
 interface CreateDivisionModalProps {
@@ -32,10 +39,31 @@ export default function CreateDivisionModal({
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    color: '#3B82F6'
+    color: '#3B82F6',
+    departmentId: ''
   })
+  const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Fetch departments when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchDepartments()
+    }
+  }, [open])
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch('/api/admin/departments')
+      const result = await response.json()
+      if (result.success) {
+        setDepartments(result.departments)
+      }
+    } catch (error) {
+      console.error('Failed to fetch departments:', error)
+    }
+  }
 
   if (!open) return null
 
@@ -44,6 +72,11 @@ export default function CreateDivisionModal({
     
     if (!formData.name.trim()) {
       setError('Nama divisi wajib diisi')
+      return
+    }
+
+    if (!formData.departmentId) {
+      setError('Departemen wajib dipilih')
       return
     }
 
@@ -57,7 +90,8 @@ export default function CreateDivisionModal({
         body: JSON.stringify({
           name: formData.name.trim(),
           description: formData.description.trim() || null,
-          color: formData.color
+          color: formData.color,
+          departmentId: formData.departmentId
         })
       })
 
@@ -81,7 +115,8 @@ export default function CreateDivisionModal({
     setFormData({
       name: '',
       description: '',
-      color: '#3B82F6'
+      color: '#3B82F6',
+      departmentId: ''
     })
     setError('')
     onClose()
@@ -145,12 +180,32 @@ export default function CreateDivisionModal({
 
                 <div className="space-y-5">
                   <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Departemen *</Label>
+                    <div className="relative group">
+                      <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
+                      <select
+                        className="w-full pl-11 h-14 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm appearance-none cursor-pointer outline-none"
+                        value={formData.departmentId}
+                        onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                        required
+                      >
+                        <option value="">Pilih Departemen</option>
+                        {departments.map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
                     <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Nama Divisi *</Label>
                     <div className="relative group">
                       <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                       <Input
                         className="pl-11 h-14 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm"
-                        placeholder="Contoh: IT Development"
+                        placeholder="Contoh: Divisi IT Al-Wustho"
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                         required
