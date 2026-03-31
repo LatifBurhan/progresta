@@ -70,7 +70,7 @@ export async function GET(
     const transformedReports = await Promise.all(
       (reports || []).map(async (report: any) => {
         // Try to get user from database first
-        const { data: dbUser } = await supabaseAdmin
+        const { data: dbUser } = await supabaseAdmin!
           .from('users')
           .select('id, email, role')
           .eq('id', report.user_id)
@@ -86,7 +86,7 @@ export async function GET(
         // If user not in database, try Supabase Auth
         if (!dbUser) {
           try {
-            const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(report.user_id)
+            const { data: authUser } = await supabaseAdmin!.auth.admin.getUserById(report.user_id)
             if (authUser?.user) {
               userInfo = {
                 id: authUser.user.id,
