@@ -10,8 +10,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only HRD, CEO, ADMIN can toggle division status
-    if (!['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+    // Only GENERAL_AFFAIR, CEO, ADMIN can toggle division status
+    if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 

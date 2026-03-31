@@ -14,8 +14,8 @@ export async function GET() {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only ADMIN, HRD, CEO can access departments
-    if (!['ADMIN', 'HRD', 'CEO'].includes(session.role)) {
+    // Only ADMIN, GENERAL_AFFAIR, CEO can access departments
+    if (!['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(session.role)) {
       console.log('Insufficient role:', session.role)
       return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
     }

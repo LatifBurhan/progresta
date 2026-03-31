@@ -13,7 +13,7 @@ export default async function ProjectReportDetailPage({ params }: PageProps) {
   // Verify user has admin access
   const session = await verifySession()
   
-  if (!session || !['ADMIN', 'HRD', 'PM', 'CEO'].includes(session.role)) {
+  if (!session || !['ADMIN', 'GENERAL_AFFAIR', 'PM', 'CEO'].includes(session.role)) {
     redirect('/dashboard')
   }
 

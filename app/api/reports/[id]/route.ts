@@ -52,7 +52,7 @@ export async function GET(
 
     // Check authorization
     const isCreator = report.user_id === session.userId;
-    const adminRoles = ['ADMIN', 'HRD', 'CEO'];
+    const adminRoles = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'];
     const isAdmin = adminRoles.includes(session.role);
 
     if (!isCreator && !isAdmin) {

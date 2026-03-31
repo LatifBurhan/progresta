@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin
-    const isAdmin = ['ADMIN', 'HRD', 'CEO'].includes(userRole);
+    const isAdmin = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(userRole);
 
     if (!isAdmin) {
       return NextResponse.json(

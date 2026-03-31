@@ -164,7 +164,7 @@ export default function LoginPage() {
               <div className="bg-blue-50/50 p-4 rounded-2xl flex gap-3 items-start">
                 <HelpCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                 <p className="text-[11px] leading-relaxed text-slate-600 font-medium">
-                  Mengalami kendala akses atau lupa kata sandi? Silahkan <a href="mailto:hrd@perusahaan.com" className="text-blue-600 font-bold hover:underline">Hubungi HRD</a> untuk reset akun.
+                  Mengalami kendala akses atau lupa kata sandi? Silahkan <a href="mailto:generalaffair@perusahaan.com" className="text-blue-600 font-bold hover:underline">Hubungi General Affair</a> untuk reset akun.
                 </p>
               </div>
             </div>

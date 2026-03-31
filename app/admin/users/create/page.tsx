@@ -32,8 +32,8 @@ export default async function CreateUserPage() {
     redirect('/waiting-room')
   }
 
-  // Only HRD, CEO, ADMIN can create users
-  if (!['HRD', 'CEO', 'ADMIN'].includes(userData.role)) {
+  // Only GENERAL_AFFAIR, CEO, ADMIN can create users
+  if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(userData.role)) {
     redirect('/admin/users')
   }
 

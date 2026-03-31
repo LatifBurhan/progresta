@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only HRD, CEO, ADMIN can create divisions
-    if (!['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+    // Only GENERAL_AFFAIR, CEO, ADMIN can create divisions
+    if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 

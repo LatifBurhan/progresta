@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only PM, HRD, CEO, ADMIN can perform user actions
-    if (!['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+    // Only PM, GENERAL_AFFAIR, CEO, ADMIN can perform user actions
+    if (!['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Only ADMIN and HRD can delete users
-    if (action === 'delete' && !['ADMIN', 'HRD'].includes(session.role)) {
+    // Only ADMIN and GENERAL_AFFAIR can delete users
+    if (action === 'delete' && !['ADMIN', 'GENERAL_AFFAIR'].includes(session.role)) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Only ADMIN and HRD can delete users' 
+        message: 'Only ADMIN and GENERAL_AFFAIR can delete users' 
       }, { status: 403 })
     }
 

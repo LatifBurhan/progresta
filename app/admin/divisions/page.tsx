@@ -24,8 +24,8 @@ export default function AdminDivisionsPage() {
         return
       }
 
-      // Only PM, HRD, CEO, ADMIN can access
-      const adminRoles = ['PM', 'HRD', 'CEO', 'ADMIN']
+      // Only PM, GENERAL_AFFAIR, CEO, ADMIN can access
+      const adminRoles = ['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN']
       if (!adminRoles.includes(data.user?.role)) {
         router.push('/dashboard')
         return

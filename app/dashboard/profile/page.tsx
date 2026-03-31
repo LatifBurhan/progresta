@@ -15,14 +15,20 @@ import {
   Loader2,
   Fingerprint
 } from 'lucide-react'
+import { ProfilePhotoUploader } from '@/components/profile/ProfilePhotoUploader'
 
 interface UserData {
   id: string
   email: string
+  name?: string
+  phone?: string
   role: string
   status: string
+  employee_status?: string
+  address?: string
   divisionId?: string
-  created_at?: string
+  createdAt?: string
+  fotoProfil?: string | null
   divisions?: {
     id: string
     name: string
@@ -44,15 +50,23 @@ export default function ProfilePage() {
     try {
       const res = await fetch('/api/auth/check')
       const data = await res.json()
+      console.log('Auth check:', data)
+      
       if (!data.authenticated) {
         router.push('/login')
         return
       }
 
+      console.log('Fetching user data for ID:', data.user.userId)
       const userRes = await fetch(`/api/users/${data.user.userId}`)
       const userResult = await userRes.json()
+      console.log('User API response:', userResult)
+      
       if (userResult.success) {
+        console.log('User data loaded:', userResult.data)
         setUserData(userResult.data)
+      } else {
+        console.error('User API error:', userResult.error)
       }
     } catch (error) {
       console.error('Failed to load user data:', error)
@@ -61,13 +75,19 @@ export default function ProfilePage() {
     }
   }
 
+  const handlePhotoUpdate = (photoUrl: string | null) => {
+    if (userData) {
+      setUserData({ ...userData, fotoProfil: photoUrl })
+    }
+  }
+
   const getRoleInfo = (role: string) => {
     const roles: Record<string, any> = {
       CEO: { label: 'CEO', icon: '👑', color: 'bg-indigo-50 text-indigo-700 border-indigo-100', full: 'Chief Executive Officer' },
-      HRD: { label: 'HRD', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100', full: 'Human Resource' },
+      GENERAL_AFFAIR: { label: 'General Affair', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100', full: 'General Affair' },
       PM: { label: 'PM', icon: '📊', color: 'bg-emerald-50 text-emerald-700 border-emerald-100', full: 'Project Manager' },
       ADMIN: { label: 'Admin', icon: '⚙️', color: 'bg-rose-50 text-rose-700 border-rose-100', full: 'System Administrator' },
-      KARYAWAN: { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-700 border-slate-100', full: 'Karyawan' },
+      STAFF: { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-700 border-slate-100', full: 'Staff' },
     }
     return roles[role] || { label: role, icon: '👤', color: 'bg-gray-50', full: role }
   }
@@ -95,24 +115,47 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20 md:pb-10">
-      {/* Header Profile - Compact */}
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+          Profil Saya
+        </h1>
+        <p className="text-sm text-slate-500">
+          {userData.role === 'STAFF' 
+            ? 'Anda hanya dapat mengubah foto profil' 
+            : 'Kelola foto profil Anda'}
+        </p>
+      </div>
+
+      {/* Photo Upload Section */}
+      <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] overflow-hidden">
+        <CardContent className="p-8">
+          <ProfilePhotoUploader
+            currentPhotoUrl={userData.fotoProfil}
+            onPhotoUpdate={handlePhotoUpdate}
+            disabled={false}
+          />
+        </CardContent>
+      </Card>
+
+      {/* User Info Header */}
       <div className="flex items-center gap-4 md:gap-6 px-2">
-        <div className="relative">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-100">
-            {userData.email.charAt(0).toUpperCase()}
-          </div>
-          <div className={`absolute -bottom-1 -right-1 p-1.5 rounded-xl border-4 border-[#F8FAFC] ${statusInfo.color} text-white shadow-sm`}>
-            {statusInfo.icon}
-          </div>
-        </div>
-        <div className="space-y-1">
-          <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight leading-none">
-            {userData.email.split('@')[0]}
-          </h1>
-          <div className="flex items-center gap-2">
+        <div className="space-y-1 flex-1">
+          <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none">
+            {userData.name || userData.email.split('@')[0]}
+          </h2>
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${roleInfo.color}`}>
               {roleInfo.icon} {roleInfo.label}
             </span>
+            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${statusInfo.color} text-white`}>
+              {statusInfo.label}
+            </span>
+            {userData.employee_status && (
+              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100">
+                {userData.employee_status}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -138,11 +181,44 @@ export default function ProfilePage() {
       <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] overflow-hidden">
         <CardContent className="p-0">
           <div className="divide-y divide-slate-50">
+            {userData.name && (
+              <DetailItem 
+                icon={<User className="w-4 h-4" />} 
+                label="Nama Lengkap" 
+                value={userData.name} 
+              />
+            )}
             <DetailItem 
               icon={<Mail className="w-4 h-4" />} 
               label="Email Address" 
               value={userData.email} 
             />
+            {userData.phone && (
+              <DetailItem 
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>} 
+                label="No. Telepon" 
+                value={userData.phone} 
+              />
+            )}
+            <DetailItem 
+              icon={<Shield className="w-4 h-4" />} 
+              label="Jabatan" 
+              value={roleInfo.full} 
+            />
+            {userData.employee_status && (
+              <DetailItem 
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>} 
+                label="Status Karyawan" 
+                value={userData.employee_status} 
+              />
+            )}
+            {userData.address && (
+              <DetailItem 
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} 
+                label="Alamat" 
+                value={userData.address} 
+              />
+            )}
             <DetailItem 
               icon={<Fingerprint className="w-4 h-4" />} 
               label="User ID" 
@@ -152,15 +228,10 @@ export default function ProfilePage() {
             <DetailItem 
               icon={<Calendar className="w-4 h-4" />} 
               label="Bergabung" 
-              value={userData.created_at 
-                ? new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', day: 'numeric' }).format(new Date(userData.created_at))
+              value={userData.createdAt 
+                ? new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', day: 'numeric' }).format(new Date(userData.createdAt))
                 : 'Tidak tersedia'
               } 
-            />
-            <DetailItem 
-              icon={<User className="w-4 h-4" />} 
-              label="Jabatan" 
-              value={roleInfo.full} 
             />
           </div>
         </CardContent>
@@ -168,7 +239,7 @@ export default function ProfilePage() {
 
       {/* Security/Action Hint */}
       <p className="text-center text-[11px] text-slate-400 font-medium px-6">
-        Jika ada kesalahan data atau ingin merubah password, silakan hubungi tim <span className="text-blue-500 font-bold tracking-tight">IT Support</span> atau HRD Al-Wustho.
+        Jika ada kesalahan data atau ingin merubah password, silakan hubungi tim <span className="text-blue-500 font-bold tracking-tight">IT Support</span> atau General Affair Al-Wustho.
       </p>
     </div>
   )

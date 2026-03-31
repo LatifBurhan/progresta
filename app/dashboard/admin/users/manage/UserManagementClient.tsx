@@ -36,6 +36,9 @@ interface UserData {
   status: string
   createdAt: string
   divisionId: string | null
+  employee_status?: string
+  address?: string
+  notes?: string
   profile: {
     name: string | null
     fotoProfil: string | null
@@ -64,14 +67,33 @@ export default function UserManagementClient({
   const [allUsers, setAllUsers] = useState(initialAllUsers)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [roleFilter, setRoleFilter] = useState<'all' | 'KARYAWAN' | 'PM' | 'HRD' | 'CEO' | 'ADMIN'>('all')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'STAFF' | 'PM' | 'GENERAL_AFFAIR' | 'CEO' | 'ADMIN'>('all')
   
   const [editModal, setEditModal] = useState<{ open: boolean; user: UserData | null }>({ open: false, user: null })
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; user: UserData | null }>({ open: false, user: null })
   const [actionModal, setActionModal] = useState<{ open: boolean; user: UserData | null; action: 'activate' | 'deactivate' | null }>({ open: false, user: null, action: null })
 
   const handleEditSuccess = (updatedUser: UserData) => {
-    setAllUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u))
+    console.log('handleEditSuccess - Updated user from API:', updatedUser); // Debug
+    
+    setAllUsers(prev => prev.map(u => {
+      if (u.id === updatedUser.id) {
+        // Merge updated data with existing data to preserve fields like todayReports
+        const merged: UserData = {
+          ...u, // Keep existing fields like todayReports, todayProgress
+          ...updatedUser, // Override with updated fields
+          profile: {
+            name: updatedUser.profile?.name || u.profile?.name || null,
+            fotoProfil: updatedUser.profile?.fotoProfil || u.profile?.fotoProfil || null,
+            phone: updatedUser.profile?.phone || u.profile?.phone || null,
+            position: updatedUser.profile?.position || u.profile?.position || null
+          }
+        };
+        return merged;
+      }
+      return u;
+    }));
+    
     setEditModal({ open: false, user: null })
   }
 
@@ -124,10 +146,10 @@ export default function UserManagementClient({
   const getRoleBadge = (role: string) => {
     const config: any = {
       'CEO': { label: 'CEO', icon: '👑', color: 'bg-purple-50 text-purple-700 border-purple-100' },
-      'HRD': { label: 'HRD', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+      'GENERAL_AFFAIR': { label: 'General Affair', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100' },
       'PM': { label: 'Manager', icon: '📊', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
       'ADMIN': { label: 'Admin', icon: '⚙️', color: 'bg-rose-50 text-rose-700 border-rose-100' },
-      'KARYAWAN': { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-600 border-slate-200' }
+      'STAFF': { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-600 border-slate-200' }
     }
     return config[role] || { label: role, icon: '👤', color: 'bg-gray-50 text-gray-600 border-gray-200' }
   }
@@ -135,14 +157,14 @@ export default function UserManagementClient({
   const canEditUser = (user: UserData) => {
     // ADMIN can edit anyone
     if (currentUserRole === 'ADMIN') return true
-    // HRD and CEO can edit KARYAWAN and PM
-    if (['HRD', 'CEO'].includes(currentUserRole) && ['KARYAWAN', 'PM'].includes(user.role)) return true
+    // GENERAL_AFFAIR and CEO can edit STAFF and PM
+    if (['GENERAL_AFFAIR', 'CEO'].includes(currentUserRole) && ['STAFF', 'PM'].includes(user.role)) return true
     return false
   }
 
   const canDeleteUser = (user: UserData) => {
-    // ADMIN and HRD can delete users
-    if (['ADMIN', 'HRD'].includes(currentUserRole)) return true
+    // ADMIN and GENERAL_AFFAIR can delete users
+    if (['ADMIN', 'GENERAL_AFFAIR'].includes(currentUserRole)) return true
     return false
   }
 
@@ -208,9 +230,9 @@ export default function UserManagementClient({
             className="h-11 bg-white border border-slate-100 text-sm font-bold text-slate-600 rounded-xl px-4 focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer shadow-sm"
           >
             <option value="all">Semua Otoritas</option>
-            <option value="KARYAWAN">Staff / Karyawan</option>
+            <option value="STAFF">Staff</option>
             <option value="PM">Project Manager</option>
-            <option value="HRD">HRD</option>
+            <option value="GENERAL_AFFAIR">General Affair</option>
             <option value="CEO">CEO</option>
             <option value="ADMIN">Super Admin</option>
           </select>
@@ -340,6 +362,7 @@ export default function UserManagementClient({
                               size="icon"
                               onClick={() => setEditModal({ open: true, user })}
                               className="h-11 w-11 rounded-xl border-slate-100 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                              title="Edit User"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -352,6 +375,7 @@ export default function UserManagementClient({
                             className={`h-11 w-11 rounded-xl border-slate-100 transition-all ${
                               user.status === 'ACTIVE' ? "text-amber-500 hover:bg-amber-50" : "text-emerald-500 hover:bg-emerald-50"
                             }`}
+                            title={user.status === 'ACTIVE' ? 'Nonaktifkan' : 'Aktifkan'}
                           >
                             {user.status === 'ACTIVE' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                           </Button>
@@ -362,6 +386,7 @@ export default function UserManagementClient({
                               size="icon"
                               onClick={() => setDeleteModal({ open: true, user })}
                               className="h-11 w-11 rounded-xl border-slate-100 text-rose-500 hover:bg-rose-50"
+                              title="Hapus User"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

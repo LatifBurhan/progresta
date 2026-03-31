@@ -10,8 +10,8 @@ export default async function DivisionManagePage() {
     redirect('/login')
   }
 
-  // Only HRD, CEO, ADMIN can manage divisions
-  if (!['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+  // Only GENERAL_AFFAIR, CEO, ADMIN can manage divisions
+  if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
     redirect('/dashboard')
   }
 

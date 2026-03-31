@@ -10,12 +10,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only HRD, CEO, ADMIN can update users
-    if (!['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+    // Only GENERAL_AFFAIR, CEO, ADMIN can update users
+    if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { userId, email, name, phone, position, role, divisionId, password } = await request.json()
+    const { userId, email, name, phone, position, employee_status, address, notes, role, divisionId, password } = await request.json()
 
     if (!userId || !email || !role || !divisionId) {
       console.log('Validation failed:', { userId, email, name, role, divisionId }); // Debug
@@ -26,7 +26,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate role - sesuai dengan constraint database
-    const validRoles = ['KARYAWAN', 'PM', 'HRD', 'CEO', 'ADMIN']
+    const validRoles = ['STAFF', 'PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN']
     if (!validRoles.includes(role)) {
       return NextResponse.json({ 
         success: false, 
@@ -35,10 +35,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Permission checks
-    if (session.role === 'HRD' && !['KARYAWAN', 'PM'].includes(role)) {
+    if (session.role === 'GENERAL_AFFAIR' && !['STAFF', 'PM'].includes(role)) {
       return NextResponse.json({ 
         success: false, 
-        message: 'HRD hanya dapat mengedit role KARYAWAN dan PM' 
+        message: 'GENERAL_AFFAIR hanya dapat mengedit role STAFF dan PM' 
       }, { status: 403 })
     }
 
@@ -155,6 +155,11 @@ export async function PUT(request: NextRequest) {
         email,
         role,
         divisionId,
+        name,
+        phone: phone || null,
+        employee_status: employee_status || null,
+        address: address || null,
+        notes: notes || null,
         updatedAt: new Date().toISOString()
       })
       .eq('id', userId)
@@ -164,6 +169,12 @@ export async function PUT(request: NextRequest) {
         role,
         status,
         divisionId,
+        name,
+        phone,
+        fotoProfil,
+        employee_status,
+        address,
+        notes,
         createdAt,
         updatedAt
       `)
@@ -177,6 +188,17 @@ export async function PUT(request: NextRequest) {
       }, { status: 500 })
     }
 
+    console.log('Update API - Returning user data:', {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+      employee_status: updatedUser.employee_status,
+      address: updatedUser.address,
+      notes: updatedUser.notes,
+      fotoProfil: updatedUser.fotoProfil
+    }); // Debug log
+
     return NextResponse.json({
       success: true,
       message: 'User berhasil diupdate',
@@ -186,14 +208,17 @@ export async function PUT(request: NextRequest) {
         role: updatedUser.role,
         status: updatedUser.status || 'ACTIVE',
         divisionId: updatedUser.divisionId,
+        employee_status: updatedUser.employee_status,
+        address: updatedUser.address,
+        notes: updatedUser.notes,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt,
         division: division,
         profile: {
-          name: name,
-          phone: phone || null,
+          name: updatedUser.name,
+          phone: updatedUser.phone,
           position: position || null,
-          fotoProfil: null
+          fotoProfil: updatedUser.fotoProfil
         }
       }
     })

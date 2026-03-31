@@ -92,8 +92,8 @@ function ReportsPageContent() {
       } else {
         setAuthenticated(true)
         setCurrentUserId(data.user?.id || '')
-        // Check if user is admin (ADMIN, HRD, or CEO)
-        const adminRoles = ['ADMIN', 'HRD', 'CEO']
+        // Check if user is admin (ADMIN, GENERAL_AFFAIR, or CEO)
+        const adminRoles = ['ADMIN', 'GENERAL_AFFAIR', 'CEO']
         setIsAdmin(adminRoles.includes(data.user?.role))
       }
     } catch (error) {

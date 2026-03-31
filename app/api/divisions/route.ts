@@ -20,7 +20,7 @@ const UpdateDivisionSchema = z.object({
 export async function GET() {
   try {
     const session = await verifySession()
-    if (!session || !['HRD', 'PM', 'CEO', 'ADMIN'].includes(session.role)) {
+    if (!session || !['GENERAL_AFFAIR', 'PM', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
@@ -78,9 +78,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await verifySession()
-    if (!session || !['HRD', 'PM', 'CEO', 'ADMIN'].includes(session.role)) {
+    if (!session || !['GENERAL_AFFAIR', 'PM', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json(
-        { success: false, message: 'Hanya HRD/PM/CEO/ADMIN yang dapat membuat divisi' },
+        { success: false, message: 'Hanya GENERAL_AFFAIR/PM/CEO/ADMIN yang dapat membuat divisi' },
         { status: 401 }
       )
     }
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const session = await verifySession()
-    if (!session || !['HRD', 'PM', 'CEO', 'ADMIN'].includes(session.role)) {
+    if (!session || !['GENERAL_AFFAIR', 'PM', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
@@ -275,9 +275,9 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await verifySession()
-    if (!session || !['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+    if (!session || !['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json(
-        { success: false, message: 'Hanya HRD/CEO/ADMIN yang dapat menghapus divisi' },
+        { success: false, message: 'Hanya GENERAL_AFFAIR/CEO/ADMIN yang dapat menghapus divisi' },
         { status: 401 }
       )
     }

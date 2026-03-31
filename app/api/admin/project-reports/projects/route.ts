@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     // Verify user has admin access
     const session = await verifySession()
     
-    if (!session || !['ADMIN', 'HRD', 'PM', 'CEO'].includes(session.role)) {
+    if (!session || !['ADMIN', 'GENERAL_AFFAIR', 'PM', 'CEO'].includes(session.role)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }

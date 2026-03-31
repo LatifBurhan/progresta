@@ -72,7 +72,7 @@ export async function DELETE(
 
     // Requirement 3.1, 3.2: Validate user is creator OR user is admin
     const isCreator = report.user_id === session.userId;
-    const adminRoles = ['ADMIN', 'HRD', 'CEO'];
+    const adminRoles = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'];
     const isAdmin = adminRoles.includes(session.role);
 
     if (!isCreator && !isAdmin) {

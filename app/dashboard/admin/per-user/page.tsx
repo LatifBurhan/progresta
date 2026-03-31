@@ -121,7 +121,7 @@ export default function PerUserDashboardPage() {
           <p className="text-gray-600 mt-1">{selectedUser.email} • {selectedUser.divisionName}</p>
         </div>
         <DashboardClient 
-          userRole="KARYAWAN" 
+          userRole="STAFF" 
           userName={selectedUser.name} 
           userId={selectedUser.id} 
         />
@@ -225,7 +225,7 @@ export default function PerUserDashboardPage() {
                           className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             user.role === 'CEO'
                               ? 'bg-purple-100 text-purple-800'
-                              : user.role === 'HRD'
+                              : user.role === 'GENERAL_AFFAIR'
                               ? 'bg-blue-100 text-blue-800'
                               : user.role === 'PM'
                               ? 'bg-green-100 text-green-800'

@@ -33,7 +33,10 @@ export default function CreateUserForm({ divisions: allDivisions }: CreateUserFo
     name: '',
     phone: '',
     position: '',
-    role: 'KARYAWAN',
+    employee_status: '',
+    address: '',
+    notes: '',
+    role: 'STAFF',
     departmentId: '',
     divisionId: ''
   })
@@ -107,6 +110,9 @@ export default function CreateUserForm({ divisions: allDivisions }: CreateUserFo
           name: formData.name,
           phone: formData.phone,
           position: formData.position,
+          employee_status: formData.employee_status,
+          address: formData.address,
+          notes: formData.notes,
           role: formData.role,
           divisionId: formData.divisionId
         })
@@ -123,7 +129,10 @@ export default function CreateUserForm({ divisions: allDivisions }: CreateUserFo
           name: '',
           phone: '',
           position: '',
-          role: 'KARYAWAN',
+          employee_status: '',
+          address: '',
+          notes: '',
+          role: 'STAFF',
           departmentId: '',
           divisionId: ''
         })
@@ -142,9 +151,9 @@ export default function CreateUserForm({ divisions: allDivisions }: CreateUserFo
   }
 
   const roles = [
-    { value: 'KARYAWAN', label: '👨‍💻 Karyawan', description: 'Akses standar untuk pelaporan' },
+    { value: 'STAFF', label: '👨‍💻 Staff', description: 'Akses standar untuk pelaporan' },
     { value: 'PM', label: '📊 Project Manager', description: 'Monitoring project dan tim' },
-    { value: 'HRD', label: '👥 HRD', description: 'Manajemen karyawan dan approval' },
+    { value: 'GENERAL_AFFAIR', label: '👥 General Affair', description: 'Manajemen karyawan dan approval' },
     { value: 'CEO', label: '👑 CEO', description: 'Akses penuh ke semua data' }
   ]
 
@@ -250,6 +259,48 @@ export default function CreateUserForm({ divisions: allDivisions }: CreateUserFo
               onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
               placeholder="Frontend Developer, Marketing, dll"
             />
+          </div>
+
+          {/* Employee Status */}
+          <div>
+            <Label htmlFor="employee_status">Status Karyawan</Label>
+            <Input
+              id="employee_status"
+              type="text"
+              value={formData.employee_status}
+              onChange={(e) => setFormData(prev => ({ ...prev, employee_status: e.target.value }))}
+              placeholder="Tetap, Kontrak, Magang, dll"
+            />
+          </div>
+
+          {/* Address */}
+          <div>
+            <Label htmlFor="address">Alamat</Label>
+            <textarea
+              id="address"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              rows={3}
+              value={formData.address}
+              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+              placeholder="Alamat lengkap karyawan"
+            />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <Label htmlFor="notes" className="flex items-center gap-2">
+              Catatan
+              <span className="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100">Admin Only</span>
+            </Label>
+            <textarea
+              id="notes"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              rows={3}
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Catatan internal (hanya untuk Admin & General Affair)"
+            />
+            <p className="text-xs text-gray-500 mt-1">Hanya Admin dan General Affair yang dapat mengedit field ini</p>
           </div>
 
           {/* Role Selection */}

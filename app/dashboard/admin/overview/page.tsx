@@ -10,7 +10,7 @@ export default async function AdminOverviewPage() {
   }
 
   // Check if user is admin
-  const isAdmin = ['ADMIN', 'HRD', 'CEO'].includes(session.role)
+  const isAdmin = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(session.role)
 
   if (!isAdmin) {
     redirect('/dashboard')

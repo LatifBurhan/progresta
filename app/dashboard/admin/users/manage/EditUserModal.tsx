@@ -52,7 +52,10 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
     name: "",
     phone: "",
     position: "",
-    role: "KARYAWAN",
+    employee_status: "",
+    address: "",
+    notes: "",
+    role: "STAFF",
     departmentId: "",
     divisionId: "",
     password: "",
@@ -88,6 +91,8 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
 
   useEffect(() => {
     if (user) {
+      console.log('EditUserModal - Received user data:', user); // Debug log
+      
       // Find user's division to get department_id
       const userDivision = allDivisions.find(d => d.id === user.divisionId);
       
@@ -96,12 +101,23 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
         name: user.profile?.name || "",
         phone: user.profile?.phone || "",
         position: user.profile?.position || "",
+        employee_status: (user as any).employee_status || "",
+        address: (user as any).address || "",
+        notes: (user as any).notes || "",
         role: user.role,
         departmentId: userDivision?.department_id || "",
         divisionId: user.divisionId || "",
         password: "",
         changePassword: false,
       });
+      
+      console.log('EditUserModal - Form data set:', {
+        name: user.profile?.name,
+        phone: user.profile?.phone,
+        employee_status: (user as any).employee_status,
+        address: (user as any).address,
+        notes: (user as any).notes
+      }); // Debug log
     }
   }, [user, allDivisions]);
 
@@ -145,6 +161,9 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
         name: formData.name,
         phone: formData.phone || null,
         position: formData.position || null,
+        employee_status: formData.employee_status || null,
+        address: formData.address || null,
+        notes: formData.notes || null,
         role: formData.role,
         divisionId: formData.divisionId,
       };
@@ -180,9 +199,9 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
   };
 
   const roles = [
-    { value: "KARYAWAN", label: "👨‍💻 Karyawan", description: "Akses standar untuk pelaporan" },
+    { value: "STAFF", label: "👨‍💻 Staff", description: "Akses standar untuk pelaporan" },
     { value: "PM", label: "📊 Project Manager", description: "Monitoring project dan tim" },
-    { value: "HRD", label: "👥 HRD", description: "Manajemen karyawan dan approval" },
+    { value: "GENERAL_AFFAIR", label: "👥 General Affair", description: "Manajemen karyawan dan approval" },
     { value: "CEO", label: "👑 CEO", description: "Akses penuh ke semua data" },
   ];
 
@@ -290,6 +309,43 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* Employee Status */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Status Karyawan</Label>
+                    <Input
+                      className="h-14 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm"
+                      placeholder="Tetap, Kontrak, Magang, dll"
+                      value={formData.employee_status}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, employee_status: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Address */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase">Alamat</Label>
+                    <textarea
+                      className="w-full px-4 py-3 h-24 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm resize-none"
+                      placeholder="Alamat lengkap karyawan"
+                      value={formData.address}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Notes - Only for ADMIN and GENERAL_AFFAIR */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-black text-slate-500 ml-1 uppercase flex items-center gap-2">
+                      Catatan
+                      <span className="text-[9px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 border border-amber-100">Admin Only</span>
+                    </Label>
+                    <textarea
+                      className="w-full px-4 py-3 h-24 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm resize-none"
+                      placeholder="Catatan internal (hanya untuk Admin & General Affair)"
+                      value={formData.notes}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                    />
+                    <p className="text-[10px] font-bold text-slate-400 ml-1">Hanya Admin dan General Affair yang dapat mengedit field ini</p>
                   </div>
                 </div>
               </section>

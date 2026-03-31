@@ -13,8 +13,8 @@ export default async function CreateUserPage() {
     redirect('/login')
   }
 
-  // Only HRD, CEO, ADMIN can create users
-  if (!['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+  // Only GENERAL_AFFAIR, CEO, ADMIN can create users
+  if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
     redirect('/dashboard')
   }
 

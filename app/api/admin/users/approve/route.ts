@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only PM, HRD, CEO, ADMIN can approve users
-    if (!['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+    // Only PM, GENERAL_AFFAIR, CEO, ADMIN can approve users
+    if (!['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
-    const validRoles = ['KARYAWAN', 'PM', 'HRD', 'CEO', 'ADMIN']
+    const validRoles = ['STAFF', 'PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN']
     if (!validRoles.includes(role)) {
       return NextResponse.json({ 
         success: false, 

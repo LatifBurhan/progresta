@@ -10,8 +10,8 @@ export default async function UserManagePage() {
     redirect('/login')
   }
 
-  // Only HRD, CEO, ADMIN can manage users
-  if (!['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+  // Only GENERAL_AFFAIR, CEO, ADMIN can manage users
+  if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
     redirect('/dashboard')
   }
 
@@ -41,6 +41,12 @@ export default async function UserManagePage() {
         divisionId,
         createdAt,
         updatedAt,
+        fotoProfil,
+        name,
+        phone,
+        employee_status,
+        address,
+        notes,
         divisions!inner(name, color)
       `)
       .eq('status', 'ACTIVE') // Only active users
@@ -79,13 +85,16 @@ export default async function UserManagePage() {
           divisionId: user.divisionId,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
+          employee_status: user.employee_status || undefined,
+          address: user.address || undefined,
+          notes: user.notes || undefined,
           division: user.divisions,
           todayReports,
           todayProgress,
           profile: {
-            name: user.email.split('@')[0], // Fallback: use email prefix as name
-            fotoProfil: null,
-            phone: null,
+            name: user.name || user.email.split('@')[0],
+            fotoProfil: user.fotoProfil || null,
+            phone: user.phone || null,
             position: null
           }
         }

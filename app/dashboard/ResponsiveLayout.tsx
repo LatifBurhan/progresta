@@ -39,10 +39,10 @@ export default function ResponsiveLayout({
 
   const roleStyles: Record<string, string> = {
     CEO: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-    HRD: 'bg-blue-50 text-blue-700 border-blue-100',
+    GENERAL_AFFAIR: 'bg-blue-50 text-blue-700 border-blue-100',
     PM: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     ADMIN: 'bg-rose-50 text-rose-700 border-rose-100',
-    KARYAWAN: 'bg-slate-50 text-slate-700 border-slate-100',
+    STAFF: 'bg-slate-50 text-slate-700 border-slate-100',
   }
 
   return (
@@ -154,7 +154,7 @@ export default function ResponsiveLayout({
             </div>
 
             {/* Nav Group: Admin */}
-            {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (
+            {['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role) && (
               <div>
                 <p className="px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Admin Panel</p>
                 <nav className="space-y-1.5">
@@ -193,7 +193,7 @@ export default function ResponsiveLayout({
         <div className="flex justify-around items-center h-16">
           <MobileNavItem href="/dashboard" icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" label="Home" active={isActive('/dashboard')} />
           <MobileNavItem href="/dashboard/reports?view=history" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Laporan" active={pathname.includes('reports')} />
-          {['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role) && (
+          {['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role) && (
             <MobileNavItem href="/dashboard/admin/overview" icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" label="Admin" active={pathname.includes('admin')} />
           )}
           <MobileNavItem href="/dashboard/profile" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" label="Profil" active={isActive('/dashboard/profile')} />

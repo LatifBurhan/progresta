@@ -11,12 +11,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only HRD, CEO, ADMIN can create users directly
-    if (!['HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+    // Only GENERAL_AFFAIR, CEO, ADMIN can create users directly
+    if (!['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
       return NextResponse.json({ success: false, message: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { email, password, name, phone, position, role, divisionId } = await request.json()
+    const { email, password, name, phone, position, employee_status, address, notes, role, divisionId } = await request.json()
 
     if (!email || !password || !name || !role || !divisionId) {
       return NextResponse.json({ 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role - sesuai dengan constraint database (uppercase)
-    const validRoles = ['KARYAWAN', 'PM', 'HRD', 'CEO', 'ADMIN']
+    const validRoles = ['STAFF', 'PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN']
     if (!validRoles.includes(role.toUpperCase())) {
       return NextResponse.json({ 
         success: false, 
@@ -108,6 +108,9 @@ export async function POST(request: NextRequest) {
         password: hashedPassword, // Include hashed password
         role: normalizedRole, // Use normalized (uppercase) role
         divisionId: divisionId,
+        employee_status: employee_status || null,
+        address: address || null,
+        notes: notes || null,
         status: 'ACTIVE', // Use 'ACTIVE' instead of status_pending: false
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -118,6 +121,9 @@ export async function POST(request: NextRequest) {
         email,
         role,
         divisionId,
+        employee_status,
+        address,
+        notes,
         status,
         createdAt,
         divisions!inner(name, color)

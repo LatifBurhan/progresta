@@ -12,8 +12,8 @@ export default async function AdminReportsPage() {
     redirect('/login')
   }
 
-  // Only PM, HRD, CEO, ADMIN can access
-  if (!['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+  // Only PM, GENERAL_AFFAIR, CEO, ADMIN can access
+  if (!['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
     redirect('/dashboard')
   }
 

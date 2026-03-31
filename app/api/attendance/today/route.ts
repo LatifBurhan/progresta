@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId') || session.userId
 
     // Only allow users to see their own attendance or admin/PM/CEO to see others
-    if (userId !== session.userId && !['ADMIN', 'PM', 'CEO', 'HRD'].includes(session.role)) {
+    if (userId !== session.userId && !['ADMIN', 'PM', 'CEO', 'GENERAL_AFFAIR'].includes(session.role)) {
       return NextResponse.json(
         { success: false, message: 'Forbidden' },
         { status: 403 }

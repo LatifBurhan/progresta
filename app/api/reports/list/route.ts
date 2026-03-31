@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const isAdmin = ['ADMIN', 'HRD', 'CEO'].includes(user.role);
+    const isAdmin = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(user.role);
 
     // Build query - get reports first
     // Requirement 4.5, 5.5: We'll fetch user and project names separately

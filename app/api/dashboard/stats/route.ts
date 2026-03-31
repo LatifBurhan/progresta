@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const targetUserId = searchParams.get('user_id');
 
     // Check if user is admin
-    const isAdmin = ['ADMIN', 'HRD', 'CEO'].includes(session.role);
+    const isAdmin = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(session.role);
 
     // Determine which user's stats to fetch
     const userId = (isAdmin && targetUserId) ? targetUserId : session.userId;

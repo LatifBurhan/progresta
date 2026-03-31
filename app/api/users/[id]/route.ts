@@ -31,10 +31,10 @@ export async function GET(
 
     const userId = params.id;
 
-    // Get user data - only select columns that exist
+    // Get user data - select all profile fields
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, role, status')
+      .select('id, email, name, phone, role, status, employee_status, address, "fotoProfil", "createdAt"')
       .eq('id', userId)
       .single();
 

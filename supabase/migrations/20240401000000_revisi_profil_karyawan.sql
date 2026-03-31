@@ -1,10 +1,12 @@
--- Migration: Revisi Profil Karyawan
+-- Migration Part 2: Revisi Profil Karyawan
 -- Date: 2024-04-01
 -- Description: 
 --   1. Tambah field: employee_status, address, notes
 --   2. Hapus field: position
 --   3. Ubah role: HRD -> GENERAL_AFFAIR, KARYAWAN -> STAFF
 --   4. Tambah tabel relasi: user_departments, user_divisions
+-- 
+-- IMPORTANT: Run migration 20240401000001_add_new_role_values.sql FIRST!
 
 -- ============================================
 -- STEP 1: Tambah kolom baru di tabel users
@@ -59,25 +61,23 @@ WHERE "divisionId" IS NOT NULL
 ON CONFLICT (user_id, division_id) DO NOTHING;
 
 -- ============================================
--- STEP 5: Update role names
+-- STEP 5: Update role names in users table
 -- ============================================
+-- Note: ENUM values GENERAL_AFFAIR and STAFF must already exist
+-- Run migration 20240401000001_add_new_role_values.sql first!
 
 -- Update HRD -> GENERAL_AFFAIR
 UPDATE users SET role = 'GENERAL_AFFAIR' WHERE role = 'HRD';
 
--- Update KARYAWAN -> STAFF
+-- Update KARYAWAN -> STAFF  
 UPDATE users SET role = 'STAFF' WHERE role = 'KARYAWAN';
 
 -- ============================================
--- STEP 6: Update role constraint
+-- STEP 6: Update default role
 -- ============================================
 
--- Drop old constraint if exists
-ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-
--- Add new constraint with updated roles
-ALTER TABLE users ADD CONSTRAINT users_role_check 
-  CHECK (role IN ('ADMIN', 'CEO', 'GENERAL_AFFAIR', 'PM', 'STAFF'));
+-- Update default role dari KARYAWAN ke STAFF
+ALTER TABLE users ALTER COLUMN role SET DEFAULT 'STAFF';
 
 -- ============================================
 -- STEP 7: RLS Policies untuk tabel baru
@@ -87,39 +87,75 @@ ALTER TABLE users ADD CONSTRAINT users_role_check
 ALTER TABLE user_departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_divisions ENABLE ROW LEVEL SECURITY;
 
--- Policy: Semua authenticated users bisa read
-CREATE POLICY "Allow authenticated users to read user_departments"
-  ON user_departments FOR SELECT
-  TO authenticated
-  USING (true);
+-- Policy: Semua authenticated users bisa read (skip if exists)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'user_departments' 
+    AND policyname = 'Allow authenticated users to read user_departments'
+  ) THEN
+    CREATE POLICY "Allow authenticated users to read user_departments"
+      ON user_departments FOR SELECT
+      TO authenticated
+      USING (true);
+  END IF;
+END $$;
 
-CREATE POLICY "Allow authenticated users to read user_divisions"
-  ON user_divisions FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'user_divisions' 
+    AND policyname = 'Allow authenticated users to read user_divisions'
+  ) THEN
+    CREATE POLICY "Allow authenticated users to read user_divisions"
+      ON user_divisions FOR SELECT
+      TO authenticated
+      USING (true);
+  END IF;
+END $$;
 
--- Policy: Hanya ADMIN dan GENERAL_AFFAIR bisa insert/update/delete
-CREATE POLICY "Allow admin and general_affair to manage user_departments"
-  ON user_departments FOR ALL
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role IN ('ADMIN', 'GENERAL_AFFAIR')
-    )
-  );
+-- Policy: Hanya ADMIN dan GENERAL_AFFAIR bisa insert/update/delete (skip if exists)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'user_departments' 
+    AND policyname = 'Allow admin and general_affair to manage user_departments'
+  ) THEN
+    CREATE POLICY "Allow admin and general_affair to manage user_departments"
+      ON user_departments FOR ALL
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM users
+          WHERE users.id = auth.uid()
+          AND users.role IN ('ADMIN', 'GENERAL_AFFAIR')
+        )
+      );
+  END IF;
+END $$;
 
-CREATE POLICY "Allow admin and general_affair to manage user_divisions"
-  ON user_divisions FOR ALL
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role IN ('ADMIN', 'GENERAL_AFFAIR')
-    )
-  );
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'user_divisions' 
+    AND policyname = 'Allow admin and general_affair to manage user_divisions'
+  ) THEN
+    CREATE POLICY "Allow admin and general_affair to manage user_divisions"
+      ON user_divisions FOR ALL
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM users
+          WHERE users.id = auth.uid()
+          AND users.role IN ('ADMIN', 'GENERAL_AFFAIR')
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================
 -- STEP 8: Grant permissions

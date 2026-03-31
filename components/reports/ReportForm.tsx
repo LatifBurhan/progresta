@@ -252,7 +252,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
           <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
             <ImageIcon className="w-4 h-4 text-blue-600" />
           </div>
-          <Label className="text-base font-bold text-slate-800">Lampiran Foto <span className="text-rose-500">*</span></Label>
+          <Label className="text-base font-bold text-slate-800">Lampiran Foto <span className="text-slate-400 text-sm font-normal">(Opsional)</span></Label>
         </div>
         <div className="bg-white p-2 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-400 transition-colors">
           <PhotoUploader

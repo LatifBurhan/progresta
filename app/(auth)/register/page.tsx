@@ -145,7 +145,7 @@ export default function RegisterPage() {
                 <div className="text-xs text-blue-800">
                   <p className="font-medium mb-1">Catatan Penting:</p>
                   <ul className="space-y-1">
-                    <li>• Akun baru memerlukan persetujuan Admin/HRD</li>
+                    <li>• Akun baru memerlukan persetujuan Admin/General Affair</li>
                     <li>• Anda akan diberikan role dan divisi setelah disetujui</li>
                     <li>• Proses approval biasanya 1-2 hari kerja</li>
                   </ul>
