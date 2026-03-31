@@ -66,16 +66,28 @@ export default function PerUserDashboardPage() {
   const loadUsers = async () => {
     try {
       const res = await fetch('/api/dashboard/users')
+      
+      // Check if response is ok
+      if (!res.ok) {
+        const data = await res.json()
+        console.error('API Error:', data.error)
+        
+        // Only show alert for critical errors (not 404 which might be handled by fallback)
+        if (res.status !== 404) {
+          alert('Error: ' + (data.error || 'Failed to load users'))
+        }
+        return
+      }
+
       const data = await res.json()
 
-      console.log('API Response:', data) // Debug log
-
-      if (data.success) {
+      if (data.success && data.data) {
         setUsers(data.data)
         setFilteredUsers(data.data)
       } else {
-        console.error('API Error:', data.error)
-        alert('Error: ' + (data.error || 'Failed to load users'))
+        console.warn('API returned success but no data:', data)
+        setUsers([])
+        setFilteredUsers([])
       }
     } catch (error) {
       console.error('Failed to load users:', error)

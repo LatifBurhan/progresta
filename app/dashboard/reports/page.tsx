@@ -145,10 +145,7 @@ export default function ReportsPage() {
               </svg>
               Kembali ke Daftar Project
             </button>
-            <h1 className="text-3xl font-bold">Riwayat Laporan</h1>
-            <p className="text-muted-foreground mt-1">
-              Pantau progres pekerjaan yang telah dilaporkan
-            </p>
+            
           </div>
         )}
 

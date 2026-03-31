@@ -39,6 +39,7 @@ export interface ProjectReport {
  */
 export interface ProjectReportWithDetails extends ProjectReport {
   user_name: string;
+  user_foto_profil?: string | null;
   project_name: string;
   can_edit: boolean;
   can_delete: boolean;

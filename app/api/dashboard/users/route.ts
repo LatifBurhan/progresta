@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     if (currentUserError || !currentUser) {
       // Fallback to Supabase Auth when user not found in database
-      console.log('User not found in database, attempting fallback to Supabase Auth...');
+      console.log('[INFO] User not found in database, attempting fallback to Supabase Auth...');
       
       try {
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         );
 
         if (authError || !authUser || !authUser.user) {
-          console.error('User not found in Auth:', authError);
+          console.log('[ERROR] User not found in Auth:', authError?.message || 'No user data');
           return NextResponse.json(
             { success: false, error: "User not found in database or authentication system" },
             { status: 404 }
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
         // Try to get role from user_metadata, if not available, default to ADMIN
         userRole = authUser.user.user_metadata?.role || 'ADMIN';
-        console.log('Using role from Supabase Auth:', userRole);
+        console.log('[SUCCESS] Using role from Supabase Auth:', userRole);
 
         // Auto-create user in database for future requests
         try {
@@ -70,17 +70,22 @@ export async function GET(request: NextRequest) {
             });
 
           if (insertError) {
-            console.error('Failed to auto-create user in database:', insertError);
+            // Check if error is duplicate key (user already exists)
+            if (insertError.code === '23505') {
+              console.log('[INFO] User already exists in database, skipping insert');
+            } else {
+              console.log('[WARN] Failed to auto-create user in database:', insertError.message);
+            }
             // Continue anyway, user can still access via Auth
           } else {
-            console.log('Auto-created user in database:', authUser.user.id);
+            console.log('[SUCCESS] Auto-created user in database:', authUser.user.id);
           }
-        } catch (insertErr) {
-          console.error('Error auto-creating user:', insertErr);
+        } catch (insertErr: any) {
+          console.log('[WARN] Error auto-creating user:', insertErr.message);
           // Continue anyway
         }
-      } catch (fallbackError) {
-        console.error('Fallback to Auth failed:', fallbackError);
+      } catch (fallbackError: any) {
+        console.log('[ERROR] Fallback to Auth failed:', fallbackError.message);
         return NextResponse.json(
           { success: false, error: "User not found" },
           { status: 404 }
@@ -89,6 +94,7 @@ export async function GET(request: NextRequest) {
     } else {
       // User found in database, use existing flow
       userRole = currentUser.role;
+      console.log('[INFO] Using role from database:', userRole);
     }
 
     // Check if user is admin
@@ -108,7 +114,7 @@ export async function GET(request: NextRequest) {
       .order('email', { ascending: true });
 
     if (usersError) {
-      console.error('Error fetching users:', usersError);
+      console.log('[ERROR] Error fetching users:', usersError.message);
       return NextResponse.json(
         { success: false, error: "Failed to fetch users: " + usersError.message },
         { status: 500 }
@@ -176,7 +182,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("Dashboard users error:", error);
+    console.log('[ERROR] Dashboard users error:', error.message);
     return NextResponse.json(
       { success: false, error: "Internal server error: " + error.message },
       { status: 500 }

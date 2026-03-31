@@ -50,10 +50,9 @@ export function validateReportForm(data: CreateReportRequest): ValidationErrors 
     errors.pekerjaan_dikerjakan = 'Pekerjaan yang dikerjakan harus diisi';
   }
   
-  // Requirement 1.8: Photo count validation (1-5 photos)
-  if (!data.foto_urls || data.foto_urls.length < 1) {
-    errors.foto_urls = 'Minimal 1 foto harus diupload';
-  } else if (data.foto_urls.length > 5) {
+  // Photos are optional (Requirement 8.1, 8.2)
+  // Only validate count if photos are provided
+  if (data.foto_urls && data.foto_urls.length > 5) {
     errors.foto_urls = 'Maksimal 5 foto dapat diupload';
   }
   
@@ -63,7 +62,7 @@ export function validateReportForm(data: CreateReportRequest): ValidationErrors 
 /**
  * Validates photo files for format and count
  * 
- * Requirements: 1.8, 1.9, 6.2, 6.3, 6.4
+ * Requirements: 1.8, 1.9, 6.2, 6.3, 6.4, 8.1
  * 
  * @param files - FileList object from file input
  * @returns Error message if validation fails, null if valid
@@ -74,9 +73,9 @@ export function validatePhotoFiles(files: FileList | File[]): string | null {
   
   const fileArray = Array.from(files);
   
-  // Requirement 6.2: Minimum 1 photo
-  if (fileArray.length < 1) {
-    return 'Minimal 1 foto harus dipilih';
+  // Requirement 8.1: Photos are optional, so 0 files is valid
+  if (fileArray.length === 0) {
+    return null;
   }
   
   // Requirement 6.3: Maximum 5 photos
@@ -137,6 +136,7 @@ export function isValidLokasiKerja(lokasiKerja: string): lokasiKerja is LokasiKe
 
 /**
  * Validates that all required fields are present in the report data
+ * Photos are optional (Requirement 8.1)
  * 
  * @param data - Partial report data to validate
  * @returns true if all required fields are present, false otherwise
@@ -145,9 +145,7 @@ export function hasRequiredFields(data: Partial<CreateReportRequest>): boolean {
   return !!(
     data.project_id &&
     data.lokasi_kerja &&
-    data.pekerjaan_dikerjakan &&
-    data.foto_urls &&
-    data.foto_urls.length >= 1 &&
-    data.foto_urls.length <= 5
+    data.pekerjaan_dikerjakan
+    // foto_urls is optional, so not checked here
   );
 }

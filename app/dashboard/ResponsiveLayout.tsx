@@ -163,6 +163,7 @@ export default function ResponsiveLayout({
                   <SidebarLink href="/dashboard/admin/users/manage" icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" label="Manajemen User" active={isActive('/dashboard/admin/users/manage')} color="orange" />
                   <SidebarLink href="/dashboard/admin/projects" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" label="Kelola Project" active={pathname.startsWith('/dashboard/admin/projects')} color="purple" />
                   <SidebarLink href="/dashboard/admin/divisions" icon="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" label="Manajemen Divisi" active={isActive('/dashboard/admin/divisions')} color="orange" />
+                  <SidebarLink href="/dashboard/admin/project-reports" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Laporan Project" active={pathname.startsWith('/dashboard/admin/project-reports')} color="teal" />
                   <SidebarLink href="/admin/reports" icon="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Export Laporan" active={pathname.startsWith('/admin/reports')} color="rose" />
                 </nav>
               </div>
@@ -212,6 +213,7 @@ function SidebarLink({ href, icon, label, active, color = 'blue' }: any) {
     indigo: active ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-indigo-50/50 hover:text-indigo-700',
     orange: active ? 'bg-orange-50 text-orange-700' : 'text-slate-600 hover:bg-orange-50/50 hover:text-orange-700',
     rose: active ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-rose-50/50 hover:text-rose-700',
+    teal: active ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-teal-50/50 hover:text-teal-700',
   }
 
   return (

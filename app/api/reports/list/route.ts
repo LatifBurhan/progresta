@@ -151,11 +151,27 @@ export async function GET(request: NextRequest) {
     const userIds = [...new Set((reports || []).map((r: any) => r.user_id))];
     const projectIds = [...new Set((reports || []).map((r: any) => r.project_id))];
 
-    // Fetch users
+    // Fetch users from database
     const { data: users } = await supabaseAdmin
       .from('users')
       .select('id, name')
       .in('id', userIds);
+
+    // Fetch user photos from Supabase Auth
+    const userPhotoMap = new Map<string, string | null>();
+    for (const userId of userIds) {
+      try {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (authUser?.user?.user_metadata?.fotoProfil) {
+          userPhotoMap.set(userId, authUser.user.user_metadata.fotoProfil);
+        } else {
+          userPhotoMap.set(userId, null);
+        }
+      } catch (error) {
+        console.error(`Failed to fetch photo for user ${userId}:`, error);
+        userPhotoMap.set(userId, null);
+      }
+    }
 
     // Fetch projects
     const { data: projects } = await supabaseAdmin
@@ -197,6 +213,7 @@ export async function GET(request: NextRequest) {
         id: report.id,
         user_id: report.user_id,
         user_name: userMap.get(report.user_id) || 'Unknown User',
+        user_foto_profil: userPhotoMap.get(report.user_id) || null,
         project_id: report.project_id,
         project_name: projectMap.get(report.project_id) || 'Unknown Project',
         lokasi_kerja: report.lokasi_kerja,

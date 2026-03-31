@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, ChangeEvent } from 'react'
-import { X, Upload, Image as ImageIcon } from 'lucide-react'
+import { useState, useRef, ChangeEvent, useEffect } from 'react'
+import { X, Upload, Image as ImageIcon, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { validatePhotoFiles } from '@/lib/validations/report-validation'
+import { CameraCapture } from './CameraCapture'
 
 interface PhotoUploaderProps {
   maxPhotos?: number
@@ -11,6 +12,7 @@ interface PhotoUploaderProps {
   onFilesSelected: (files: File[]) => void
   initialPhotos?: string[]
   error?: string
+  enableCamera?: boolean
 }
 
 export function PhotoUploader({
@@ -18,15 +20,34 @@ export function PhotoUploader({
   acceptedFormats = ['image/jpeg', 'image/jpg', 'image/png'],
   onFilesSelected,
   initialPhotos = [],
-  error
+  error,
+  enableCamera = true
 }: PhotoUploaderProps) {
   const [previews, setPreviews] = useState<string[]>(initialPhotos)
   const [files, setFiles] = useState<File[]>([])
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false)
+  const [cameraSupported, setCameraSupported] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Check camera support
+  useEffect(() => {
+    const checkCameraSupport = () => {
+      const supported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+      setCameraSupported(supported)
+    }
+    checkCameraSupport()
+  }, [])
 
   const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files
     if (!selectedFiles || selectedFiles.length === 0) return
+
+    // Check if adding these files would exceed max
+    const totalFiles = files.length + selectedFiles.length
+    if (totalFiles > maxPhotos) {
+      alert(`Maksimal ${maxPhotos} foto. Anda sudah memiliki ${files.length} foto.`)
+      return
+    }
 
     // Validate files
     const validationError = validatePhotoFiles(selectedFiles)
@@ -35,23 +56,54 @@ export function PhotoUploader({
       return
     }
 
-    // Convert FileList to array
+    // Convert FileList to array and merge with existing files
     const fileArray = Array.from(selectedFiles)
+    const newFiles = [...files, ...fileArray]
     
-    // Generate previews
+    // Generate previews for new files
     const newPreviews: string[] = []
     fileArray.forEach(file => {
       const reader = new FileReader()
       reader.onloadend = () => {
         newPreviews.push(reader.result as string)
         if (newPreviews.length === fileArray.length) {
-          setPreviews(newPreviews)
-          setFiles(fileArray)
-          onFilesSelected(fileArray)
+          setPreviews([...previews, ...newPreviews])
+          setFiles(newFiles)
+          onFilesSelected(newFiles)
         }
       }
       reader.readAsDataURL(file)
     })
+  }
+
+  const handleCameraCapture = (file: File) => {
+    // Add captured file to existing files
+    const newFiles = [...files, file]
+    
+    // Generate preview for captured photo
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const newPreviews = [...previews, reader.result as string]
+      setPreviews(newPreviews)
+      setFiles(newFiles)
+      onFilesSelected(newFiles)
+    }
+    reader.readAsDataURL(file)
+    
+    // Close camera modal
+    setIsCameraModalOpen(false)
+  }
+
+  const openCameraModal = () => {
+    if (files.length >= maxPhotos) {
+      alert(`Maksimal ${maxPhotos} foto sudah tercapai. Hapus foto yang ada untuk menambah foto baru.`)
+      return
+    }
+    setIsCameraModalOpen(true)
+  }
+
+  const closeCameraModal = () => {
+    setIsCameraModalOpen(false)
   }
 
   const removePhoto = (index: number) => {
@@ -74,15 +126,32 @@ export function PhotoUploader({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
+        {/* Camera Button */}
+        {enableCamera && cameraSupported && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={openCameraModal}
+            disabled={files.length >= maxPhotos}
+            className="flex-1"
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            Ambil Foto
+          </Button>
+        )}
+
+        {/* File Picker Button */}
         <Button
           type="button"
           variant="outline"
           onClick={handleButtonClick}
-          className="w-full"
+          disabled={files.length >= maxPhotos}
+          className="flex-1"
         >
           <Upload className="w-4 h-4 mr-2" />
-          Pilih Foto (1-{maxPhotos})
+          Pilih Foto
         </Button>
+        
         <input
           ref={fileInputRef}
           type="file"
@@ -92,6 +161,13 @@ export function PhotoUploader({
           className="hidden"
         />
       </div>
+
+      {/* Max photos reached message */}
+      {files.length >= maxPhotos && (
+        <p className="text-sm text-amber-600 font-medium">
+          Maksimal {maxPhotos} foto sudah tercapai
+        </p>
+      )}
 
       {error && (
         <p className="text-sm text-destructive">{error}</p>
@@ -124,8 +200,18 @@ export function PhotoUploader({
         <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
           <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p className="text-sm">Belum ada foto dipilih</p>
-          <p className="text-xs mt-1">JPG, PNG, atau JPEG (1-{maxPhotos} foto)</p>
+          <p className="text-xs mt-1">JPG, PNG, atau JPEG (Opsional, maks {maxPhotos} foto)</p>
         </div>
+      )}
+
+      {/* Camera Capture Component */}
+      {enableCamera && cameraSupported && (
+        <CameraCapture
+          isOpen={isCameraModalOpen}
+          onClose={closeCameraModal}
+          onPhotoCapture={handleCameraCapture}
+          maxFileSize={5 * 1024 * 1024}
+        />
       )}
     </div>
   )

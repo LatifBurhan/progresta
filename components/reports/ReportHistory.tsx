@@ -106,55 +106,57 @@ export function ReportHistory({ isAdmin, projectId = '' }: ReportHistoryProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="-m-4 sm:-m-8 pb-24 text-slate-900 bg-[#F8FAFC] min-h-screen">
       
-      {/* Header with Count and Create Button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold text-slate-900">Riwayat Laporan</h2>
-          <span className="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full font-semibold">
-            {reports.length}
-          </span>
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-[#F8FAFC] border-b border-slate-200/60 px-4 py-3 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-black uppercase tracking-tight text-slate-800 leading-none mb-1">
+              Riwayat Laporan
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                {reports.length} Laporan Aktivitas
+              </span>
+            </div>
+          </div>
+
+          <Button 
+            onClick={() => router.push('/dashboard/reports?view=create')}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2 font-bold text-xs"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Buat Laporan
+          </Button>
         </div>
-        <Button 
-          onClick={() => router.push('/dashboard/reports?view=create')}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-medium"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Buat Laporan
-        </Button>
       </div>
 
-      {/* Subtitle */}
-      <p className="text-slate-600 text-sm">Pantau progres pekerjaan yang telah dilaporkan</p>
-
       {/* Reports List Area */}
+      <div className="px-4 space-y-6">
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
       ) : reports.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Inbox className="w-16 h-16 text-slate-300 mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900">Belum ada laporan</h3>
-          <p className="text-sm text-slate-500 mt-2">
-            Mulai buat laporan pertama Anda
-          </p>
+        <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-slate-200">
+          <Inbox className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada aktivitas</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {reports.map((report) => (
+        reports.map((report) => (
+          <div key={report.id} className="group">
             <ReportCard
-              key={report.id}
               report={report}
               isAdmin={isAdmin}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
               onPhotoClick={handlePhotoClick}
             />
-          ))}
-        </div>
+          </div>
+        ))
       )}
+      </div>
 
       {/* Photo Viewer */}
       <PhotoViewer

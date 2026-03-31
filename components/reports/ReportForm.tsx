@@ -81,11 +81,9 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const dataToValidate = {
-      ...formData,
-      foto_urls: selectedFiles.length > 0 ? ['placeholder'] : formData.foto_urls
-    }
-    const validationErrors = validateReportForm(dataToValidate)
+    
+    // Validate form (photos are optional, so we don't need placeholder)
+    const validationErrors = validateReportForm(formData)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
