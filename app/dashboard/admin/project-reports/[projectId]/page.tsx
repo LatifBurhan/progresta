@@ -4,9 +4,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 import ProjectReportDetailClient from './ProjectReportDetailClient'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     projectId: string
-  }
+  }>
 }
 
 export default async function ProjectReportDetailPage({ params }: PageProps) {
@@ -27,7 +27,7 @@ export default async function ProjectReportDetailPage({ params }: PageProps) {
     )
   }
 
-  const { projectId } = params
+  const { projectId } = await params
 
   // Fetch project details
   const { data: project, error: projectError } = await supabaseAdmin

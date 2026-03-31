@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
-import { createClient } from '@/lib/supabase'
-import prisma from '@/lib/prisma'
+import { supabaseAdmin } from '@/lib/supabase'
 import CreateUserForm from '../CreateUserForm'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -14,11 +13,14 @@ export default async function CreateUserPage() {
     redirect('/login')
   }
 
-  // Check user status and role using Supabase client (consistent with admin layout)
-  const supabase = createClient()
-  const { data: userData, error } = await supabase
+  if (!supabaseAdmin) {
+    return <div>Database configuration error</div>
+  }
+
+  // Check user status and role using Supabase
+  const { data: userData, error } = await supabaseAdmin
     .from('users')
-    .select('role, status_pending')
+    .select('role, status')
     .eq('id', session.userId)
     .single()
 
@@ -26,7 +28,7 @@ export default async function CreateUserPage() {
     redirect('/login')
   }
 
-  if (userData.status_pending) {
+  if (userData.status === 'PENDING') {
     redirect('/waiting-room')
   }
 
@@ -35,11 +37,16 @@ export default async function CreateUserPage() {
     redirect('/admin/users')
   }
 
-  // Get all active divisions
-  const divisions = await prisma.division.findMany({
-    where: { isActive: true },
-    orderBy: { name: 'asc' }
-  })
+  if (!supabaseAdmin) {
+    return <div>Database configuration error</div>
+  }
+
+  // Get all active divisions from Supabase
+  const { data: divisions } = await supabaseAdmin
+    .from('divisions')
+    .select('id, name, color')
+    .eq('isActive', true)
+    .order('name', { ascending: true })
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -61,7 +68,7 @@ export default async function CreateUserPage() {
         </Link>
       </div>
 
-      <CreateUserForm divisions={divisions} />
+      <CreateUserForm divisions={divisions || []} />
     </div>
   )
 }

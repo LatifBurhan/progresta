@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     // Verify user has admin access
@@ -24,7 +24,7 @@ export async function GET(
       )
     }
 
-    const { projectId } = params
+    const { projectId } = await params
 
     // Fetch project details
     const { data: project, error: projectError } = await supabaseAdmin
