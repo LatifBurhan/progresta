@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ReportHistory } from '@/components/reports/ReportHistory'
@@ -11,7 +12,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { Button } from '@/components/ui/button'
 import type { Project } from '@/types/report'
 
-export default function ReportsPage() {
+function ReportsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const view = searchParams.get('view')
@@ -209,5 +210,17 @@ export default function ReportsPage() {
       {/* Toast Notifications */}
       <Toaster />
     </>
+  )
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+      </div>
+    }>
+      <ReportsPageContent />
+    </Suspense>
   )
 }
