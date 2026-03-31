@@ -1,8 +1,12 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/update-overdue-projects",
-      "schedule": "0 0 * * *"
-    }
-  ]
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key"
+  }
 }
