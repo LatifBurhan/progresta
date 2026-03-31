@@ -8,7 +8,8 @@ import Link from 'next/link'
 import { 
   User, Phone, Briefcase, Search, 
   Building, Edit, Trash2, UserCheck, 
-  UserX, Plus, ArrowLeft
+  UserX, Plus, ArrowLeft, CheckCircle2, 
+  XCircle
 } from 'lucide-react'
 import EditUserModal from './EditUserModal'
 import DeleteUserModal from './DeleteUserModal'
@@ -45,6 +46,8 @@ interface UserData {
     name: string
     color: string | null
   } | null
+  todayReports?: number
+  todayProgress?: number
 }
 
 interface UserManagementClientProps {
@@ -84,11 +87,29 @@ export default function UserManagementClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, action })
       })
-      if (response.ok) {
-        setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, status: action === 'activate' ? 'ACTIVE' : 'INACTIVE' } : u))
+      
+      const data = await response.json()
+      
+      if (response.ok && data.success) {
+        // Update user status in local state
+        setAllUsers(prev => prev.map(u => 
+          u.id === userId 
+            ? { ...u, status: action === 'activate' ? 'ACTIVE' : 'INACTIVE' } 
+            : u
+        ))
         setActionModal({ open: false, user: null, action: null })
+        
+        // Show success message
+        alert(`User berhasil ${action === 'activate' ? 'diaktifkan' : 'dinonaktifkan'}!`)
+      } else {
+        // Show error message
+        alert(`Gagal ${action === 'activate' ? 'mengaktifkan' : 'menonaktifkan'} user: ${data.message || 'Unknown error'}`)
+        console.error('User action failed:', data)
       }
-    } catch (error) { console.error(error) }
+    } catch (error) {
+      console.error('User action error:', error)
+      alert(`Terjadi kesalahan saat ${action === 'activate' ? 'mengaktifkan' : 'menonaktifkan'} user`)
+    }
   }
 
   const filteredUsers = allUsers.filter(user => {
@@ -120,8 +141,8 @@ export default function UserManagementClient({
   }
 
   const canDeleteUser = (user: UserData) => {
-    // Only ADMIN can delete users
-    if (currentUserRole === 'ADMIN') return true
+    // ADMIN and HRD can delete users
+    if (['ADMIN', 'HRD'].includes(currentUserRole)) return true
     return false
   }
 
@@ -204,7 +225,7 @@ export default function UserManagementClient({
               <tr className="bg-slate-50/50 border-b border-slate-50 text-slate-400 font-black text-[11px] uppercase tracking-[0.2em]">
                 <th className="px-8 py-6">Informasi Personel</th>
                 <th className="px-8 py-6">Otoritas & Penempatan</th>
-                <th className="px-8 py-6">Kontak & Detail</th>
+                <th className="px-8 py-6">Progres Harian</th>
                 <th className="px-8 py-6 text-right">Manajemen Akun</th>
               </tr>
             </thead>
@@ -234,12 +255,35 @@ export default function UserManagementClient({
                                 {(user.profile?.name || user.email).charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${user.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                            {/* Status Badge with Icon */}
+                            {user.status === 'ACTIVE' ? (
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-white shadow-md flex items-center justify-center">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                              </div>
+                            ) : (
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-rose-500 border-2 border-white shadow-md flex items-center justify-center">
+                                <XCircle className="w-3.5 h-3.5 text-white" />
+                              </div>
+                            )}
                           </div>
                           <div className="min-w-0">
-                            <h3 className="font-extrabold text-slate-900 text-lg group-hover:text-blue-600 transition-colors truncate">
-                              {user.profile?.name || user.email.split('@')[0]}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-extrabold text-slate-900 text-lg group-hover:text-blue-600 transition-colors truncate">
+                                {user.profile?.name || user.email.split('@')[0]}
+                              </h3>
+                              {/* Status Text Badge */}
+                              {user.status === 'ACTIVE' ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider border border-emerald-100">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Aktif
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-bold uppercase tracking-wider border border-rose-100">
+                                  <XCircle className="w-3 h-3" />
+                                  Non-Aktif
+                                </span>
+                              )}
+                            </div>
                             <p className="text-sm font-medium text-slate-400 truncate">{user.email}</p>
                           </div>
                         </div>
@@ -259,19 +303,31 @@ export default function UserManagementClient({
                         </div>
                       </td>
 
-                      {/* Kontak & Position */}
+                      {/* Progres Harian */}
                       <td className="px-8 py-6">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2 text-slate-700 text-sm font-bold">
-                            <Briefcase className="w-4 h-4 text-slate-300" />
-                            {user.profile?.position || 'Anggota Tim'}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-slate-700">
+                              {user.todayReports || 0}/3 Laporan
+                            </span>
+                            <span className="text-xs font-bold text-slate-400">
+                              {user.todayProgress || 0}%
+                            </span>
                           </div>
-                          {user.profile?.phone && (
-                            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                              <Phone className="w-3.5 h-3.5" />
-                              {user.profile.phone}
-                            </div>
-                          )}
+                          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className={`h-2.5 rounded-full transition-all duration-500 ${
+                                (user.todayProgress || 0) === 100
+                                  ? 'bg-emerald-500'
+                                  : (user.todayProgress || 0) >= 66
+                                  ? 'bg-blue-500'
+                                  : (user.todayProgress || 0) >= 33
+                                  ? 'bg-amber-500'
+                                  : 'bg-rose-500'
+                              }`}
+                              style={{ width: `${user.todayProgress || 0}%` }}
+                            />
+                          </div>
                         </div>
                       </td>
 

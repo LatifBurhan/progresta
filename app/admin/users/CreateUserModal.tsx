@@ -94,7 +94,7 @@ export default function CreateUserModal({ open, divisions, onClose }: CreateUser
             </div>
             <div>
               <h3 className="text-xl font-black text-slate-900 tracking-tight">Tambah Anggota</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Sistem Manajemen User</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Sistem Database Karyawan</p>
             </div>
           </div>
           <button 

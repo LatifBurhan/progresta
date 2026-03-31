@@ -24,6 +24,12 @@ export default async function UserManagePage() {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // Get today's date range
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
     // Get all active users with their divisions
     const { data: users, error: usersError } = await supabase
       .from('users')
@@ -44,23 +50,46 @@ export default async function UserManagePage() {
       console.error('Failed to fetch users:', usersError)
       allUsers = []
     } else {
+      // Get today's reports count for each user
+      const userIds = (users || []).map(u => u.id)
+      
+      const { data: reportsData } = await supabase
+        .from('reports')
+        .select('userId')
+        .in('userId', userIds)
+        .gte('createdAt', today.toISOString())
+        .lt('createdAt', tomorrow.toISOString())
+
+      // Count reports per user
+      const reportCounts: Record<string, number> = {}
+      reportsData?.forEach(report => {
+        reportCounts[report.userId] = (reportCounts[report.userId] || 0) + 1
+      })
+
       // Transform users to match expected format
-      allUsers = (users || []).map(user => ({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        divisionId: user.divisionId,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        division: user.divisions,
-        profile: {
-          name: user.email.split('@')[0], // Fallback: use email prefix as name
-          fotoProfil: null,
-          phone: null,
-          position: null
+      allUsers = (users || []).map(user => {
+        const todayReports = reportCounts[user.id] || 0
+        const todayProgress = Math.min(Math.round((todayReports / 3) * 100), 100)
+        
+        return {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          divisionId: user.divisionId,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          division: user.divisions,
+          todayReports,
+          todayProgress,
+          profile: {
+            name: user.email.split('@')[0], // Fallback: use email prefix as name
+            fotoProfil: null,
+            phone: null,
+            position: null
+          }
         }
-      }))
+      })
     }
 
     // Get all divisions with department info

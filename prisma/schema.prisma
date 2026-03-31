@@ -9,17 +9,24 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Enum untuk status user
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+}
+
 // Model sesuai dengan struktur database yang sebenarnya
 model User {
-  id            String    @id @db.Uuid
-  email         String    @unique
+  id            String     @id @db.Uuid
+  email         String     @unique
   // name field tidak ada di database, jadi dihapus
-  role          String    @default("KARYAWAN") // Sesuai constraint database (uppercase)
-  divisionId    String?   @map("divisionId") @db.Uuid // Map ke divisionId (camelCase di database)
-  statusPending Boolean   @default(true) @map("status_pending")
-  status        String    @default("ACTIVE") // Add status field
-  createdAt     DateTime  @default(now()) @map("createdAt")
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updatedAt")
+  role          String     @default("KARYAWAN") // Sesuai constraint database (uppercase)
+  divisionId    String?    @map("divisionId") @db.Uuid // Map ke divisionId (camelCase di database)
+  statusPending Boolean    @default(true) @map("status_pending")
+  status        UserStatus @default(ACTIVE) // Use enum instead of String
+  createdAt     DateTime   @default(now()) @map("createdAt")
+  updatedAt     DateTime   @default(now()) @updatedAt @map("updatedAt")
   
   // Relations
   division      Division? @relation(fields: [divisionId], references: [id])

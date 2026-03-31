@@ -1,34 +1,58 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Get environment variables with fallbacks for build time
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-// Client-side Supabase (for public access)
-export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+// Lazy initialization for client-side Supabase
+let _supabase: SupabaseClient | null = null
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(target, prop) {
+    if (!_supabase) {
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase URL and Anon Key are required. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
+      }
+      _supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+    }
+    return (_supabase as any)[prop]
+  }
+})
 
 // Function to create Supabase client (for server-side use)
 export function createClient() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase URL and Anon Key are required')
+  }
   return createSupabaseClient(supabaseUrl, supabaseAnonKey)
 }
 
-// Server-side Supabase with service role (bypasses RLS)
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-export const supabaseAdmin = supabaseServiceKey 
-  ? createSupabaseClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      },
-      db: {
-        schema: 'public'
-      },
-      global: {
-        headers: {
-          'Prefer': 'return=representation'
-        }
+// Lazy initialization for admin client
+let _supabaseAdmin: SupabaseClient | null = null
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get(target, prop) {
+    if (!_supabaseAdmin) {
+      if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error('Supabase URL and Service Role Key are required. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.')
       }
-    })
-  : null
+      _supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        },
+        db: {
+          schema: 'public'
+        },
+        global: {
+          headers: {
+            'Prefer': 'return=representation'
+          }
+        }
+      })
+    }
+    return (_supabaseAdmin as any)[prop]
+  }
+})
 
 // Helper function to upload avatar (server-side with admin client)
 export async function uploadAvatar(fileBuffer: Buffer, fileName: string, contentType: string) {

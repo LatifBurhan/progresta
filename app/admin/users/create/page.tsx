@@ -55,7 +55,7 @@ export default async function CreateUserPage() {
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
           <Link href="/dashboard" className="hover:text-blue-600">Dashboard</Link>
           <span>/</span>
-          <Link href="/admin/users" className="hover:text-blue-600">Manajemen User</Link>
+          <Link href="/admin/users" className="hover:text-blue-600">Database Karyawan</Link>
           <span>/</span>
           <span className="text-gray-900 font-medium">Tambah User</span>
         </nav>
@@ -63,7 +63,7 @@ export default async function CreateUserPage() {
         <Link href="/admin/users">
           <Button variant="outline" className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Kembali ke Manajemen User
+            Kembali ke Database Karyawan
           </Button>
         </Link>
       </div>

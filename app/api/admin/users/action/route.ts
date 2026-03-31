@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,12 +34,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true }
-    })
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single()
 
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json({ 
         success: false, 
         message: 'User not found' 
@@ -54,11 +55,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Only ADMIN can delete users
-    if (action === 'delete' && session.role !== 'ADMIN') {
+    // Only ADMIN and HRD can delete users
+    if (action === 'delete' && !['ADMIN', 'HRD'].includes(session.role)) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Only ADMIN can delete users' 
+        message: 'Only ADMIN and HRD can delete users' 
       }, { status: 403 })
     }
 
@@ -73,11 +74,22 @@ export async function POST(request: NextRequest) {
           }, { status: 400 })
         }
         
-        result = await prisma.user.update({
-          where: { id: userId },
-          data: { status: 'ACTIVE' },
-          include: { profile: true, division: true }
-        })
+        const { data: activatedUser, error: activateError } = await supabaseAdmin
+          .from('users')
+          .update({ status: 'ACTIVE' })
+          .eq('id', userId)
+          .select()
+          .single()
+
+        if (activateError) {
+          console.error('Activate error:', activateError)
+          return NextResponse.json({ 
+            success: false, 
+            message: 'Failed to activate user' 
+          }, { status: 500 })
+        }
+
+        result = activatedUser
         break
 
       case 'deactivate':
@@ -88,19 +100,37 @@ export async function POST(request: NextRequest) {
           }, { status: 400 })
         }
         
-        result = await prisma.user.update({
-          where: { id: userId },
-          data: { status: 'INACTIVE' },
-          include: { profile: true, division: true }
-        })
+        const { data: deactivatedUser, error: deactivateError } = await supabaseAdmin
+          .from('users')
+          .update({ status: 'INACTIVE' })
+          .eq('id', userId)
+          .select()
+          .single()
+
+        if (deactivateError) {
+          console.error('Deactivate error:', deactivateError)
+          return NextResponse.json({ 
+            success: false, 
+            message: 'Failed to deactivate user' 
+          }, { status: 500 })
+        }
+
+        result = deactivatedUser
         break
 
       case 'delete':
-        // Delete user and all related data (cascade will handle profile)
-        // Note: Reports will remain but user reference will be null
-        await prisma.user.delete({
-          where: { id: userId }
-        })
+        const { error: deleteError } = await supabaseAdmin
+          .from('users')
+          .delete()
+          .eq('id', userId)
+
+        if (deleteError) {
+          console.error('Delete error:', deleteError)
+          return NextResponse.json({ 
+            success: false, 
+            message: 'Failed to delete user' 
+          }, { status: 500 })
+        }
         
         result = { id: userId, deleted: true }
         break
@@ -121,17 +151,10 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('User action error:', error)
     
-    // Handle specific Prisma errors
-    if (error?.code === 'P2025') {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'User not found' 
-      }, { status: 404 })
-    }
-
     return NextResponse.json({ 
       success: false, 
-      message: 'Internal server error' 
+      message: 'Internal server error',
+      error: error.message 
     }, { status: 500 })
   }
 }

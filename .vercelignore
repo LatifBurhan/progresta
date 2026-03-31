@@ -1,10 +1,19 @@
-# Documentation
+# Documentation (keep deployment docs)
 docs/
 README.md
 CHANGELOG.md
+*.md
+!DEPLOYMENT_README.md
+!VERCEL_DEPLOYMENT.md
+!QUICK_START_VERCEL.md
+!SUPABASE_SETUP.md
+!DEPLOYMENT_CHECKLIST.md
 
 # Development files
+.env
+.env.local
 .env.example
+.env.production.example
 .vscode/
 
 # Tests
@@ -20,3 +29,14 @@ scripts/
 # Git
 .git/
 .gitignore
+
+# Build artifacts (will be rebuilt on Vercel)
+.next/
+node_modules/
+
+# Database files
+*.sql
+!supabase/migrations/*.sql
+
+# Kiro files
+.kiro/
