@@ -16,8 +16,8 @@ export default async function UserManagePage() {
   }
 
   // Get all users with their divisions using Supabase client
-  let allUsers = []
-  let divisions = []
+  let allUsers: any[] = []
+  let divisions: any[] = []
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!

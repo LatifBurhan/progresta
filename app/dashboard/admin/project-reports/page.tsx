@@ -62,13 +62,13 @@ export default async function ProjectReportsPage() {
   const projectsWithCounts = await Promise.all(
     (projects || []).map(async (project: any) => {
       // Get report count
-      const { count } = await supabaseAdmin
+      const { count } = await supabaseAdmin!
         .from('project_reports')
         .select('id', { count: 'exact', head: true })
         .eq('project_id', project.id)
 
       // Get departments for this project via project_department_divisions
-      const { data: projectDepts } = await supabaseAdmin
+      const { data: projectDepts } = await supabaseAdmin!
         .from('project_department_divisions')
         .select(`
           departments (

@@ -29,24 +29,14 @@ export default async function DashboardLayout({
 
     if (userData) {
       profile = {
-        fotoProfil: null,
-        name: session.name,
-        user: {
-          email: userData.email,
-          role: userData.role
-        }
+        fotoProfil: null
       }
     }
   } catch (error) {
     console.error('Failed to fetch user profile:', error)
     // Fallback profile
     profile = {
-      fotoProfil: null,
-      name: session.name,
-      user: {
-        email: session.email,
-        role: session.role
-      }
+      fotoProfil: null
     }
   }
 

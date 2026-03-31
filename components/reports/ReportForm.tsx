@@ -223,7 +223,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
             </Label>
             <Textarea
               id="kendala"
-              value={formData.kendala}
+              value={formData.kendala || ''}
               onChange={(e) => updateField('kendala', e.target.value)}
               className="min-h-[100px] rounded-xl border-slate-200 bg-white"
               placeholder="Apa hambatanmu hari ini?"
@@ -236,7 +236,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
             </Label>
             <Textarea
               id="rencana_kedepan"
-              value={formData.rencana_kedepan}
+              value={formData.rencana_kedepan || ''}
               onChange={(e) => updateField('rencana_kedepan', e.target.value)}
               className="min-h-[100px] rounded-xl border-slate-200 bg-white"
               placeholder="Langkah selanjutnya..."

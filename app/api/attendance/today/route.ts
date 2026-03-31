@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(request: Request) {
   try {
@@ -23,6 +23,13 @@ export async function GET(request: Request) {
       )
     }
 
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, message: 'Database configuration error' },
+        { status: 500 }
+      )
+    }
+
     // Get today's date in Jakarta timezone
     const now = new Date()
     const jakartaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}))
@@ -31,22 +38,21 @@ export async function GET(request: Request) {
     tomorrow.setDate(tomorrow.getDate() + 1)
 
     // Get all reports for today
-    const reports = await prisma.report.findMany({
-      where: {
-        userId,
-        reportDate: {
-          gte: today,
-          lt: tomorrow
-        }
-      },
-      orderBy: {
-        reportTime: 'asc'
-      },
-      select: {
-        reportTime: true,
-        totalHours: true
-      }
-    })
+    const { data: reports, error } = await supabaseAdmin
+      .from('project_reports')
+      .select('report_time, total_hours')
+      .eq('user_id', userId)
+      .gte('report_date', today.toISOString())
+      .lt('report_date', tomorrow.toISOString())
+      .order('report_time', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching reports:', error)
+      return NextResponse.json(
+        { success: false, message: 'Gagal mengambil data laporan' },
+        { status: 500 }
+      )
+    }
 
     let attendance = {
       clockIn: null as string | null,
@@ -54,28 +60,28 @@ export async function GET(request: Request) {
       workDuration: 0, // in hours
       totalHours: 0,
       isOvertime: false,
-      reportCount: reports.length,
+      reportCount: reports?.length || 0,
       lastUpdated: new Date().toISOString()
     }
 
-    if (reports.length > 0) {
+    if (reports && reports.length > 0) {
       // Clock in = first report time
-      attendance.clockIn = reports[0].reportTime.toISOString()
+      attendance.clockIn = reports[0].report_time
       
       // Clock out = last report time
-      attendance.clockOut = reports[reports.length - 1].reportTime.toISOString()
+      attendance.clockOut = reports[reports.length - 1].report_time
       
       // Work duration = time between first and last report
-      const firstReport = new Date(reports[0].reportTime)
-      const lastReport = new Date(reports[reports.length - 1].reportTime)
+      const firstReport = new Date(reports[0].report_time)
+      const lastReport = new Date(reports[reports.length - 1].report_time)
       const durationMs = lastReport.getTime() - firstReport.getTime()
       attendance.workDuration = durationMs / (1000 * 60 * 60) // Convert to hours
       
       // Total hours = sum of all report hours
-      attendance.totalHours = reports.reduce((sum, report) => sum + report.totalHours, 0)
+      attendance.totalHours = reports.reduce((sum: number, report: any) => sum + (report.total_hours || 0), 0)
       
       // Check if overtime (last report after 16:00 WIB)
-      const lastReportTime = new Date(reports[reports.length - 1].reportTime)
+      const lastReportTime = new Date(reports[reports.length - 1].report_time)
       const lastReportHour = new Intl.DateTimeFormat('en-US', {
         timeZone: 'Asia/Jakarta',
         hour: 'numeric',

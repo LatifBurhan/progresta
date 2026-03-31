@@ -35,7 +35,7 @@ interface Division {
   id: string;
   name: string;
   color: string | null;
-  department_id: string;
+  department_id?: string;
 }
 
 interface EditUserModalProps {

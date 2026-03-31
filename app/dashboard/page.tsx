@@ -13,6 +13,10 @@ export default async function DashboardPage() {
   // Get user name from Supabase Auth user_metadata
   let userName = session.email
   try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not initialized')
+    }
+
     // First try to get from Auth user metadata
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(session.userId)
     

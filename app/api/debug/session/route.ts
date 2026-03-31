@@ -13,6 +13,13 @@ export async function GET() {
       })
     }
 
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database configuration error'
+      })
+    }
+
     // Get user from database
     const { data: dbUser, error: dbError } = await supabaseAdmin
       .from('users')

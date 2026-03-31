@@ -17,21 +17,28 @@ interface Division {
   name: string;
   color?: string;
   is_active?: boolean;
+  department_id?: string;
 }
 
 interface Project {
   id: string;
   name: string;
-  description?: string;
-  tujuan?: string;
-  pic?: string;
-  prioritas?: string;
+  description: string | null;
+  tujuan: string | null;
+  pic: string | null;
+  prioritas: string | null;
   status: string;
-  tanggal_mulai?: string;
-  tanggal_selesai?: string;
-  lampiran_files?: string[];
-  divisions?: Division[];
-  created_at?: string;
+  tanggal_mulai: string | null;
+  tanggal_selesai: string | null;
+  lampiran_files: string[] | null;
+  divisions: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+  }>;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
 }
 
 interface ProjectManagementClientProps {
@@ -67,7 +74,7 @@ export default function ProjectManagementClient({ projects: initialProjects, div
   const openEditModal = (project: Project) => { setSelectedProject(project); setEditModalOpen(true); };
   const openFilePreview = (project: Project) => { setSelectedProject(project); setFilePreviewModalOpen(true); };
 
-  const getPriorityStyle = (prioritas: string | null) => {
+  const getPriorityStyle = (prioritas: string | null | undefined) => {
     switch (prioritas) {
       case "Urgent": return "bg-rose-50 text-rose-600 border-rose-100";
       case "Tinggi": return "bg-orange-50 text-orange-600 border-orange-100";
@@ -117,7 +124,7 @@ export default function ProjectManagementClient({ projects: initialProjects, div
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' });
   };

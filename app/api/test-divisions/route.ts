@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET() {
   try {
@@ -9,35 +9,39 @@ export async function GET() {
       success: false
     }
 
-    // Test 1: Database connection
-    results.tests.push('Testing database connection...')
-    try {
-      await prisma.$connect()
-      results.tests.push('✅ Database connected successfully')
-      results.dbConnected = true
-    } catch (error: any) {
-      results.tests.push(`❌ Database connection failed: ${error.message}`)
-      results.dbConnected = false
-      results.dbError = error.message
+    if (!supabaseAdmin) {
+      results.tests.push('❌ Supabase admin client not initialized')
       return NextResponse.json(results, { status: 500 })
     }
+
+    // Test 1: Database connection
+    results.tests.push('Testing Supabase connection...')
+    results.tests.push('✅ Supabase admin client initialized')
+    results.dbConnected = true
 
     // Test 2: Fetch divisions
     results.tests.push('Fetching divisions from database...')
     try {
-      const divisions = await prisma.division.findMany({
-        orderBy: { name: 'asc' }
-      })
+      const { data: divisions, error } = await supabaseAdmin
+        .from('divisions')
+        .select('id, name, description, color, created_at')
+        .order('name', { ascending: true })
       
-      results.tests.push(`✅ Found ${divisions.length} divisions`)
-      results.divisions = divisions.map(div => ({
+      if (error) {
+        results.tests.push(`❌ Failed to fetch divisions: ${error.message}`)
+        results.divisionError = error.message
+        return NextResponse.json(results, { status: 500 })
+      }
+
+      results.tests.push(`✅ Found ${divisions?.length || 0} divisions`)
+      results.divisions = divisions?.map((div: any) => ({
         id: div.id,
         name: div.name,
         description: div.description,
         color: div.color,
-        createdAt: div.createdAt?.toISOString()
+        createdAt: div.created_at
       }))
-      results.divisionCount = divisions.length
+      results.divisionCount = divisions?.length || 0
       results.success = true
     } catch (error: any) {
       results.tests.push(`❌ Failed to fetch divisions: ${error.message}`)
@@ -46,8 +50,6 @@ export async function GET() {
 
     // Test 3: Environment variables
     results.environment = {
-      DATABASE_URL: !!process.env.DATABASE_URL,
-      DIRECT_URL: !!process.env.DIRECT_URL,
       SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY

@@ -16,8 +16,8 @@ interface Department {
 interface Division {
   id: string;
   name: string;
-  color: string;
-  department_id: string;
+  color?: string;
+  department_id?: string;
 }
 
 interface CreateProjectModalProps {
@@ -70,7 +70,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
 
   // Filter divisions based on selected departments
   const filteredDivisions = formData.departmentIds.length > 0
-    ? divisions.filter(d => formData.departmentIds.includes(d.department_id))
+    ? divisions.filter(d => d.department_id && formData.departmentIds.includes(d.department_id))
     : [];
 
   const calculateDuration = () => {
@@ -90,7 +90,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
       // Remove divisions that are not in the selected departments
       const validDivisionIds = prev.divisionIds.filter(divId => {
         const division = divisions.find(d => d.id === divId);
-        return division && newDepartmentIds.includes(division.department_id);
+        return division && division.department_id && newDepartmentIds.includes(division.department_id);
       });
 
       return {

@@ -41,7 +41,7 @@ export async function GET() {
       supabaseConfig: {
         canCreateClient: false,
         canCreateAdminClient: false,
-        error: null
+        error: null as string | null
       }
     }
 

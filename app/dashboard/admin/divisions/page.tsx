@@ -15,7 +15,7 @@ export default async function DivisionManagePage() {
     redirect('/dashboard')
   }
 
-  let divisionsWithCounts = []
+  let divisionsWithCounts: any[] = []
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!

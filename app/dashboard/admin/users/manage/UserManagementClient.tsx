@@ -24,6 +24,8 @@ interface UserProfile {
 interface Division {
   id: string
   name: string
+  color: string | null
+  department_id?: string
 }
 
 interface UserData {
@@ -31,8 +33,18 @@ interface UserData {
   email: string
   role: string
   status: string
-  profile?: UserProfile
-  division?: Division
+  createdAt: string
+  divisionId: string | null
+  profile: {
+    name: string | null
+    fotoProfil: string | null
+    phone: string | null
+    position: string | null
+  } | null
+  division?: {
+    name: string
+    color: string | null
+  } | null
 }
 
 interface UserManagementClientProps {

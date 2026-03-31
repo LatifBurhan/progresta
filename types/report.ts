@@ -89,8 +89,8 @@ export interface CreateReportRequest {
   project_id: string;
   lokasi_kerja: LokasiKerja;
   pekerjaan_dikerjakan: string;
-  kendala?: string;
-  rencana_kedepan?: string;
+  kendala?: string | null;
+  rencana_kedepan?: string | null;
   foto_urls: string[];
 }
 
@@ -205,8 +205,8 @@ export interface ReportFormData {
   project_id: string;
   lokasi_kerja: LokasiKerja;
   pekerjaan_dikerjakan: string;
-  kendala: string;
-  rencana_kedepan: string;
+  kendala: string | null;
+  rencana_kedepan: string | null;
   foto_urls: string[];
 }
 

@@ -18,22 +18,29 @@ interface Division {
   id: string;
   name: string;
   color?: string;
-  department_id: string;
+  department_id?: string;
 }
 
 interface Project {
   id: string;
   name: string;
-  tujuan?: string;
-  description?: string;
-  pic?: string;
-  prioritas?: string;
-  tanggal_mulai?: string;
-  tanggal_selesai?: string;
+  tujuan: string | null;
+  description: string | null;
+  pic: string | null;
+  prioritas: string | null;
+  tanggal_mulai: string | null;
+  tanggal_selesai: string | null;
   status: string;
-  lampiran_files?: string[];
+  lampiran_files: string[] | null;
   lampiran_url?: string;
-  divisions?: Division[];
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  divisions: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+  }>;
 }
 
 interface EditProjectModalProps {
@@ -120,7 +127,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
 
   // Filter divisions based on selected departments
   const filteredDivisions = formData.departmentIds.length > 0
-    ? divisions.filter(d => formData.departmentIds.includes(d.department_id))
+    ? divisions.filter(d => d.department_id && formData.departmentIds.includes(d.department_id))
     : [];
 
   const handleDepartmentToggle = (departmentId: string) => {
@@ -132,7 +139,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
       // Remove divisions that are not in the selected departments
       const validDivisionIds = prev.divisionIds.filter(divId => {
         const division = divisions.find(d => d.id === divId);
-        return division && newDepartmentIds.includes(division.department_id);
+        return division && division.department_id && newDepartmentIds.includes(division.department_id);
       });
 
       return {
