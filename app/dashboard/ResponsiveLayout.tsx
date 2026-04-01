@@ -149,6 +149,7 @@ export default function ResponsiveLayout({
                 <SidebarLink href="/dashboard" icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" label="Dashboard" active={isActive('/dashboard')} />
                 <SidebarLink href="/dashboard/reports?view=create" icon="M12 4v16m8-8H4" label="Buat Laporan" active={pathname === '/dashboard/reports' && searchParams?.get('view') === 'create'} color="green" />
                 <SidebarLink href="/dashboard/reports?view=history" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Riwayat" active={pathname === '/dashboard/reports' && searchParams?.get('view') === 'history'} color="purple" />
+                <SidebarLink href="/dashboard/overtime" icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0" label="Lembur" active={pathname.startsWith('/dashboard/overtime')} color="orange" />
                 <SidebarLink href="/dashboard/profile" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" label="Profil Saya" active={isActive('/dashboard/profile')} />
               </nav>
             </div>
@@ -163,7 +164,9 @@ export default function ResponsiveLayout({
                   <SidebarLink href="/dashboard/admin/projects" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" label="Kelola Project" active={pathname.startsWith('/dashboard/admin/projects')} color="purple" />
                   <SidebarLink href="/dashboard/admin/divisions" icon="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" label="Manajemen Divisi" active={isActive('/dashboard/admin/divisions')} color="orange" />
                   <SidebarLink href="/dashboard/admin/project-reports" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Laporan Project" active={pathname.startsWith('/dashboard/admin/project-reports')} color="teal" />
-
+                  {session.role === 'GENERAL_AFFAIR' && (
+                    <SidebarLink href="/dashboard/overtime/admin" icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0" label="Kelola Lembur" active={pathname === '/dashboard/overtime/admin'} color="orange" />
+                  )}
                 </nav>
               </div>
             )}
@@ -193,6 +196,7 @@ export default function ResponsiveLayout({
         <div className="flex justify-around items-center h-16">
           <MobileNavItem href="/dashboard" icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" label="Home" active={isActive('/dashboard')} />
           <MobileNavItem href="/dashboard/reports?view=history" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Laporan" active={pathname.includes('reports')} />
+          <MobileNavItem href="/dashboard/overtime" icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0" label="Lembur" active={pathname.startsWith('/dashboard/overtime')} />
           {['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role) && (
             <MobileNavItem href="/dashboard/admin/overview" icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" label="Admin" active={pathname.includes('admin')} />
           )}
