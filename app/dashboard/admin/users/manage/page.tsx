@@ -30,7 +30,7 @@ export default async function UserManagePage() {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    // Get all active users with their divisions
+    // Get all users with their divisions
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select(`
@@ -49,7 +49,6 @@ export default async function UserManagePage() {
         notes,
         divisions!inner(name, color)
       `)
-      .eq('status', 'ACTIVE') // Only active users
       .order('createdAt', { ascending: false })
 
     if (usersError) {
