@@ -150,6 +150,7 @@ export default function ResponsiveLayout({
                 <SidebarLink href="/dashboard/reports?view=create" icon="M12 4v16m8-8H4" label="Buat Laporan" active={pathname === '/dashboard/reports' && searchParams?.get('view') === 'create'} color="green" />
                 <SidebarLink href="/dashboard/reports?view=history" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Riwayat" active={pathname === '/dashboard/reports' && searchParams?.get('view') === 'history'} color="purple" />
                 <SidebarLink href="/dashboard/overtime" icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0" label="Lembur" active={pathname.startsWith('/dashboard/overtime')} color="orange" />
+                <SidebarLink href="/dashboard/payslips" icon="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" label="Slip Gaji" active={pathname.startsWith('/dashboard/payslips')} color="green" />
                 <SidebarLink href="/dashboard/profile" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" label="Profil Saya" active={isActive('/dashboard/profile')} />
               </nav>
             </div>
@@ -166,6 +167,9 @@ export default function ResponsiveLayout({
                   <SidebarLink href="/dashboard/admin/project-reports" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" label="Laporan Project" active={pathname.startsWith('/dashboard/admin/project-reports')} color="teal" />
                   {session.role === 'GENERAL_AFFAIR' && (
                     <SidebarLink href="/dashboard/overtime/admin" icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0" label="Kelola Lembur" active={pathname === '/dashboard/overtime/admin'} color="orange" />
+                  )}
+                  {['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role) && (
+                    <SidebarLink href="/dashboard/admin/payslips" icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" label="Kelola Slip Gaji" active={pathname.startsWith('/dashboard/admin/payslips')} color="teal" />
                   )}
                 </nav>
               </div>
