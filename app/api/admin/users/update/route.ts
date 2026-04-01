@@ -35,10 +35,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Permission checks
-    if (session.role === 'GENERAL_AFFAIR' && !['STAFF', 'PM'].includes(role)) {
+    if (session.role === 'GENERAL_AFFAIR' && role === 'ADMIN') {
       return NextResponse.json({ 
         success: false, 
-        message: 'GENERAL_AFFAIR hanya dapat mengedit role STAFF dan PM' 
+        message: 'GENERAL_AFFAIR tidak dapat mengedit user ADMIN' 
       }, { status: 403 })
     }
 

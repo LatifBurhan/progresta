@@ -157,8 +157,8 @@ export default function UserManagementClient({
   const canEditUser = (user: UserData) => {
     // ADMIN can edit anyone
     if (currentUserRole === 'ADMIN') return true
-    // GENERAL_AFFAIR and CEO can edit STAFF and PM
-    if (['GENERAL_AFFAIR', 'CEO'].includes(currentUserRole) && ['STAFF', 'PM'].includes(user.role)) return true
+    // GENERAL_AFFAIR and CEO can edit anyone except ADMIN
+    if (['GENERAL_AFFAIR', 'CEO'].includes(currentUserRole) && user.role !== 'ADMIN') return true
     return false
   }
 
