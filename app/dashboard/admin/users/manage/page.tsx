@@ -44,10 +44,10 @@ export default async function UserManagePage() {
         fotoProfil,
         name,
         phone,
+        position,
         employee_status,
         address,
-        notes,
-        divisions!inner(name, color)
+        notes
       `)
       .order('createdAt', { ascending: false })
 
@@ -71,6 +71,14 @@ export default async function UserManagePage() {
         reportCounts[report.userId] = (reportCounts[report.userId] || 0) + 1
       })
 
+      // Fetch divisions map
+      const { data: allDivs } = await supabase
+        .from('divisions')
+        .select('id, name, color')
+
+      const divisionsMap: Record<string, any> = {}
+      allDivs?.forEach(d => { divisionsMap[d.id] = d })
+
       // Transform users to match expected format
       allUsers = (users || []).map(user => {
         const todayReports = reportCounts[user.id] || 0
@@ -87,14 +95,14 @@ export default async function UserManagePage() {
           employee_status: user.employee_status || undefined,
           address: user.address || undefined,
           notes: user.notes || undefined,
-          division: user.divisions,
+          division: user.divisionId ? divisionsMap[user.divisionId] || null : null,
           todayReports,
           todayProgress,
           profile: {
             name: user.name || user.email.split('@')[0],
             fotoProfil: user.fotoProfil || null,
             phone: user.phone || null,
-            position: null
+            position: user.position || null
           }
         }
       })

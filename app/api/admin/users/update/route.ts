@@ -157,6 +157,7 @@ export async function PUT(request: NextRequest) {
         divisionId,
         name,
         phone: phone || null,
+        position: position || null,
         employee_status: employee_status || null,
         address: address || null,
         notes: notes || null,
