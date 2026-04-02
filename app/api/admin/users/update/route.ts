@@ -172,6 +172,7 @@ export async function PUT(request: NextRequest) {
         divisionId,
         name,
         phone,
+        position,
         fotoProfil,
         employee_status,
         address,
@@ -194,6 +195,7 @@ export async function PUT(request: NextRequest) {
       email: updatedUser.email,
       name: updatedUser.name,
       phone: updatedUser.phone,
+      position: updatedUser.position,
       employee_status: updatedUser.employee_status,
       address: updatedUser.address,
       notes: updatedUser.notes,
@@ -218,7 +220,7 @@ export async function PUT(request: NextRequest) {
         profile: {
           name: updatedUser.name,
           phone: updatedUser.phone,
-          position: position || null,
+          position: updatedUser.position,
           fotoProfil: updatedUser.fotoProfil
         }
       }

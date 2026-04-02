@@ -19,6 +19,9 @@ interface UserData {
   status: string;
   createdAt: string;
   divisionId: string | null;
+  employee_status?: string;
+  address?: string;
+  notes?: string;
   profile: {
     name: string | null;
     fotoProfil: string | null;
@@ -78,11 +81,11 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
   // Filter divisions when department changes
   useEffect(() => {
     if (formData.departmentId) {
-      const filtered = allDivisions.filter(div => div.department_id === formData.departmentId);
+      const filtered = allDivisions.filter((div) => div.department_id === formData.departmentId);
       setFilteredDivisions(filtered);
       // Reset division selection if current division is not in filtered list
-      if (formData.divisionId && !filtered.find(d => d.id === formData.divisionId)) {
-        setFormData(prev => ({ ...prev, divisionId: '' }));
+      if (formData.divisionId && !filtered.find((d) => d.id === formData.divisionId)) {
+        setFormData((prev) => ({ ...prev, divisionId: "" }));
       }
     } else {
       setFilteredDivisions([]);
@@ -91,32 +94,32 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
 
   useEffect(() => {
     if (user) {
-      console.log('EditUserModal - Received user data:', user); // Debug log
-      
+      console.log("EditUserModal - Received user data:", user); // Debug log
+
       // Find user's division to get department_id
-      const userDivision = allDivisions.find(d => d.id === user.divisionId);
-      
+      const userDivision = allDivisions.find((d) => d.id === user.divisionId);
+
       setFormData({
         email: user.email,
         name: user.profile?.name || "",
         phone: user.profile?.phone || "",
         position: user.profile?.position || "",
-        employee_status: (user as any).employee_status || "",
-        address: (user as any).address || "",
-        notes: (user as any).notes || "",
+        employee_status: user.employee_status || "",
+        address: user.address || "",
+        notes: user.notes || "",
         role: user.role,
         departmentId: userDivision?.department_id || "",
         divisionId: user.divisionId || "",
         password: "",
         changePassword: false,
       });
-      
-      console.log('EditUserModal - Form data set:', {
+
+      console.log("EditUserModal - Form data set:", {
         name: user.profile?.name,
         phone: user.profile?.phone,
         employee_status: (user as any).employee_status,
         address: (user as any).address,
-        notes: (user as any).notes
+        notes: (user as any).notes,
       }); // Debug log
     }
   }, [user, allDivisions]);
@@ -172,7 +175,7 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
         updateData.password = formData.password;
       }
 
-      console.log('Sending update data:', updateData); // Debug log
+      console.log("Sending update data:", updateData); // Debug log
 
       const response = await fetch("/api/admin/users/update", {
         method: "PUT",
@@ -181,7 +184,7 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
       });
 
       const result = await response.json();
-      console.log('Update result:', result); // Debug log
+      console.log("Update result:", result); // Debug log
 
       if (result.success) {
         onSuccess(result.user);
@@ -191,7 +194,7 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
         setError(result.message || "Gagal mengupdate user");
       }
     } catch (error) {
-      console.error('Update error:', error); // Debug log
+      console.error("Update error:", error); // Debug log
       setError("Terjadi kesalahan sistem");
     } finally {
       setLoading(false);
@@ -438,7 +441,7 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
                   </div>
                   <select
                     value={formData.departmentId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, departmentId: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, departmentId: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl border-2 border-slate-50 bg-slate-50 focus:border-blue-500 focus:bg-white transition-all text-sm font-bold outline-none"
                     required
                   >

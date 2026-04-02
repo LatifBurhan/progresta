@@ -108,6 +108,9 @@ export async function POST(request: NextRequest) {
         password: hashedPassword, // Include hashed password
         role: normalizedRole, // Use normalized (uppercase) role
         divisionId: divisionId,
+        name: name, // Include name
+        phone: phone || null, // Include phone
+        position: position || null, // Include position
         employee_status: employee_status || null,
         address: address || null,
         notes: notes || null,
@@ -121,6 +124,9 @@ export async function POST(request: NextRequest) {
         email,
         role,
         divisionId,
+        name,
+        phone,
+        position,
         employee_status,
         address,
         notes,
