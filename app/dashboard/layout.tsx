@@ -23,13 +23,13 @@ export default async function DashboardLayout({
     const supabase = createClient()
     const { data: userData } = await supabase
       .from('users')
-      .select('id, email, role')
+      .select('id, email, role, fotoProfil')
       .eq('id', session.userId)
       .single()
 
     if (userData) {
       profile = {
-        fotoProfil: null
+        fotoProfil: userData.fotoProfil
       }
     }
   } catch (error) {
