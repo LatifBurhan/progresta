@@ -20,28 +20,64 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch projects with divisions (Many-to-Many)
+    // Fetch projects with divisions (avoiding complex relationship query for assignments)
     const { data: projects, error: projectsError } = await supabaseAdmin
-      .from('projects')
-      .select(`
+      .from("projects")
+      .select(
+        `
         *,
         project_divisions (
           division_id,
           divisions (
             id,
             name,
-            color
+            color,
+            departments (
+              id,
+              name
+            )
           )
         )
-      `)
-      .order('created_at', { ascending: false })
+      `,
+      )
+      .order("created_at", { ascending: false });
 
     if (projectsError) {
-      console.error('Error fetching projects:', projectsError)
-      return NextResponse.json({
-        success: false,
-        message: 'Gagal mengambil data projects: ' + projectsError.message
-      }, { status: 500 })
+      console.error("Error fetching projects:", projectsError);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Gagal mengambil data projects: " + projectsError.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    // Fetch all assignments separately to avoid schema cache relationship issues
+    const projectIds = (projects || []).map((p) => p.id);
+    let allAssignments: any[] = [];
+
+    if (projectIds.length > 0) {
+      const { data: assignmentsData, error: assignmentsError } = await supabaseAdmin
+        .from("project_assignments")
+        .select(
+          `
+          project_id,
+          user_id,
+          users (
+            id,
+            name,
+            email
+          )
+        `,
+        )
+        .in("project_id", projectIds);
+
+      if (!assignmentsError && assignmentsData) {
+        allAssignments = assignmentsData;
+      } else if (assignmentsError) {
+        console.error("Error fetching all project assignments:", assignmentsError);
+      }
     }
 
     // Transform the data
@@ -50,8 +86,13 @@ export async function GET(request: NextRequest) {
       // Fallback for old data mapping
       tanggal_mulai: p.tanggal_mulai || p.startDate,
       tanggal_selesai: p.tanggal_selesai || p.endDate,
-      status: p.status || (p.isActive ? 'Aktif' : 'Non-Aktif'),
-      divisions: p.project_divisions?.map((pd: any) => pd.divisions).filter(Boolean) || []
+      status: p.status || (p.isActive ? "Aktif" : "Non-Aktif"),
+      divisions: p.project_divisions?.map((pd: any) => pd.divisions).filter(Boolean) || [],
+      assignments:
+        allAssignments
+          .filter((a) => a.project_id === p.id)
+          .map((a) => a.users)
+          .filter(Boolean) || [],
     }));
 
     console.log(`Fetched ${transformedProjects.length} projects`);

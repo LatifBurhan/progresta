@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Plus, Calendar, User, Target, FileText, AlertCircle, Briefcase, Flag, Hash, Layers, Clock, Sparkles, CheckCircle2, Paperclip, Building2 } from "lucide-react";
+import { X, Plus, Calendar, User, Target, FileText, AlertCircle, Briefcase, Flag, Hash, Layers, Clock, Sparkles, CheckCircle2, Paperclip, Building2, Users } from "lucide-react";
 import FileUploadComponent from "@/components/projects/FileUploadComponent";
+import { cn } from "@/lib/utils";
 
 interface Department {
   id: string;
@@ -18,6 +19,13 @@ interface Division {
   name: string;
   color?: string;
   department_id?: string;
+}
+
+interface UserInDivision {
+  id: string;
+  email: string;
+  name: string | null;
+  divisionId: string | null;
 }
 
 interface CreateProjectModalProps {
@@ -35,12 +43,15 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
     description: "",
     departmentIds: [] as string[],
     divisionIds: [] as string[],
+    userIds: [] as string[], // Personel yang dipilih
     pic: "",
     prioritas: "",
     tanggalMulai: "",
     tanggalSelesai: "",
     lampiranFiles: [] as string[],
   });
+  const [availableUsers, setAvailableUsers] = useState<UserInDivision[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -64,14 +75,46 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
     }
   }, [open]);
 
+  // Fetch users when division changes
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (formData.divisionIds.length === 0) {
+        setAvailableUsers([]);
+        return;
+      }
+
+      setLoadingUsers(true);
+      try {
+        const divisionIdsStr = formData.divisionIds.join(",");
+        const response = await fetch(`/api/admin/users/by-divisions?divisionIds=${divisionIdsStr}`);
+        const result = await response.json();
+        if (result.success) {
+          setAvailableUsers(result.users);
+
+          // Bersihkan userIds yang tidak ada lagi di divisi yang dipilih
+          const validUserIds = formData.userIds.filter((uid) => result.users.some((u: UserInDivision) => u.id === uid));
+          if (validUserIds.length !== formData.userIds.length) {
+            setFormData((prev) => ({ ...prev, userIds: validUserIds }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch users by divisions:", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    if (open) {
+      fetchUsers();
+    }
+  }, [formData.divisionIds, open]);
+
   const tempProjectId = `temp-${Date.now()}`;
 
   if (!open) return null;
 
   // Filter divisions based on selected departments
-  const filteredDivisions = formData.departmentIds.length > 0
-    ? divisions.filter(d => d.department_id && formData.departmentIds.includes(d.department_id))
-    : [];
+  const filteredDivisions = formData.departmentIds.length > 0 ? divisions.filter((d) => d.department_id && formData.departmentIds.includes(d.department_id)) : [];
 
   const calculateDuration = () => {
     if (!formData.tanggalMulai || !formData.tanggalSelesai) return null;
@@ -83,13 +126,11 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
 
   const handleDepartmentToggle = (departmentId: string) => {
     setFormData((prev) => {
-      const newDepartmentIds = prev.departmentIds.includes(departmentId)
-        ? prev.departmentIds.filter((id) => id !== departmentId)
-        : [...prev.departmentIds, departmentId];
-      
+      const newDepartmentIds = prev.departmentIds.includes(departmentId) ? prev.departmentIds.filter((id) => id !== departmentId) : [...prev.departmentIds, departmentId];
+
       // Remove divisions that are not in the selected departments
-      const validDivisionIds = prev.divisionIds.filter(divId => {
-        const division = divisions.find(d => d.id === divId);
+      const validDivisionIds = prev.divisionIds.filter((divId) => {
+        const division = divisions.find((d) => d.id === divId);
         return division && division.department_id && newDepartmentIds.includes(division.department_id);
       });
 
@@ -105,6 +146,13 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
     setFormData((prev) => ({
       ...prev,
       divisionIds: prev.divisionIds.includes(divisionId) ? prev.divisionIds.filter((id) => id !== divisionId) : [...prev.divisionIds, divisionId],
+    }));
+  };
+
+  const handleUserToggle = (userId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      userIds: prev.userIds.includes(userId) ? prev.userIds.filter((id) => id !== userId) : [...prev.userIds, userId],
     }));
   };
 
@@ -145,7 +193,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
   };
 
   const handleClose = () => {
-    setFormData({ name: "", tujuan: "", description: "", departmentIds: [], divisionIds: [], pic: "", prioritas: "", tanggalMulai: "", tanggalSelesai: "", lampiranFiles: [] });
+    setFormData({ name: "", tujuan: "", description: "", departmentIds: [], divisionIds: [], userIds: [], pic: "", prioritas: "", tanggalMulai: "", tanggalSelesai: "", lampiranFiles: [] });
     setUploadedFiles([]);
     setUploadError("");
     setError("");
@@ -155,6 +203,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
   const duration = calculateDuration();
   const selectedDepartments = departments.filter((d: Department) => formData.departmentIds.includes(d.id));
   const selectedDivisions = filteredDivisions.filter((d: Division) => formData.divisionIds.includes(d.id));
+  const selectedUsers = availableUsers.filter((u) => formData.userIds.includes(u.id));
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -195,7 +244,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
               <section className="space-y-6">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
-                  <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Identitas Utama</h4>
+                  <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Identitas Utama</h4>
                 </div>
 
                 <div className="space-y-5">
@@ -240,6 +289,24 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                 </div>
               </section>
 
+              {/* Group 5: Asset / Lampiran - Moved here! */}
+              <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4 text-amber-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Project Assets</span>
+                </div>
+                <FileUploadComponent
+                  projectId={tempProjectId}
+                  existingFiles={uploadedFiles}
+                  onChange={(files) => {
+                    setUploadedFiles(files);
+                    setFormData((prev) => ({ ...prev, lampiranFiles: files }));
+                  }}
+                  onError={(err) => setUploadError(err)}
+                  disabled={loading}
+                />
+              </section>
+
               {/* Group 2: Preview (App-like Card) */}
               {formData.name && selectedDepartments.length > 0 && selectedDivisions.length > 0 && (
                 <section className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl animate-in fade-in zoom-in">
@@ -256,7 +323,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2">
                             {selectedDepartments.map((dept: Department) => (
-                              <span key={dept.id} className="text-[9px] font-black px-2 py-0.5 rounded bg-white/20 border border-white/20 uppercase tracking-tighter" style={{ backgroundColor: dept.color + '40' }}>
+                              <span key={dept.id} className="text-[9px] font-black px-2 py-0.5 rounded bg-white/20 border border-white/20 uppercase tracking-tighter" style={{ backgroundColor: dept.color + "40" }}>
                                 {dept.name}
                               </span>
                             ))}
@@ -268,6 +335,12 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                               </span>
                             ))}
                           </div>
+                          {selectedUsers.length > 0 && (
+                            <div className="flex items-center gap-1.5 pt-1">
+                              <Users className="w-3 h-3 text-blue-400" />
+                              <p className="text-[8px] font-bold text-slate-300 uppercase tracking-wider">{selectedUsers.length} Personel Terpilih</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -330,7 +403,7 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                 </div>
               </section>
 
-              {/* Group 4: Departemen & Divisi Terlibat */}
+              {/* Group 4: Departemen, Divisi, Personel */}
               <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-6">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-purple-500" />
@@ -354,17 +427,16 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                 </div>
 
                 {formData.departmentIds.length > 0 && (
-                  <>
-                    <div className="border-t border-slate-100 pt-4">
-                      <div className="flex items-center gap-2 mb-4">
+                  <div className="border-t border-slate-100 pt-4 space-y-6">
+                    {/* Divisi Selection */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
                         <Layers className="w-4 h-4 text-blue-500" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Divisi dari Departemen Terpilih *</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Divisi *</span>
                       </div>
 
                       {filteredDivisions.length === 0 ? (
-                        <div className="text-center py-4 text-slate-400 text-xs">
-                          Tidak ada divisi di departemen yang dipilih
-                        </div>
+                        <div className="text-center py-4 text-slate-400 text-xs">Tidak ada divisi terpilih</div>
                       ) : (
                         <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto no-scrollbar">
                           {filteredDivisions.map((division) => (
@@ -383,26 +455,69 @@ export default function CreateProjectModal({ open, divisions, onClose, onSuccess
                         </div>
                       )}
                     </div>
-                  </>
-                )}
-              </section>
 
-              {/* Group 5: Asset / Lampiran */}
-              <section className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-2">
-                  <Paperclip className="w-4 h-4 text-amber-500" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Project Assets</span>
-                </div>
-                <FileUploadComponent
-                  projectId={tempProjectId}
-                  existingFiles={uploadedFiles}
-                  onChange={(files) => {
-                    setUploadedFiles(files);
-                    setFormData((prev) => ({ ...prev, lampiranFiles: files }));
-                  }}
-                  onError={(err) => setUploadError(err)}
-                  disabled={loading}
-                />
+                    {/* Personel Selection (Multi-select List) */}
+                    <div className="space-y-4 pt-2">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-500" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Personel Spesifik</span>
+                      </div>
+
+                      {formData.divisionIds.length === 0 ? (
+                        <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pilih Divisi Dulu</p>
+                        </div>
+                      ) : loadingUsers ? (
+                        <div className="flex flex-col items-center justify-center py-6 space-y-2">
+                          <Clock className="w-5 h-5 text-blue-500 animate-spin" />
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat Daftar Personel...</p>
+                        </div>
+                      ) : availableUsers.length === 0 ? (
+                        <div className="text-center py-6 bg-amber-50 rounded-2xl border border-dashed border-amber-200">
+                          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest px-4">Tidak ada personel di divisi terpilih</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {availableUsers.map((user) => {
+                            const division = divisions.find((d) => d.id === user.divisionId);
+                            const isSelected = formData.userIds.includes(user.id);
+                            return (
+                              <div
+                                key={user.id}
+                                onClick={() => handleUserToggle(user.id)}
+                                className={cn(
+                                  "flex items-center gap-4 p-3 rounded-2xl border-2 transition-all cursor-pointer group hover:border-emerald-200",
+                                  isSelected ? "border-emerald-500 bg-emerald-50 shadow-sm" : "border-slate-50 bg-slate-50 hover:bg-white",
+                                )}
+                              >
+                                <div
+                                  className={cn(
+                                    "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black transition-all",
+                                    isSelected ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200" : "bg-white text-slate-400 shadow-sm",
+                                  )}
+                                >
+                                  {(user.name || user.email).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <h5 className={cn("text-xs font-black uppercase tracking-tight truncate", isSelected ? "text-emerald-900" : "text-slate-700")}>{user.name || user.email.split("@")[0]}</h5>
+                                    {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter truncate">{user.email}</span>
+                                    <span className="text-[10px] text-slate-300">•</span>
+                                    <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter truncate">{division?.name}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {availableUsers.length > 0 && <p className="text-[9px] font-bold text-slate-400 italic px-1">* Kosongkan jika ingin menugaskan project ke seluruh anggota divisi.</p>}
+                    </div>
+                  </div>
+                )}
               </section>
             </div>
           </form>

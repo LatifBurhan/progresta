@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Edit, User, Hash, Layers, Clock, Trash2, ShieldAlert, Paperclip, ExternalLink, Building2 } from "lucide-react";
+import { X, Edit, User, Hash, Layers, Clock, Trash2, ShieldAlert, Paperclip, ExternalLink, Building2, Users, CheckCircle2 } from "lucide-react";
 import FileUploadComponent from "@/components/projects/FileUploadComponent";
 import { getFileIcon } from "@/lib/storage/project-file-upload";
+import { cn } from "@/lib/utils";
 
 interface Department {
   id: string;
@@ -19,6 +20,13 @@ interface Division {
   name: string;
   color?: string;
   department_id?: string;
+}
+
+interface UserInDivision {
+  id: string;
+  email: string;
+  name: string | null;
+  divisionId: string | null;
 }
 
 interface Project {
@@ -41,6 +49,11 @@ interface Project {
     name: string;
     color: string | null;
   }>;
+  assignments?: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+  }>;
 }
 
 interface EditProjectModalProps {
@@ -60,6 +73,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
     description: "",
     departmentIds: [] as string[],
     divisionIds: [] as string[],
+    userIds: [] as string[],
     pic: "",
     prioritas: "",
     tanggalMulai: "",
@@ -67,6 +81,8 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
     lampiranFiles: [] as string[],
     status: "",
   });
+  const [availableUsers, setAvailableUsers] = useState<UserInDivision[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -100,11 +116,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
 
       // Get unique department IDs from project divisions
       const projectDivisions = project.divisions || [];
-      const uniqueDepartmentIds = [...new Set(
-        projectDivisions
-          .map(d => divisions.find(div => div.id === d.id)?.department_id)
-          .filter(Boolean)
-      )] as string[];
+      const uniqueDepartmentIds = [...new Set(projectDivisions.map((d) => divisions.find((div) => div.id === d.id)?.department_id).filter(Boolean))] as string[];
 
       setFormData({
         name: project.name || "",
@@ -112,6 +124,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
         description: project.description || "",
         departmentIds: uniqueDepartmentIds,
         divisionIds: project.divisions?.map((d) => d.id) || [],
+        userIds: project.assignments?.map((a) => a.id) || [],
         pic: project.pic || "",
         prioritas: project.prioritas || "",
         tanggalMulai: project.tanggal_mulai || "",
@@ -123,22 +136,55 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
     }
   }, [project, divisions]);
 
+  // Fetch users when division changes
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (formData.divisionIds.length === 0) {
+        setAvailableUsers([]);
+        return;
+      }
+
+      setLoadingUsers(true);
+      try {
+        const divisionIdsStr = formData.divisionIds.join(",");
+        const response = await fetch(`/api/admin/users/by-divisions?divisionIds=${divisionIdsStr}`);
+        const result = await response.json();
+        if (result.success) {
+          setAvailableUsers(result.users);
+
+          // Bersihkan userIds yang tidak ada lagi di divisi yang dipilih
+          // Kecuali saat inisialisasi awal (project.assignments)
+          const validUserIds = formData.userIds.filter((uid) => result.users.some((u: UserInDivision) => u.id === uid));
+
+          // Jika kita baru saja pindah divisi, update userIds
+          if (validUserIds.length !== formData.userIds.length && formData.userIds.length > 0) {
+            // setFormData(prev => ({ ...prev, userIds: validUserIds }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch users by divisions:", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    if (open) {
+      fetchUsers();
+    }
+  }, [formData.divisionIds, open]);
+
   if (!open) return null;
 
   // Filter divisions based on selected departments
-  const filteredDivisions = formData.departmentIds.length > 0
-    ? divisions.filter(d => d.department_id && formData.departmentIds.includes(d.department_id))
-    : [];
+  const filteredDivisions = formData.departmentIds.length > 0 ? divisions.filter((d) => d.department_id && formData.departmentIds.includes(d.department_id)) : [];
 
   const handleDepartmentToggle = (departmentId: string) => {
     setFormData((prev) => {
-      const newDepartmentIds = prev.departmentIds.includes(departmentId)
-        ? prev.departmentIds.filter((id) => id !== departmentId)
-        : [...prev.departmentIds, departmentId];
-      
+      const newDepartmentIds = prev.departmentIds.includes(departmentId) ? prev.departmentIds.filter((id) => id !== departmentId) : [...prev.departmentIds, departmentId];
+
       // Remove divisions that are not in the selected departments
-      const validDivisionIds = prev.divisionIds.filter(divId => {
-        const division = divisions.find(d => d.id === divId);
+      const validDivisionIds = prev.divisionIds.filter((divId) => {
+        const division = divisions.find((d) => d.id === divId);
         return division && division.department_id && newDepartmentIds.includes(division.department_id);
       });
 
@@ -154,6 +200,13 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
     setFormData((prev) => ({
       ...prev,
       divisionIds: prev.divisionIds.includes(divisionId) ? prev.divisionIds.filter((id) => id !== divisionId) : [...prev.divisionIds, divisionId],
+    }));
+  };
+
+  const handleUserToggle = (userId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      userIds: prev.userIds.includes(userId) ? prev.userIds.filter((id) => id !== userId) : [...prev.userIds, userId],
     }));
   };
 
@@ -285,6 +338,30 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
                   </div>
                 </div>
               </section>
+
+              {/* Group 5: Asset / Lampiran - Moved here! */}
+              <section className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="w-4 h-4 text-amber-500" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Project Assets</span>
+                  </div>
+                  {uploadedFiles.length > 0 && <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-50 text-blue-600 uppercase tracking-tighter">{uploadedFiles.length} File Terlampir</span>}
+                </div>
+
+                <div className="pt-2">
+                  <FileUploadComponent
+                    projectId={project.id}
+                    existingFiles={uploadedFiles}
+                    onChange={(files) => {
+                      setUploadedFiles(files);
+                      setFormData((prev) => ({ ...prev, lampiranFiles: files }));
+                    }}
+                    onError={(err) => setError(err)}
+                    disabled={loading}
+                  />
+                </div>
+              </section>
             </div>
 
             {/* RIGHT COLUMN */}
@@ -346,7 +423,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
                       type="button"
                       onClick={() => handleDepartmentToggle(department.id)}
                       className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all ${
-                        formData.departmentIds.includes(department.id) ? "border-slate-800 bg-slate-800 text-white shadow-md" : "border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-200"
+                        formData.departmentIds.includes(department.id) ? "border-slate-800 bg-slate-800 text-white shadow-md" : "border-slate-100 bg-white text-slate-400 hover:border-slate-200"
                       }`}
                     >
                       <Building2 className={`w-3 h-3 ${formData.departmentIds.includes(department.id) ? "text-purple-300" : "text-slate-300"}`} />
@@ -364,9 +441,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
                       </div>
 
                       {filteredDivisions.length === 0 ? (
-                        <div className="text-center py-4 text-slate-400 text-xs">
-                          Tidak ada divisi di departemen yang dipilih
-                        </div>
+                        <div className="text-center py-4 text-slate-400 text-xs">Tidak ada divisi di departemen yang dipilih</div>
                       ) : (
                         <div className="flex flex-wrap gap-2">
                           {filteredDivisions.map((division) => (
@@ -375,7 +450,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
                               type="button"
                               onClick={() => handleDivisionToggle(division.id)}
                               className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all ${
-                                formData.divisionIds.includes(division.id) ? "border-blue-600 bg-blue-600 text-white shadow-md" : "border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-200"
+                                formData.divisionIds.includes(division.id) ? "border-blue-600 bg-blue-600 text-white shadow-md" : "border-slate-100 bg-white text-slate-400 hover:border-slate-200"
                               }`}
                             >
                               <Hash className={`w-3 h-3 ${formData.divisionIds.includes(division.id) ? "text-blue-200" : "text-slate-300"}`} />
@@ -385,67 +460,69 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
                         </div>
                       )}
                     </div>
+
+                    {/* Personel Selection (Multi-select List) */}
+                    <div className="space-y-4 pt-2">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-500" />
+                        <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Personel Terlibat</span>
+                      </div>
+
+                      {formData.divisionIds.length === 0 ? (
+                        <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pilih Divisi Dulu</p>
+                        </div>
+                      ) : loadingUsers ? (
+                        <div className="flex flex-col items-center justify-center py-6 space-y-2">
+                          <Clock className="w-5 h-5 text-indigo-500 animate-spin" />
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat Personel...</p>
+                        </div>
+                      ) : availableUsers.length === 0 ? (
+                        <div className="text-center py-6 bg-amber-50 rounded-2xl border border-dashed border-amber-200">
+                          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest px-4">Tidak ada personel di divisi terpilih</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {availableUsers.map((user) => {
+                            const division = divisions.find((d) => d.id === user.divisionId);
+                            const isSelected = formData.userIds.includes(user.id);
+                            return (
+                              <div
+                                key={user.id}
+                                onClick={() => handleUserToggle(user.id)}
+                                className={cn(
+                                  "flex items-center gap-4 p-3 rounded-2xl border-2 transition-all cursor-pointer group hover:border-emerald-200",
+                                  isSelected ? "border-emerald-500 bg-emerald-50 shadow-sm" : "border-slate-50 bg-slate-50 hover:bg-white",
+                                )}
+                              >
+                                <div
+                                  className={cn(
+                                    "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black transition-all",
+                                    isSelected ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200" : "bg-white text-slate-400 shadow-sm",
+                                  )}
+                                >
+                                  {(user.name || user.email).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <h5 className={cn("text-xs font-black uppercase tracking-tight truncate", isSelected ? "text-emerald-900" : "text-slate-700")}>{user.name || user.email.split("@")[0]}</h5>
+                                    {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter truncate">{user.email}</span>
+                                    <span className="text-[10px] text-slate-300">•</span>
+                                    <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter truncate">{division?.name}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {availableUsers.length > 0 && <p className="text-[9px] font-bold text-slate-400 italic px-1">* Kosongkan jika ingin menugaskan project ke seluruh anggota divisi.</p>}
+                    </div>
                   </>
                 )}
-              </section>
-
-              <section className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Paperclip className="w-4 h-4 text-amber-500" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Project Assets</span>
-                  </div>
-                  {uploadedFiles.length > 0 && <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-50 text-blue-600 uppercase tracking-tighter">{uploadedFiles.length} File Terlampir</span>}
-                </div>
-
-                {/* VISUAL PREVIEW OF EXISTING ASSETS */}
-                {uploadedFiles.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-2 bg-slate-50/50 rounded-2xl border border-slate-100 max-h-60 overflow-y-auto custom-scrollbar">
-                    {uploadedFiles.map((url, idx) => {
-                      const fileName = getFileName(url);
-                      const isImg = isImage(url);
-                      const { icon, color } = getFileIcon(fileName);
-
-                      return (
-                        <div key={idx} className="group relative aspect-square rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all">
-                          {isImg ? (
-                            <img src={url} alt={fileName} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-3 gap-2">
-                              <span className={`text-3xl ${color}`}>{icon}</span>
-                              <span className="text-[9px] font-bold text-slate-400 uppercase text-center line-clamp-1">{fileName.split(".").pop()} File</span>
-                            </div>
-                          )}
-
-                          {/* Overlay on hover */}
-                          <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <a href={url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-colors" title="Buka File">
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                          </div>
-
-                          {/* Filename tooltip-like footer */}
-                          <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-white/90 backdrop-blur-sm border-t border-slate-100">
-                            <p className="text-[8px] font-bold text-slate-600 truncate uppercase tracking-tighter text-center">{fileName}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="pt-2">
-                  <FileUploadComponent
-                    projectId={project.id}
-                    existingFiles={uploadedFiles}
-                    onChange={(files) => {
-                      setUploadedFiles(files);
-                      setFormData((prev) => ({ ...prev, lampiranFiles: files }));
-                    }}
-                    onError={(err) => setError(err)}
-                    disabled={loading}
-                  />
-                </div>
               </section>
             </div>
           </form>

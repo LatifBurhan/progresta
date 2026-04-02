@@ -8,6 +8,12 @@ interface Division {
   color: string
 }
 
+interface User {
+  id: string
+  name: string | null
+  email: string
+}
+
 interface ProjectDetailSectionProps {
   project: {
     id: string
@@ -20,6 +26,7 @@ interface ProjectDetailSectionProps {
     tanggal_selesai?: string
     status?: string
     divisions?: Division[]
+    assignments?: User[]
     lampiran_files?: string[]
   }
 }
@@ -150,6 +157,48 @@ export default function ProjectDetailSection({ project }: ProjectDetailSectionPr
             <p className="text-slate-600 leading-relaxed text-sm md:text-base font-normal opacity-90">
               {project.description || 'Tidak ada deskripsi tambahan untuk project ini.'}
             </p>
+          </div>
+
+          {/* Personel Section - New! */}
+          <div className="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em]">
+                <Users className="w-4 h-4 text-emerald-500" /> Personel Terlibat
+              </div>
+              <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-sm border border-emerald-100">
+                {project.assignments && project.assignments.length > 0 
+                  ? `${project.assignments.length} Personel` 
+                  : 'Seluruh Anggota Divisi'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {project.assignments && project.assignments.length > 0 ? (
+                project.assignments.map((user, i) => (
+                  <div 
+                    key={i} 
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-100 group"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-400 font-black text-lg group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                      {(user.name || user.email).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-slate-900 uppercase tracking-tight truncate">
+                        {user.name || user.email.split('@')[0]}
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-400 truncate tracking-tight">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full py-8 text-center bg-slate-50/50 border-2 border-dashed border-slate-100 rounded-3xl">
+                   <Users className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                   <p className="text-[10px] font-bold text-slate-400 uppercase">Project terbuka untuk seluruh anggota divisi terkait</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
