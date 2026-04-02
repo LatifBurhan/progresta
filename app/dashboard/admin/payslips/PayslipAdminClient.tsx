@@ -291,7 +291,7 @@ export default function PayslipAdminClient({
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
-                        {ps ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(ps.gaji_bersih)) : '-'}
+                        {ps ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(Number(ps.gaji_bersih))) : '-'}
                       </td>
                       <td className="px-4 py-3">
                         {(() => {

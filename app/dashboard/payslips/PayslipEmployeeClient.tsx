@@ -13,7 +13,7 @@ const BULAN_NAMES = [
 ]
 
 function formatRupiah(n: number) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n)
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n))
 }
 
 export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmployeeClientProps) {
