@@ -185,15 +185,17 @@ export default function ResponsiveLayout({
         </main>
       </div>
 
-      {/* Floating Action Button */}
-      <Link
-        href="/dashboard/reports?view=create"
-        className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-30 w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group"
-      >
-        <svg className="w-7 h-7 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </Link>
+      {/* Floating Action Button - hanya untuk STAFF dan PM */}
+      {['STAFF', 'PM'].includes(session.role) && (
+        <Link
+          href="/dashboard/reports?view=create"
+          className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-30 w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group"
+        >
+          <svg className="w-7 h-7 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </Link>
+      )}
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 z-50 px-2 pb-safe">

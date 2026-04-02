@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
+import { logoutAction } from '@/app/actions/auth-actions'
 import { 
   User, 
   Mail, 
@@ -241,6 +242,19 @@ export default function ProfilePage() {
       <p className="text-center text-[11px] text-slate-400 font-medium px-6">
         Jika ada kesalahan data atau ingin merubah password, silakan hubungi tim <span className="text-blue-500 font-bold tracking-tight">IT Support</span> atau General Affair Al-Wustho.
       </p>
+
+      {/* Logout Button */}
+      <form action={logoutAction}>
+        <button
+          type="submit"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-rose-50 text-rose-600 font-semibold text-sm hover:bg-rose-100 transition-colors border border-rose-100"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Keluar
+        </button>
+      </form>
     </div>
   )
 }
