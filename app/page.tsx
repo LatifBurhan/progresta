@@ -127,9 +127,21 @@ export default function SplashScreen() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50 flex flex-col justify-between overflow-hidden relative selection:bg-blue-500/30">
+    <div className="min-h-[100dvh] bg-slate-50 flex flex-col justify-between overflow-hidden relative selection:bg-blue-500/30 group/splash">
       {/* Decorative Background */}
       <div className="absolute inset-0 opacity-[0.03] z-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(#0f172a 1px, transparent 1px)", backgroundSize: "24px 24px" }}></div>
+
+      {/* Desktop Navigation Click Areas */}
+      <div className="hidden md:block absolute inset-y-0 left-0 w-1/4 z-30 cursor-pointer group/prev" onClick={() => currentSlide > 0 && setCurrentSlide(currentSlide - 1)}>
+        <div className="absolute left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/50 backdrop-blur-sm border border-slate-200 flex items-center justify-center opacity-0 group-hover/prev:opacity-100 transition-all duration-300 shadow-lg">
+          <ChevronRight className="w-6 h-6 text-slate-400 rotate-180" />
+        </div>
+      </div>
+      <div className="hidden md:block absolute inset-y-0 right-0 w-1/4 z-30 cursor-pointer group/next" onClick={handleNext}>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center opacity-0 group-hover/next:opacity-100 transition-all duration-300 shadow-xl shadow-blue-200">
+          <ChevronRight className="w-6 h-6 text-white" />
+        </div>
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col justify-center relative z-10 px-6 sm:px-12 pt-12 pb-6" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEndHandler}>
@@ -193,10 +205,22 @@ export default function SplashScreen() {
               Mulai Sekarang <Rocket className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <div className="flex items-center gap-2 text-slate-400 animate-pulse">
-              <ChevronRight className="w-4 h-4 opacity-50" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Swipe untuk melanjutkan</span>
-              <ChevronRight className="w-4 h-4 opacity-50" />
+            <div className="flex flex-col items-center gap-4 w-full">
+              {/* Desktop Next Button */}
+              <Button
+                onClick={handleNext}
+                variant="outline"
+                className="hidden md:flex w-full h-14 border-2 border-slate-200 hover:border-blue-600 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 group/btn"
+              >
+                Lanjutkan <ChevronRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+              </Button>
+
+              {/* Mobile Swipe Indicator */}
+              <div className="flex items-center gap-2 text-slate-400 animate-pulse md:hidden">
+                <ChevronRight className="w-4 h-4 opacity-50" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Swipe untuk melanjutkan</span>
+                <ChevronRight className="w-4 h-4 opacity-50" />
+              </div>
             </div>
           )}
         </div>
