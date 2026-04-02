@@ -171,7 +171,9 @@ export default function LeaveFormModal({ employee, tahun, onSuccess, onCancel }:
                 ))}
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Catatan</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Catatan <span className="text-slate-400 font-normal">(hanya terlihat oleh admin)</span>
+                  </label>
                   <textarea
                     value={values.catatan}
                     onChange={(e) => handleChange('catatan', e.target.value)}

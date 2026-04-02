@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Payslip } from '@/lib/payslip/types'
+import type { EmployeeLeave } from '@/lib/leave/types'
 
 interface PayslipEmployeeClientProps {
   initialPayslips: Payslip[]
@@ -21,6 +22,27 @@ export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmploy
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [acknowledging, setAcknowledging] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [leaveMap, setLeaveMap] = useState<Map<number, EmployeeLeave>>(new Map())
+
+  // Fetch data cuti untuk semua tahun yang ada di slip gaji
+  useEffect(() => {
+    const uniqueTahun = [...new Set(initialPayslips.map((p) => p.periode_tahun))]
+    if (uniqueTahun.length === 0) return
+
+    Promise.all(
+      uniqueTahun.map((tahun) =>
+        fetch(`/api/leave?tahun=${tahun}`).then((r) => r.json())
+      )
+    ).then((results) => {
+      const map = new Map<number, EmployeeLeave>()
+      results.forEach((json, i) => {
+        if (json.success && json.data) {
+          map.set(uniqueTahun[i], json.data)
+        }
+      })
+      setLeaveMap(map)
+    }).catch(() => {})
+  }, [initialPayslips])
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type })
@@ -148,6 +170,38 @@ export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmploy
                     <span className="font-semibold text-teal-800">Gaji Bersih</span>
                     <span className="text-xl font-bold text-teal-700">{formatRupiah(Number(p.gaji_bersih))}</span>
                   </div>
+
+                  {/* Info Cuti */}
+                  {(() => {
+                    const lv = leaveMap.get(p.periode_tahun)
+                    const sisa = lv?.sisa_cuti ?? 0
+                    const sakit = lv?.jumlah_sakit ?? 0
+                    const izin = lv?.jumlah_izin ?? 0
+                    const alpha = lv?.jumlah_alpha ?? 0
+                    return (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Info Cuti {p.periode_tahun}</p>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          <div className="bg-green-50 border border-green-100 rounded-lg p-2">
+                            <p className="text-lg font-bold text-green-700">{sisa}</p>
+                            <p className="text-[10px] text-green-600 font-medium">Sisa Cuti</p>
+                          </div>
+                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-2">
+                            <p className="text-lg font-bold text-blue-700">{sakit}</p>
+                            <p className="text-[10px] text-blue-600 font-medium">Sakit</p>
+                          </div>
+                          <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
+                            <p className="text-lg font-bold text-yellow-700">{izin}</p>
+                            <p className="text-[10px] text-yellow-600 font-medium">Izin</p>
+                          </div>
+                          <div className="bg-red-50 border border-red-100 rounded-lg p-2">
+                            <p className="text-lg font-bold text-red-700">{alpha}</p>
+                            <p className="text-[10px] text-red-600 font-medium">Alpha</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   {/* Catatan */}
                   {p.catatan && (
