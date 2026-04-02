@@ -4,6 +4,19 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { payslipError } from '@/lib/payslip/errors'
 import { isPayslipManager } from '@/lib/payslip/roles'
 import { getPayslipById } from '@/lib/payslip/queries'
+import { readFileSync } from 'fs'
+import { join } from 'path'
+
+// Baca logo dari filesystem dan encode ke base64
+function getLogoBase64(): string {
+  try {
+    const logoPath = join(process.cwd(), 'public', 'alwustho.png')
+    const logoBuffer = readFileSync(logoPath)
+    return `data:image/png;base64,${logoBuffer.toString('base64')}`
+  } catch {
+    return ''
+  }
+}
 
 const BULAN_NAMES = [
   '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -11,7 +24,7 @@ const BULAN_NAMES = [
 ]
 
 function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount)
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(amount))
 }
 
 export async function GET(
@@ -36,10 +49,10 @@ export async function GET(
       return payslipError('FORBIDDEN', 'Akses ditolak', 403)
     }
 
-    // Ambil data karyawan
+    // Ambil data karyawan dan GA yang publish
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('name, email')
+      .select('name, email, role, employee_status')
       .eq('id', payslip.user_id)
       .single()
 
@@ -47,141 +60,171 @@ export async function GET(
       return payslipError('NOT_FOUND', 'Data karyawan tidak ditemukan', 404)
     }
 
+    // Ambil nama GA yang publish
+    let namaGA = '-'
+    if (payslip.created_by) {
+      const { data: gaData } = await supabaseAdmin
+        .from('users')
+        .select('name, email')
+        .eq('id', payslip.created_by)
+        .single()
+      if (gaData) namaGA = gaData.name || gaData.email.split('@')[0]
+    }
+
     const namaKaryawan = userData.name || userData.email.split('@')[0]
     const bulanNama = BULAN_NAMES[payslip.periode_bulan] || String(payslip.periode_bulan)
     const tahun = payslip.periode_tahun
+    const totalPendapatan = Number(payslip.gaji_pokok) + Number(payslip.lembur) + Number(payslip.insentif) + Number(payslip.tunjangan) + Number(payslip.dinas_luar)
+    const totalPotongan = Number(payslip.potongan_bpjs) + Number(payslip.potongan_pajak)
+    const logoSrc = getLogoBase64()
 
     const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Slip Gaji - ${namaKaryawan} - ${bulanNama} ${tahun}</title>
+  <title>Salary Slip - ${namaKaryawan} - ${bulanNama} ${tahun}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #333; background: #fff; padding: 20px; }
-    .container { max-width: 700px; margin: 0 auto; border: 2px solid #333; padding: 24px; }
-    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 16px; }
-    .header h1 { font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-    .header p { font-size: 12px; color: #666; margin-top: 4px; }
-    .info-section { display: flex; justify-content: space-between; margin-bottom: 16px; }
-    .info-block { flex: 1; }
-    .info-block p { margin-bottom: 4px; }
-    .info-block strong { display: inline-block; min-width: 120px; }
-    .divider { border-top: 1px solid #ccc; margin: 12px 0; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    th { background: #f0f0f0; text-align: left; padding: 8px; border: 1px solid #ccc; font-size: 11px; text-transform: uppercase; }
-    td { padding: 8px; border: 1px solid #ccc; }
-    td.amount { text-align: right; }
-    .total-row td { font-weight: bold; background: #f9f9f9; }
-    .gaji-bersih-row td { font-weight: bold; font-size: 14px; background: #e8f5e9; }
-    .footer { margin-top: 24px; display: flex; justify-content: space-between; }
-    .signature-block { text-align: center; }
-    .signature-block p { margin-bottom: 60px; }
-    .catatan { margin-top: 12px; padding: 8px; background: #fffde7; border: 1px solid #f9a825; border-radius: 4px; font-size: 11px; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; background: #fff; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm; }
+    /* Header */
+    .header { display: flex; align-items: center; border-bottom: 2px solid #222; padding-bottom: 10px; margin-bottom: 6px; }
+    .logo { width: 70px; margin-right: 16px; }
+    .company-info { flex: 1; text-align: center; }
+    .company-name { font-size: 20px; font-weight: bold; }
+    .company-address { font-size: 10px; color: #444; margin-top: 2px; }
+    /* Title */
+    .title-section { background: #c8e6c9; text-align: center; padding: 6px; margin: 8px 0 4px; border: 1px solid #aaa; }
+    .title-section h2 { font-size: 13px; font-weight: bold; letter-spacing: 2px; }
+    .periode { text-align: center; font-size: 11px; margin-bottom: 10px; }
+    /* Info karyawan */
+    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    .info-table td { padding: 3px 6px; font-size: 11px; }
+    .info-table td:first-child { width: 130px; }
+    /* Komponen gaji */
+    .komponen-wrapper { display: flex; gap: 12px; margin-bottom: 12px; }
+    .komponen-col { flex: 1; }
+    .komponen-col table { width: 100%; border-collapse: collapse; }
+    .komponen-col th { background: #f5f5f5; border: 1px solid #bbb; padding: 5px 8px; font-size: 11px; text-align: center; font-weight: bold; }
+    .komponen-col td { border: 1px solid #bbb; padding: 4px 8px; font-size: 11px; }
+    .komponen-col td.label { width: 55%; }
+    .komponen-col td.eq { width: 8%; text-align: center; }
+    .komponen-col td.amount { text-align: right; }
+    .total-row td { font-weight: bold; background: #f9f9f9; border-top: 2px solid #aaa; }
+    /* Gaji bersih */
+    .gaji-bersih-section { border: 1px solid #bbb; margin-bottom: 12px; }
+    .gaji-bersih-section table { width: 100%; border-collapse: collapse; }
+    .gaji-bersih-section td { padding: 5px 8px; font-size: 11px; }
+    .gaji-bersih-section td.label { width: 55%; font-weight: bold; }
+    .gaji-bersih-section td.eq { width: 8%; text-align: center; font-weight: bold; }
+    .gaji-bersih-section td.amount { text-align: right; font-weight: bold; font-size: 13px; }
+    /* Catatan */
+    .catatan-section { border: 1px solid #bbb; padding: 6px 8px; margin-bottom: 16px; min-height: 40px; font-size: 11px; }
+    .catatan-label { font-weight: bold; margin-bottom: 4px; }
+    /* Footer */
+    .footer { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .signature-block { text-align: center; min-width: 160px; }
+    .signature-block .sig-title { font-size: 11px; margin-bottom: 50px; }
+    .signature-block .sig-name { font-size: 11px; font-weight: bold; border-top: 1px solid #222; padding-top: 4px; }
     @media print {
-      body { padding: 0; }
-      .container { border: none; }
-      .no-print { display: none; }
+      body { margin: 0; }
+      .page { padding: 8mm; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="page">
+    <!-- Header -->
     <div class="header">
-      <h1>Slip Gaji Karyawan</h1>
-      <p>Periode: ${bulanNama} ${tahun}</p>
-    </div>
-
-    <div class="info-section">
-      <div class="info-block">
-        <p><strong>Nama Karyawan:</strong> ${namaKaryawan}</p>
-        <p><strong>Email:</strong> ${userData.email}</p>
-      </div>
-      <div class="info-block" style="text-align:right;">
-        <p><strong>Periode:</strong> ${bulanNama} ${tahun}</p>
-        <p><strong>Status:</strong> ${payslip.status.toUpperCase()}</p>
-        ${payslip.published_at ? `<p><strong>Diterbitkan:</strong> ${new Date(payslip.published_at).toLocaleDateString('id-ID')}</p>` : ''}
-        ${payslip.acknowledged_at ? `<p><strong>Dikonfirmasi:</strong> ${new Date(payslip.acknowledged_at).toLocaleDateString('id-ID')}</p>` : ''}
+      <img src="${logoSrc}" class="logo" alt="Logo Alwustho" ${!logoSrc ? 'style="display:none"' : ''} />
+      <div class="company-info">
+        <div class="company-name">Alwustho Technologies</div>
+        <div class="company-address">Gang Melom No. 15, Waringinrejo, Cemani, Grogol, Sukoharjo</div>
       </div>
     </div>
 
-    <div class="divider"></div>
+    <!-- Title -->
+    <div class="title-section">
+      <h2>SALARY SLIP</h2>
+    </div>
+    <div class="periode">( Periode ${bulanNama} ${tahun} )</div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Komponen Pendapatan</th>
-          <th style="text-align:right;">Jumlah</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Gaji Pokok</td><td class="amount">${formatRupiah(Number(payslip.gaji_pokok))}</td></tr>
-        <tr><td>Lembur</td><td class="amount">${formatRupiah(Number(payslip.lembur))}</td></tr>
-        <tr><td>Insentif</td><td class="amount">${formatRupiah(Number(payslip.insentif))}</td></tr>
-        <tr><td>Tunjangan</td><td class="amount">${formatRupiah(Number(payslip.tunjangan))}</td></tr>
-        <tr><td>Dinas Luar</td><td class="amount">${formatRupiah(Number(payslip.dinas_luar))}</td></tr>
-        <tr class="total-row">
-          <td>Total Pendapatan</td>
-          <td class="amount">${formatRupiah(Number(payslip.gaji_pokok) + Number(payslip.lembur) + Number(payslip.insentif) + Number(payslip.tunjangan) + Number(payslip.dinas_luar))}</td>
-        </tr>
-      </tbody>
+    <!-- Info Karyawan -->
+    <table class="info-table">
+      <tr><td>Nama</td><td>: ${namaKaryawan}</td></tr>
+      <tr><td>Posisi</td><td>: ${userData.role}</td></tr>
+      <tr><td>Nomor Karyawan</td><td>: ${payslip.user_id}</td></tr>
+      <tr><td>Status Karyawan</td><td>: ${userData.employee_status || '-'}</td></tr>
     </table>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Komponen Potongan</th>
-          <th style="text-align:right;">Jumlah</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Potongan BPJS</td><td class="amount">${formatRupiah(Number(payslip.potongan_bpjs))}</td></tr>
-        <tr><td>Potongan Pajak</td><td class="amount">${formatRupiah(Number(payslip.potongan_pajak))}</td></tr>
-        <tr class="total-row">
-          <td>Total Potongan</td>
-          <td class="amount">${formatRupiah(Number(payslip.potongan_bpjs) + Number(payslip.potongan_pajak))}</td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Komponen Gaji -->
+    <div class="komponen-wrapper">
+      <!-- Penghasilan -->
+      <div class="komponen-col">
+        <table>
+          <thead><tr><th colspan="3">PENGHASILAN</th></tr></thead>
+          <tbody>
+            <tr><td class="label">Gaji Pokok</td><td class="eq">=</td><td class="amount">${formatRupiah(Number(payslip.gaji_pokok))}</td></tr>
+            <tr><td class="label">Lembur</td><td class="eq">=</td><td class="amount">${formatRupiah(Number(payslip.lembur))}</td></tr>
+            <tr><td class="label">Insentif</td><td class="eq">=</td><td class="amount">${formatRupiah(Number(payslip.insentif))}</td></tr>
+            <tr><td class="label">Tunjangan</td><td class="eq">=</td><td class="amount">${formatRupiah(Number(payslip.tunjangan))}</td></tr>
+            <tr><td class="label">Dinas Luar</td><td class="eq">=</td><td class="amount">${formatRupiah(Number(payslip.dinas_luar))}</td></tr>
+            <tr class="total-row"><td class="label">Total Penghasilan</td><td class="eq">=</td><td class="amount">${formatRupiah(totalPendapatan)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Potongan -->
+      <div class="komponen-col">
+        <table>
+          <thead><tr><th colspan="3">POTONGAN</th></tr></thead>
+          <tbody>
+            <tr><td class="label">Potongan BPJS</td><td class="eq">=</td><td class="amount">${formatRupiah(Number(payslip.potongan_bpjs))}</td></tr>
+            <tr><td class="label">Potongan Pajak</td><td class="eq">=</td><td class="amount">${formatRupiah(Number(payslip.potongan_pajak))}</td></tr>
+            <tr><td colspan="3" style="border:none;padding:4px 0;"></td></tr>
+            <tr><td colspan="3" style="border:none;padding:4px 0;"></td></tr>
+            <tr><td colspan="3" style="border:none;padding:4px 0;"></td></tr>
+            <tr class="total-row"><td class="label">Total Potongan</td><td class="eq">=</td><td class="amount">${formatRupiah(totalPotongan)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-    <table>
-      <tbody>
-        <tr class="gaji-bersih-row">
-          <td>GAJI BERSIH</td>
+    <!-- Penerimaan Bersih -->
+    <div class="gaji-bersih-section">
+      <table>
+        <tr>
+          <td class="label">Penerimaan Bersih</td>
+          <td class="eq">=</td>
           <td class="amount">${formatRupiah(Number(payslip.gaji_bersih))}</td>
         </tr>
-      </tbody>
-    </table>
+      </table>
+    </div>
 
-    ${payslip.catatan ? `<div class="catatan"><strong>Catatan:</strong> ${payslip.catatan}</div>` : ''}
+    <!-- Catatan -->
+    <div class="catatan-section">
+      <div class="catatan-label">Catatan:</div>
+      <div>${payslip.catatan || ''}</div>
+    </div>
 
+    <!-- Footer -->
     <div class="footer">
       <div class="signature-block">
-        <p>Karyawan</p>
-        <p style="margin-top:0;">${namaKaryawan}</p>
-      </div>
-      <div class="signature-block">
-        <p>HRD / Pengelola</p>
-        <p style="margin-top:0;">___________________</p>
+        <div class="sig-title">Disahkan oleh :</div>
+        <div class="sig-name">${namaGA}</div>
       </div>
     </div>
   </div>
 
-  <script>
-    window.onload = function() { window.print(); }
-  </script>
+  <script>window.onload = function() { window.print(); }</script>
 </body>
 </html>`
 
     const safeName = namaKaryawan.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
-    const filename = `slip-gaji-${safeName}-${payslip.periode_bulan}-${tahun}.pdf`
 
     return new NextResponse(html, {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${filename}"`,
       },
     })
   } catch (error) {
