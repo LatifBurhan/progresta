@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
 import { getPayslipsByUser } from '@/lib/payslip/queries'
+import type { Payslip } from '@/lib/payslip/types'
 import PayslipEmployeeClient from './PayslipEmployeeClient'
 
 export default async function PayslipEmployeePage() {
@@ -9,7 +10,7 @@ export default async function PayslipEmployeePage() {
     redirect('/login')
   }
 
-  let initialPayslips = []
+  let initialPayslips: Payslip[] = []
   try {
     initialPayslips = await getPayslipsByUser(session.userId)
   } catch {

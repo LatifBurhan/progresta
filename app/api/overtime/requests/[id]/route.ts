@@ -8,7 +8,7 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await verifySession()
@@ -16,7 +16,7 @@ export async function PUT(
       return overtimeError('UNAUTHORIZED', 'Unauthorized', 401)
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Fetch the overtime request
     const { data: overtimeRequest, error: fetchError } = await supabaseAdmin
