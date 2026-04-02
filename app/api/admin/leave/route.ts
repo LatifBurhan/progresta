@@ -4,7 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 const ALLOWED_ROLES = ['GENERAL_AFFAIR', 'CEO', 'ADMIN']
 
-// GET /api/admin/leave?user_id=...&tahun=...
+// GET /api/admin/leave?tahun=...              → semua karyawan (untuk tabel)
+// GET /api/admin/leave?user_id=...&tahun=...  → satu karyawan (untuk modal)
 export async function GET(req: NextRequest) {
   const session = await verifySession()
   if (!session || !ALLOWED_ROLES.includes(session.role)) {
@@ -15,21 +16,30 @@ export async function GET(req: NextRequest) {
   const user_id = searchParams.get('user_id')
   const tahun = searchParams.get('tahun')
 
-  if (!user_id || !tahun) {
-    return NextResponse.json({ success: false, message: 'user_id dan tahun wajib diisi' }, { status: 400 })
+  if (!tahun) {
+    return NextResponse.json({ success: false, message: 'tahun wajib diisi' }, { status: 400 })
   }
 
+  // Satu karyawan
+  if (user_id) {
+    const { data, error } = await supabaseAdmin
+      .from('employee_leave')
+      .select('*')
+      .eq('user_id', user_id)
+      .eq('tahun', Number(tahun))
+      .maybeSingle()
+
+    if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, data })
+  }
+
+  // Semua karyawan untuk tahun tersebut
   const { data, error } = await supabaseAdmin
     .from('employee_leave')
     .select('*')
-    .eq('user_id', user_id)
     .eq('tahun', Number(tahun))
-    .maybeSingle()
 
-  if (error) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 })
-  }
-
+  if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 })
   return NextResponse.json({ success: true, data })
 }
 

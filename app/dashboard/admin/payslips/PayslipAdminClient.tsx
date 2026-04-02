@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import type { Employee, Payslip } from '@/lib/payslip/types'
+import type { EmployeeLeave } from '@/lib/leave/types'
 import PayslipFormModal from './PayslipFormModal'
 import BulkGenerateModal from './BulkGenerateModal'
 import LeaveFormModal from './LeaveFormModal'
@@ -38,6 +39,7 @@ export default function PayslipAdminClient({
   const [departemenId, setDepartemenId] = useState('')
   const [divisiId, setDivisiId] = useState('')
   const [payslips, setPayslips] = useState<Payslip[]>([])
+  const [leaveMap, setLeaveMap] = useState<Map<string, EmployeeLeave>>(new Map())
   const [loading, setLoading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [formEmployee, setFormEmployee] = useState<Employee | null>(null)
@@ -61,9 +63,15 @@ export default function PayslipAdminClient({
         ...(departemenId ? { departemen_id: departemenId } : {}),
         ...(divisiId ? { divisi_id: divisiId } : {}),
       })
-      const res = await fetch(`/api/admin/payslips?${params}`)
-      const json = await res.json()
-      if (json.success) setPayslips(json.data ?? [])
+      const [payslipRes, leaveRes] = await Promise.all([
+        fetch(`/api/admin/payslips?${params}`),
+        fetch(`/api/admin/leave?tahun=${tahun}`),
+      ])
+      const [payslipJson, leaveJson] = await Promise.all([payslipRes.json(), leaveRes.json()])
+      if (payslipJson.success) setPayslips(payslipJson.data ?? [])
+      if (leaveJson.success) {
+        setLeaveMap(new Map((leaveJson.data ?? []).map((l: EmployeeLeave) => [l.user_id, l])))
+      }
     } catch {
       // silently fail
     } finally {
@@ -245,17 +253,18 @@ export default function PayslipAdminClient({
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status Slip</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Gaji Bersih</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Info Cuti</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">Memuat data...</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">Memuat data...</td>
                 </tr>
               ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada karyawan aktif</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada karyawan aktif</td>
                 </tr>
               ) : (
                 filteredEmployees.map((emp) => {
@@ -283,6 +292,28 @@ export default function PayslipAdminClient({
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {ps ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(ps.gaji_bersih)) : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const lv = leaveMap.get(emp.id)
+                          if (!lv) return <span className="text-xs text-slate-400">-</span>
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-medium">
+                                Sisa {lv.sisa_cuti}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
+                                Sakit {lv.jumlah_sakit}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-50 text-yellow-700 text-xs font-medium">
+                                Izin {lv.jumlah_izin}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs font-medium">
+                                Alpha {lv.jumlah_alpha}
+                              </span>
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -335,7 +366,7 @@ export default function PayslipAdminClient({
         <LeaveFormModal
           employee={leaveEmployee}
           tahun={tahun}
-          onSuccess={() => { setLeaveEmployee(null); showToast('Data cuti berhasil disimpan') }}
+          onSuccess={() => { setLeaveEmployee(null); showToast('Data cuti berhasil disimpan'); fetchPayslips() }}
           onCancel={() => setLeaveEmployee(null)}
         />
       )}
