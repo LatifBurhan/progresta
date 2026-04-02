@@ -44,29 +44,35 @@ export default async function CreateUserPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <div className="mb-6">
-        <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-          <Link href="/dashboard" className="hover:text-blue-600">Dashboard</Link>
-          <span>/</span>
-          <Link href="/dashboard/admin/users/manage" className="hover:text-blue-600">Database Karyawan</Link>
-          <span>/</span>
-          <span className="text-gray-900 font-medium">Tambah User</span>
-        </nav>
+    <div className="container mx-auto px-6 py-10 max-w-5xl">
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div>
+          <nav className="flex items-center space-x-2 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+            <Link href="/dashboard" className="hover:text-blue-600 transition-colors">Dashboard</Link>
+            <span className="text-slate-300">/</span>
+            <Link href="/dashboard/admin/users/manage" className="hover:text-blue-600 transition-colors">Database Karyawan</Link>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-900">Tambah User</span>
+          </nav>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Manajemen Personel</h1>
+        </div>
         
         <Link href="/dashboard/admin/users/manage">
-          <Button variant="outline" className="flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Kembali ke Database Karyawan
+          <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-3 font-bold shadow-sm">
+            <ArrowLeft className="w-4 h-4 text-slate-400" />
+            Kembali ke Database
           </Button>
         </Link>
       </div>
 
       {divisions.length === 0 && (
-        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-yellow-800">
-            ⚠️ Tidak dapat memuat data divisi. Periksa koneksi database.
+        <div className="mb-8 p-5 bg-amber-50/50 border border-amber-100 rounded-[1.5rem] flex items-center gap-4 animate-pulse">
+          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-xl">
+            ⚠️
+          </div>
+          <p className="text-sm text-amber-800 font-bold tracking-tight">
+            Koneksi Database Terganggu: Tidak dapat memuat data divisi saat ini.
           </p>
         </div>
       )}
