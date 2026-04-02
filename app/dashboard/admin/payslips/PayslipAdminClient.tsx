@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { Employee, Payslip } from '@/lib/payslip/types'
 import PayslipFormModal from './PayslipFormModal'
 import BulkGenerateModal from './BulkGenerateModal'
+import LeaveFormModal from './LeaveFormModal'
 
 interface Department { id: string; name: string }
 interface Division { id: string; name: string }
@@ -42,6 +43,7 @@ export default function PayslipAdminClient({
   const [formEmployee, setFormEmployee] = useState<Employee | null>(null)
   const [editPayslip, setEditPayslip] = useState<Payslip | null>(null)
   const [showBulkModal, setShowBulkModal] = useState(false)
+  const [leaveEmployee, setLeaveEmployee] = useState<Employee | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
 
@@ -131,8 +133,8 @@ export default function PayslipAdminClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Kelola Slip Gaji</h1>
-          <p className="text-sm text-slate-500 mt-1">Buat, edit, dan terbitkan slip gaji karyawan</p>
+          <h1 className="text-2xl font-bold text-slate-900">Kelola Slip Gaji & Cuti</h1>
+          <p className="text-sm text-slate-500 mt-1">Buat, edit, terbitkan slip gaji, dan kelola data cuti karyawan</p>
         </div>
         <Link
           href="/dashboard/admin/payslips/recap"
@@ -283,12 +285,20 @@ export default function PayslipAdminClient({
                         {ps ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(ps.gaji_bersih)) : '-'}
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => { setFormEmployee(emp); setEditPayslip(ps ?? null) }}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 font-medium transition-colors"
-                        >
-                          {ps ? 'Edit' : 'Buat Slip'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => { setFormEmployee(emp); setEditPayslip(ps ?? null) }}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 font-medium transition-colors"
+                          >
+                            {ps ? 'Edit' : 'Buat Slip'}
+                          </button>
+                          <button
+                            onClick={() => setLeaveEmployee(emp)}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 font-medium transition-colors"
+                          >
+                            Cuti
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -317,6 +327,16 @@ export default function PayslipAdminClient({
           periode={{ bulan, tahun }}
           onSuccess={(count) => { setShowBulkModal(false); setSelectedIds(new Set()); fetchPayslips(); showToast(`Berhasil membuat ${count} slip gaji`) }}
           onCancel={() => setShowBulkModal(false)}
+        />
+      )}
+
+      {/* Leave Modal */}
+      {leaveEmployee && (
+        <LeaveFormModal
+          employee={leaveEmployee}
+          tahun={tahun}
+          onSuccess={() => { setLeaveEmployee(null); showToast('Data cuti berhasil disimpan') }}
+          onCancel={() => setLeaveEmployee(null)}
         />
       )}
     </div>

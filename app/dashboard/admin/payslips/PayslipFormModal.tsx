@@ -31,6 +31,14 @@ type FieldKey = typeof FIELDS[number]['key']
 
 type FormValues = Record<FieldKey, string> & { catatan: string }
 
+const formatThousands = (val: string) => {
+  const num = val.replace(/\D/g, '')
+  if (!num) return ''
+  return Number(num).toLocaleString('id-ID')
+}
+
+const parseRaw = (val: string) => val.replace(/\./g, '')
+
 export default function PayslipFormModal({
   employee,
   periode,
@@ -39,13 +47,13 @@ export default function PayslipFormModal({
   onCancel,
 }: PayslipFormModalProps) {
   const [values, setValues] = useState<FormValues>({
-    gaji_pokok: existingPayslip ? String(existingPayslip.gaji_pokok) : '',
-    lembur: existingPayslip ? String(existingPayslip.lembur) : '',
-    insentif: existingPayslip ? String(existingPayslip.insentif) : '',
-    tunjangan: existingPayslip ? String(existingPayslip.tunjangan) : '',
-    dinas_luar: existingPayslip ? String(existingPayslip.dinas_luar) : '',
-    potongan_bpjs: existingPayslip ? String(existingPayslip.potongan_bpjs) : '0',
-    potongan_pajak: existingPayslip ? String(existingPayslip.potongan_pajak) : '0',
+    gaji_pokok: existingPayslip ? formatThousands(String(existingPayslip.gaji_pokok)) : '',
+    lembur: existingPayslip ? formatThousands(String(existingPayslip.lembur)) : '',
+    insentif: existingPayslip ? formatThousands(String(existingPayslip.insentif)) : '',
+    tunjangan: existingPayslip ? formatThousands(String(existingPayslip.tunjangan)) : '',
+    dinas_luar: existingPayslip ? formatThousands(String(existingPayslip.dinas_luar)) : '',
+    potongan_bpjs: existingPayslip ? formatThousands(String(existingPayslip.potongan_bpjs)) : '0',
+    potongan_pajak: existingPayslip ? formatThousands(String(existingPayslip.potongan_pajak)) : '0',
     catatan: existingPayslip?.catatan ?? '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -54,19 +62,20 @@ export default function PayslipFormModal({
 
   useEffect(() => {
     const komponen = {
-      gaji_pokok: Number(values.gaji_pokok) || 0,
-      lembur: Number(values.lembur) || 0,
-      insentif: Number(values.insentif) || 0,
-      tunjangan: Number(values.tunjangan) || 0,
-      dinas_luar: Number(values.dinas_luar) || 0,
-      potongan_bpjs: Number(values.potongan_bpjs) || 0,
-      potongan_pajak: Number(values.potongan_pajak) || 0,
+      gaji_pokok: Number(parseRaw(values.gaji_pokok)) || 0,
+      lembur: Number(parseRaw(values.lembur)) || 0,
+      insentif: Number(parseRaw(values.insentif)) || 0,
+      tunjangan: Number(parseRaw(values.tunjangan)) || 0,
+      dinas_luar: Number(parseRaw(values.dinas_luar)) || 0,
+      potongan_bpjs: Number(parseRaw(values.potongan_bpjs)) || 0,
+      potongan_pajak: Number(parseRaw(values.potongan_pajak)) || 0,
     }
     setGajiBersihPreview(hitungGajiBersih(komponen))
   }, [values])
 
   const handleChange = (key: string, val: string) => {
-    setValues((prev) => ({ ...prev, [key]: val }))
+    const formatted = key !== 'catatan' ? formatThousands(val) : val
+    setValues((prev) => ({ ...prev, [key]: formatted }))
     setErrors((prev) => { const next = { ...prev }; delete next[key]; return next })
   }
 
@@ -75,7 +84,7 @@ export default function PayslipFormModal({
     for (const f of FIELDS) {
       if (f.required && (!values[f.key] || values[f.key].trim() === '')) {
         errs[f.key] = `${f.label} wajib diisi`
-      } else if (values[f.key] !== '' && Number(values[f.key]) < 0) {
+      } else if (values[f.key] !== '' && Number(parseRaw(values[f.key])) < 0) {
         errs[f.key] = 'Nilai tidak boleh negatif'
       }
     }
@@ -93,13 +102,13 @@ export default function PayslipFormModal({
         user_id: employee.id,
         periode_bulan: periode.bulan,
         periode_tahun: periode.tahun,
-        gaji_pokok: Number(values.gaji_pokok),
-        lembur: Number(values.lembur),
-        insentif: Number(values.insentif),
-        tunjangan: Number(values.tunjangan),
-        dinas_luar: Number(values.dinas_luar),
-        potongan_bpjs: Number(values.potongan_bpjs) || 0,
-        potongan_pajak: Number(values.potongan_pajak) || 0,
+        gaji_pokok: Number(parseRaw(values.gaji_pokok)),
+        lembur: Number(parseRaw(values.lembur)),
+        insentif: Number(parseRaw(values.insentif)),
+        tunjangan: Number(parseRaw(values.tunjangan)),
+        dinas_luar: Number(parseRaw(values.dinas_luar)),
+        potongan_bpjs: Number(parseRaw(values.potongan_bpjs)) || 0,
+        potongan_pajak: Number(parseRaw(values.potongan_pajak)) || 0,
         catatan: values.catatan || null,
       }
 
@@ -173,9 +182,8 @@ export default function PayslipFormModal({
                   {f.label} {f.required && <span className="text-red-500">*</span>}
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="numeric"
                   value={values[f.key]}
                   onChange={(e) => handleChange(f.key, e.target.value)}
                   placeholder="0"
