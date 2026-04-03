@@ -94,7 +94,7 @@ export default function DivisionManagementClient({ divisions: initialDivisions, 
           <p className="text-base font-medium text-slate-500">Kelola struktur organisasi dan distribusi personel Al-Wustho.</p>
         </div>
 
-        {['HRD', 'CEO', 'ADMIN'].includes(currentUserRole) && (
+        {['HRD', 'CEO', 'ADMIN', 'GENERAL_AFFAIR'].includes(currentUserRole) && (
           <Button 
             onClick={() => setCreateModal(true)}
             className="h-14 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xl shadow-blue-200 gap-3 active:scale-95 transition-all text-base"

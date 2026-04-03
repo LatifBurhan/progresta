@@ -73,7 +73,7 @@ export default function ApprovalModal({
   const roles = [
     { value: 'KARYAWAN', label: 'Staff', icon: '👨‍💻', desc: 'Akses Pelaporan' },
     { value: 'PM', label: 'Manager', icon: '📊', desc: 'Lead Project' },
-    { value: 'HRD', label: 'HRD', icon: '👥', desc: 'People Ops' },
+    { value: 'GENERAL_AFFAIR', label: 'General Affair', icon: '👥', desc: 'People Ops' },
     { value: 'CEO', label: 'CEO', icon: '👑', desc: 'Full Access' }
   ]
 

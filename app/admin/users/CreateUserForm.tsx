@@ -89,7 +89,7 @@ export default function CreateUserForm({ divisions }: CreateUserFormProps) {
   const roles = [
     { value: 'KARYAWAN', label: '👨‍💻 Karyawan', description: 'Akses standar untuk pelaporan' },
     { value: 'PM', label: '📊 Project Manager', description: 'Monitoring project dan tim' },
-    { value: 'HRD', label: '👥 HRD', description: 'Manajemen karyawan dan approval' },
+    { value: 'GENERAL_AFFAIR', label: '👥 General Affair', description: 'Manajemen karyawan dan approval' },
     { value: 'CEO', label: '👑 CEO', description: 'Akses penuh ke semua data' }
   ]
 

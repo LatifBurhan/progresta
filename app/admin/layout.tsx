@@ -15,8 +15,8 @@ export default async function AdminLayout({
     redirect('/login')
   }
 
-  // Only PM, HRD, CEO, ADMIN can access admin routes
-  if (!['PM', 'HRD', 'CEO', 'ADMIN'].includes(session.role)) {
+  // Only PM, GENERAL_AFFAIR, CEO, ADMIN can access admin routes
+  if (!['PM', 'GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(session.role)) {
     redirect('/dashboard')
   }
 

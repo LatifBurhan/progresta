@@ -167,7 +167,7 @@ export default function UserManagement({
   const getRoleBadge = (role: string) => {
     const badges = {
       'CEO': { label: '👑 CEO', color: 'bg-purple-100 text-purple-800' },
-      'HRD': { label: '👥 HRD', color: 'bg-blue-100 text-blue-800' },
+      'GENERAL_AFFAIR': { label: '👥 General Affair', color: 'bg-blue-100 text-blue-800' },
       'PM': { label: '📊 PM', color: 'bg-green-100 text-green-800' },
       'ADMIN': { label: '⚙️ Admin', color: 'bg-red-100 text-red-800' },
       'KARYAWAN': { label: '👨‍💻 Karyawan', color: 'bg-gray-100 text-gray-800' }
@@ -194,8 +194,8 @@ export default function UserManagement({
             Kelola persetujuan user baru dan status user yang sudah ada
           </p>
         </div>
-        {/* Add Create User Button for HRD/CEO/ADMIN */}
-        {['HRD', 'CEO', 'ADMIN'].includes(currentUserRole) && (
+        {/* Add Create User Button for GENERAL_AFFAIR/CEO/ADMIN */}
+        {['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(currentUserRole) && (
           <div className="flex gap-2">
             <Link href="/dashboard/admin/users/manage">
               <Button variant="outline" className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300">

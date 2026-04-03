@@ -54,7 +54,7 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('day')
 
-  const isAdmin = ['ADMIN', 'HRD', 'CEO'].includes(userRole)
+  const isAdmin = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(userRole)
 
   useEffect(() => {
     loadStats()

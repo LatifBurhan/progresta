@@ -152,7 +152,7 @@ export default function ProfileForm({
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'CEO': return 'bg-purple-100 text-purple-800'
-      case 'HRD': return 'bg-blue-100 text-blue-800'
+      case 'GENERAL_AFFAIR': return 'bg-blue-100 text-blue-800'
       case 'PM': return 'bg-green-100 text-green-800'
       case 'ADMIN': return 'bg-red-100 text-red-800'
       case 'KARYAWAN': return 'bg-gray-100 text-gray-800'
@@ -196,7 +196,7 @@ export default function ProfileForm({
             <div className="flex flex-wrap gap-3">
               <Badge className={`${getRoleColor(userRole)} px-3 py-1 font-medium`}>
                 {userRole === 'CEO' && '👑'} 
-                {userRole === 'HRD' && '👥'} 
+                {userRole === 'GENERAL_AFFAIR' && '👥'} 
                 {userRole === 'PM' && '📊'} 
                 {userRole === 'ADMIN' && '⚙️'} 
                 {userRole === 'KARYAWAN' && '👨‍💻'} 
