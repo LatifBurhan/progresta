@@ -112,139 +112,139 @@ export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmploy
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-100">
-              <Wallet className="w-6 h-6" />
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
+              <Wallet className="w-5 h-5" />
             </div>
             Payslip Center
           </h1>
-          <p className="text-sm font-bold text-slate-400 mt-2 uppercase tracking-[0.2em] ml-1">E-Slip Gaji Al-Wustho</p>
+          <p className="text-xs font-semibold text-slate-400 mt-1.5 uppercase tracking-[0.2em] ml-1">E-Slip Gaji Al-Wustho</p>
         </div>
-        <div className="bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Records</p>
-          <p className="text-lg font-black text-slate-900 leading-none">{payslips.length} Slips</p>
+        <div className="bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total Records</p>
+          <p className="text-base font-bold text-slate-900 leading-none">{payslips.length} Slips</p>
         </div>
       </div>
 
       {payslips.length === 0 ? (
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 p-16 text-center shadow-sm">
-          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <FileText className="w-10 h-10 text-slate-300" />
+        <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center shadow-sm">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-slate-300" />
           </div>
-          <h3 className="text-xl font-black text-slate-900 mb-2">Belum ada slip gaji</h3>
-          <p className="text-slate-400 font-medium max-w-xs mx-auto">Riwayat slip gaji elektronik Anda akan ditampilkan di sini setelah diterbitkan oleh HRD.</p>
+          <h3 className="text-lg font-bold text-slate-900 mb-1">Belum ada slip gaji</h3>
+          <p className="text-slate-400 text-sm font-medium max-w-xs mx-auto">Riwayat slip gaji elektronik Anda akan ditampilkan di sini setelah diterbitkan oleh HRD.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {payslips.map((p) => (
             <div key={p.id} className={cn(
-              "group bg-white rounded-[2.5rem] border-2 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-xl",
-              expandedId === p.id ? "border-blue-500 shadow-blue-100/50" : "border-slate-50 hover:border-slate-200"
+              "group bg-white rounded-3xl border-2 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-lg",
+              expandedId === p.id ? "border-blue-500 shadow-blue-100/30" : "border-slate-50 hover:border-slate-200"
             )}>
               {/* Main Card Header */}
               <div 
                 onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
-                className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-6 sm:px-8 py-6 cursor-pointer select-none"
+                className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-5 sm:px-6 py-4 cursor-pointer select-none"
               >
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-4">
                   <div className={cn(
-                    "w-14 h-14 rounded-[1.25rem] flex flex-col items-center justify-center transition-all duration-500 shadow-lg",
+                    "w-12 h-12 rounded-2xl flex flex-col items-center justify-center transition-all duration-500 shadow-md",
                     expandedId === p.id ? "bg-blue-600 text-white shadow-blue-200" : "bg-slate-50 text-slate-400 group-hover:bg-white group-hover:shadow-slate-100 group-hover:text-blue-600"
                   )}>
-                    <Calendar className="w-5 h-5 mb-0.5" />
-                    <span className="text-[10px] font-black uppercase leading-none">{p.periode_tahun}</span>
+                    <Calendar className="w-4 h-4 mb-0.5" />
+                    <span className="text-[9px] font-bold uppercase leading-none">{p.periode_tahun}</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
                       {BULAN_NAMES[p.periode_bulan]} {p.periode_tahun}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-lg font-bold text-slate-400 leading-none">{formatRupiah(Number(p.gaji_bersih))}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-base font-semibold text-slate-500 leading-none">{formatRupiah(Number(p.gaji_bersih))}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 mt-4 sm:mt-0 ml-auto sm:ml-0">
+                <div className="flex items-center gap-3 mt-3 sm:mt-0 ml-auto sm:ml-0">
                   <div className={cn(
-                    "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+                    "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5",
                     p.status === 'acknowledged' 
                       ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
                       : "bg-blue-50 text-blue-600 border border-blue-100"
                   )}>
                     {p.status === 'acknowledged' ? (
-                      <><CheckCircle2 className="w-3.5 h-3.5" /> Diterima</>
+                      <><CheckCircle2 className="w-3 h-3" /> Diterima</>
                     ) : (
-                      <><Clock className="w-3.5 h-3.5 animate-pulse" /> Baru</>
+                      <><Clock className="w-3 h-3 animate-pulse" /> Baru</>
                     )}
                   </div>
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500",
+                    "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500",
                     expandedId === p.id ? "bg-blue-50 text-blue-600 rotate-180" : "bg-slate-50 text-slate-400"
                   )}>
-                    <ChevronDown className="w-5 h-5" />
+                    <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
               </div>
 
               {/* Detailed Content */}
               {expandedId === p.id && (
-                <div className="px-6 sm:px-10 pb-10 space-y-8 animate-in slide-in-from-top-4 duration-500">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
+                <div className="px-5 sm:px-8 pb-8 space-y-6 animate-in slide-in-from-top-4 duration-500">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-5 border-t border-slate-100">
                     {/* Left Column: Earnings */}
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                          <TrendingUp className="w-4 h-4" />
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                          <TrendingUp className="w-3.5 h-3.5" />
                         </div>
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Pendapatan / Earnings</h4>
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Pendapatan / Earnings</h4>
                       </div>
-                      <div className="bg-slate-50/50 rounded-[2rem] p-6 space-y-4 border border-slate-100">
+                      <div className="bg-slate-50/50 rounded-2xl p-4 space-y-3 border border-slate-100">
                         {[
-                          { label: 'Gaji Pokok', val: p.gaji_pokok, icon: <Wallet className="w-3.5 h-3.5" /> },
-                          { label: 'Uang Lembur', val: p.lembur, icon: <Clock className="w-3.5 h-3.5" /> },
-                          { label: 'Insentif Performa', val: p.insentif, icon: <Sparkles className="w-3.5 h-3.5 text-amber-500" /> },
-                          { label: 'Tunjangan Jabatan', val: p.tunjangan, icon: <Building2 className="w-3.5 h-3.5 text-indigo-500" /> },
-                          { label: 'Dinas Luar Kota', val: p.dinas_luar, icon: <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> },
+                          { label: 'Gaji Pokok', val: p.gaji_pokok, icon: <Wallet className="w-3 h-3" /> },
+                          { label: 'Uang Lembur', val: p.lembur, icon: <Clock className="w-3 h-3" /> },
+                          { label: 'Insentif Performa', val: p.insentif, icon: <Sparkles className="w-3 h-3 text-amber-500" /> },
+                          { label: 'Tunjangan Jabatan', val: p.tunjangan, icon: <Building2 className="w-3 h-3 text-indigo-500" /> },
+                          { label: 'Dinas Luar Kota', val: p.dinas_luar, icon: <TrendingUp className="w-3 h-3 text-emerald-500" /> },
                         ].map((item) => (
                           <div key={item.label} className="flex items-center justify-between group/row">
-                            <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover/row:text-emerald-500 group-hover/row:border-emerald-100 transition-colors shadow-sm">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-6 h-6 rounded-md bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover/row:text-emerald-500 group-hover/row:border-emerald-100 transition-colors shadow-sm">
                                 {item.icon}
                               </div>
-                              <span className="text-sm font-bold text-slate-600">{item.label}</span>
+                              <span className="text-xs font-semibold text-slate-600">{item.label}</span>
                             </div>
-                            <span className="text-sm font-black text-slate-900">{formatRupiah(Number(item.val))}</span>
+                            <span className="text-xs font-bold text-slate-900">{formatRupiah(Number(item.val))}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* Right Column: Deductions */}
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
-                          <TrendingDown className="w-4 h-4" />
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                          <TrendingDown className="w-3.5 h-3.5" />
                         </div>
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Potongan / Deductions</h4>
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Potongan / Deductions</h4>
                       </div>
-                      <div className="bg-slate-50/50 rounded-[2rem] p-6 space-y-4 border border-slate-100">
+                      <div className="bg-slate-50/50 rounded-2xl p-4 space-y-3 border border-slate-100">
                         {[
-                          { label: 'Iuran BPJS (Kes/TK)', val: p.potongan_bpjs, icon: <Stethoscope className="w-3.5 h-3.5" /> },
-                          { label: 'Pajak Penghasilan (PPh)', val: p.potongan_pajak, icon: <TrendingDown className="w-3.5 h-3.5" /> },
+                          { label: 'Iuran BPJS (Kes/TK)', val: p.potongan_bpjs, icon: <Stethoscope className="w-3 h-3" /> },
+                          { label: 'Pajak Penghasilan (PPh)', val: p.potongan_pajak, icon: <TrendingDown className="w-3 h-3" /> },
                         ].map((item) => (
                           <div key={item.label} className="flex items-center justify-between group/row">
-                            <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover/row:text-rose-500 group-hover/row:border-rose-100 transition-colors shadow-sm">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-6 h-6 rounded-md bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover/row:text-rose-500 group-hover/row:border-rose-100 transition-colors shadow-sm">
                                 {item.icon}
                               </div>
-                              <span className="text-sm font-bold text-slate-600">{item.label}</span>
+                              <span className="text-xs font-semibold text-slate-600">{item.label}</span>
                             </div>
-                            <span className="text-sm font-black text-rose-600">({formatRupiah(Number(item.val))})</span>
+                            <span className="text-xs font-bold text-rose-600">({formatRupiah(Number(item.val))})</span>
                           </div>
                         ))}
-                        <div className="pt-2 italic text-[10px] text-slate-400 flex gap-2 items-start">
-                          <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                          <span>Potongan sudah disesuaikan dengan peraturan perusahaan yang berlaku.</span>
+                        <div className="pt-1.5 italic text-[9px] text-slate-400 flex gap-2 items-start">
+                          <Info className="w-2.5 h-2.5 mt-0.5 shrink-0" />
+                          <span>Potongan sudah disesuaikan dengan peraturan perusahaan.</span>
                         </div>
                       </div>
                     </div>

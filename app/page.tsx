@@ -197,31 +197,13 @@ export default function SplashScreen() {
 
         {/* Action Buttons / Swipe Indicator */}
         <div className="flex flex-col items-center justify-center gap-4 min-h-[56px]">
-          {currentSlide === slides.length - 1 ? (
+          {currentSlide === slides.length - 1 && (
             <Button
               onClick={handleFinish}
               className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs sm:text-sm uppercase tracking-[0.15em] shadow-xl shadow-blue-600/20 transition-all hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center gap-2 animate-in fade-in zoom-in duration-500"
             >
               Mulai Sekarang <Rocket className="w-4 h-4 ml-1" />
             </Button>
-          ) : (
-            <div className="flex flex-col items-center gap-4 w-full">
-              {/* Desktop Next Button */}
-              <Button
-                onClick={handleNext}
-                variant="outline"
-                className="hidden md:flex w-full h-14 border-2 border-slate-200 hover:border-blue-600 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 group/btn"
-              >
-                Lanjutkan <ChevronRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-              </Button>
-
-              {/* Mobile Swipe Indicator */}
-              <div className="flex items-center gap-2 text-slate-400 animate-pulse md:hidden">
-                <ChevronRight className="w-4 h-4 opacity-50" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Swipe untuk melanjutkan</span>
-                <ChevronRight className="w-4 h-4 opacity-50" />
-              </div>
-            </div>
           )}
         </div>
       </div>
