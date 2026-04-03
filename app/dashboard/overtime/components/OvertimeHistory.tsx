@@ -11,6 +11,7 @@ export interface OvertimeRequest {
   project_leader: string
   purpose: string
   duration: string
+  start_photo_url: string | null
   proof_photo_url: string
   approval_status: 'pending' | 'approved'
   approved_by: string | null
@@ -87,14 +88,26 @@ export default function OvertimeHistory({ requests, onEdit }: OvertimeHistoryPro
                 </div>
 
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  {req.proof_photo_url && (
-                    <button
-                      onClick={() => setLightboxUrl(req.proof_photo_url)}
-                      className="block w-16 h-16 rounded-xl overflow-hidden border border-slate-200 hover:border-orange-300 transition-colors"
-                    >
-                      <img src={req.proof_photo_url} alt="Bukti" className="w-full h-full object-cover" />
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {req.start_photo_url && (
+                      <button
+                        onClick={() => setLightboxUrl(req.start_photo_url!)}
+                        className="block w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-slate-200 hover:border-blue-300 transition-all shadow-sm"
+                        title="Foto Awal"
+                      >
+                        <img src={req.start_photo_url} alt="Awal" className="w-full h-full object-cover" />
+                      </button>
+                    )}
+                    {req.proof_photo_url && (
+                      <button
+                        onClick={() => setLightboxUrl(req.proof_photo_url)}
+                        className="block w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-slate-200 hover:border-orange-300 transition-all shadow-sm"
+                        title="Foto Selesai"
+                      >
+                        <img src={req.proof_photo_url} alt="Selesai" className="w-full h-full object-cover" />
+                      </button>
+                    )}
+                  </div>
                   {canEdit(req) && (
                     <button
                       onClick={() => onEdit(req)}

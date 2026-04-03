@@ -81,6 +81,7 @@ export async function POST(request: Request) {
         project_leader: activeSession.project_leader,
         purpose: activeSession.purpose,
         duration: pgInterval,
+        start_photo_url: activeSession.start_photo_url,
         proof_photo_url: uploadResult.url,
         approval_status: 'pending',
       })
