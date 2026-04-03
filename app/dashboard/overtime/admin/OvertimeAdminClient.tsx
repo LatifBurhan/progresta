@@ -5,7 +5,6 @@ import { formatDurationFromInterval } from "@/lib/overtime/duration";
 import type { OvertimeRequest } from "../components/OvertimeHistory";
 
 interface AdminRequest extends OvertimeRequest {
-  start_photo_url?: string;
   users?: {
     email: string;
     name?: string;
@@ -365,26 +364,15 @@ export default function OvertimeAdminClient() {
 
       {/* Lightbox */}
       {lightboxUrl && (
-        <div 
-          className="fixed inset-0 z-[60] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300"
-          onClick={() => setLightboxUrl(null)}
-        >
+        <div className="fixed inset-0 z-[60] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setLightboxUrl(null)}>
           <div className="relative max-w-4xl w-full max-h-[90vh] flex items-center justify-center">
-            <button 
-              className="absolute -top-12 right-0 text-white hover:text-slate-300 transition-colors flex items-center gap-2 font-medium"
-              onClick={() => setLightboxUrl(null)}
-            >
+            <button className="absolute -top-12 right-0 text-white hover:text-slate-300 transition-colors flex items-center gap-2 font-medium" onClick={() => setLightboxUrl(null)}>
               Tutup
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <img 
-              src={lightboxUrl} 
-              alt="Bukti Foto" 
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border-4 border-white/10"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <img src={lightboxUrl} alt="Bukti Foto" className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border-4 border-white/10" onClick={(e) => e.stopPropagation()} />
           </div>
         </div>
       )}
