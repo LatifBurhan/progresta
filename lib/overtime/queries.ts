@@ -55,7 +55,17 @@ export async function getAllOvertimeRequests(
 
   let query = supabaseAdmin
     .from('overtime_requests')
-    .select('*, users!overtime_requests_user_id_fkey(email, name)')
+    .select(`
+      *, 
+      users!overtime_requests_user_id_fkey(
+        email, 
+        name,
+        divisions(
+          name,
+          departments(name)
+        )
+      )
+    `)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
