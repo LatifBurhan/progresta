@@ -89,13 +89,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Requirement 7.5: Validate foto_urls count (1-5)
-    if (!body.foto_urls || body.foto_urls.length < 1 || body.foto_urls.length > 5) {
+    // Requirement 7.5: Validate foto_urls count (0-5, foto opsional)
+    if (body.foto_urls && body.foto_urls.length > 5) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid foto_urls count",
-          details: { foto_urls: "Must contain 1-5 photo URLs" }
+          details: { foto_urls: "Maximum 5 photos allowed" }
         },
         { status: 400 }
       );
@@ -171,10 +171,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Requirement 7.5: Serialize foto_urls for database storage
-    const serializedFotoUrls = serializeFotoUrls(body.foto_urls);
+    // Requirement 7.5: Serialize foto_urls for database storage (empty array if no photos)
+    const serializedFotoUrls = serializeFotoUrls(body.foto_urls || []);
 
     // Requirement 7.5: Insert record to database
+    // After Supabase restart, PostgREST should have reloaded schema cache
     const { data: newReport, error: insertError } = await supabaseAdmin
       .from('project_reports')
       .insert([{
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      console.error('Error inserting report:', insertError);
+      console.error('Error creating report:', insertError);
       return NextResponse.json(
         { success: false, error: "Failed to create report: " + insertError.message },
         { status: 500 }
