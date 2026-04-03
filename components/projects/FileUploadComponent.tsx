@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Upload, X, AlertCircle, Loader2 } from 'lucide-react'
 import { uploadProjectFile, deleteProjectFile, getFileIcon, formatFileSize } from '@/lib/storage/project-file-upload'
 
@@ -49,6 +49,47 @@ export default function FileUploadComponent({
   const [errors, setErrors] = useState<Map<string, string>>(new Map())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Sync existingFiles ketika prop berubah (misal saat modal edit dibuka)
+  // Gunakan ref untuk track nilai sebelumnya agar tidak trigger saat upload baru
+  const prevExistingKey = useRef('')
+  const isInitialSync = useRef(false)
+  useEffect(() => {
+    const key = existingFiles.join(',')
+    if (key && key !== prevExistingKey.current) {
+      prevExistingKey.current = key
+      isInitialSync.current = true
+      setFiles(existingFiles.map((url, index) => ({
+        id: `existing-${index}`,
+        name: extractFileNameFromUrl(url),
+        size: 0,
+        type: getTypeFromUrl(url),
+        url,
+        status: 'success' as const
+      })))
+    }
+  }, [existingFiles.join(',')])
+
+  // Notify parent hanya saat semua upload selesai (tidak ada yang masih uploading)
+  useEffect(() => {
+    if (isInitialSync.current) {
+      isInitialSync.current = false
+      return
+    }
+    // Jangan notify kalau masih ada yang uploading
+    const hasUploading = files.some(f => f.status === 'uploading')
+    if (hasUploading) return
+
+    const successUrls = files
+      .filter(f => f.status === 'success' && f.url && !f.url.startsWith('blob:'))
+      .map(f => f.url)
+
+    const existingKey = existingFiles.join(',')
+    const currentKey = successUrls.join(',')
+    if (currentKey !== existingKey) {
+      onChange(successUrls)
+    }
+  }, [files])
+
   // Extract filename from URL
   function extractFileNameFromUrl(url: string): string {
     try {
@@ -81,6 +122,19 @@ export default function FileUploadComponent({
   // Generate unique ID
   function generateId(): string {
     return `${Date.now()}-${Math.random().toString(36).substring(7)}`
+  }
+
+  // Get file type from URL
+  function getTypeFromUrl(url: string): string {
+    const ext = url.split('.').pop()?.toLowerCase() || ''
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
+    if (imageExts.includes(ext)) return `image/${ext}`
+    return ''
+  }
+
+  // Check if file is image
+  function isImageFile(file: UploadedFile): boolean {
+    return file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
   }
 
   // Validate file
@@ -117,72 +171,52 @@ export default function FileUploadComponent({
 
   // Process and upload files
   async function processFiles(filesToUpload: File[]) {
+    // Filter valid files dulu sebelum add ke state
+    const validFiles: File[] = []
     for (const file of filesToUpload) {
-      // Check max files limit
-      if (files.length >= maxFiles) {
+      if (validFiles.length + files.length >= maxFiles) {
         onError(`Maksimal ${maxFiles} file`)
         break
       }
+      if (validateFile(file)) validFiles.push(file)
+    }
 
-      // Validate file
-      if (!validateFile(file)) continue
+    if (validFiles.length === 0) return
 
-      // Add to state with uploading status (optimistic UI)
-      const fileId = generateId()
-      const newFile: UploadedFile = {
-        id: fileId,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: '',
-        status: 'uploading'
-      }
+    // Buat entry untuk semua file sekaligus (optimistic UI)
+    const newEntries: UploadedFile[] = validFiles.map(file => ({
+      id: generateId(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+      status: 'uploading' as const
+    }))
 
-      setFiles(prev => [...prev, newFile])
-      
-      // Clear previous errors for this file
-      setErrors(prev => {
-        const newErrors = new Map(prev)
-        newErrors.delete(fileId)
-        return newErrors
-      })
+    setFiles(prev => [...prev, ...newEntries])
 
+    // Upload semua file secara paralel
+    await Promise.all(newEntries.map(async (entry, i) => {
+      const file = validFiles[i]
       try {
-        // Upload file
         const result = await uploadProjectFile(file, projectId)
-
-        // Update state with success
-        setFiles(prev => {
-          const updated = prev.map(f => 
-            f.id === fileId 
-              ? { ...f, status: 'success' as const, url: result.publicUrl }
-              : f
-          )
-          
-          // Notify parent with ALL successful file URLs
-          const allSuccessUrls = updated.filter(f => f.status === 'success').map(f => f.url)
-          onChange(allSuccessUrls)
-          
-          return updated
-        })
-
-      } catch (error: any) {
-        // Update state with error
-        setFiles(prev => prev.map(f => 
-          f.id === fileId 
-            ? { ...f, status: 'error' }
+        setFiles(prev => prev.map(f =>
+          f.id === entry.id
+            ? { ...f, status: 'success' as const, url: result.publicUrl }
             : f
         ))
-
-        const errorMsg = error.message || 'Gagal upload file'
+      } catch (error: any) {
+        setFiles(prev => prev.map(f =>
+          f.id === entry.id ? { ...f, status: 'error' as const } : f
+        ))
         setErrors(prev => {
-          const newErrors = new Map(prev)
-          newErrors.set(fileId, errorMsg)
-          return newErrors
+          const next = new Map(prev)
+          next.set(entry.id, error.message || 'Gagal upload file')
+          return next
         })
-        onError(errorMsg)
+        onError(error.message || 'Gagal upload file')
       }
-    }
+    }))
   }
 
   // Handle file selection from input
@@ -240,10 +274,7 @@ export default function FileUploadComponent({
         }
       }
 
-      // Notify parent with updated URLs
-      const updatedUrls = files.filter(f => f.id !== fileId && f.status === 'success').map(f => f.url)
-      onChange(updatedUrls)
-
+      // Notify parent with updated URLs — dilakukan via useEffect
       // Clear error for this file
       setErrors(prev => {
         const newErrors = new Map(prev)
@@ -304,59 +335,67 @@ export default function FileUploadComponent({
 
       {/* File List */}
       {files.length > 0 && (
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {files.map(file => {
             const { icon, color } = getFileIcon(file.name)
             const error = errors.get(file.id)
+            const isImage = isImageFile(file)
 
             return (
               <div
                 key={file.id}
-                className={`
-                  flex items-center gap-3 p-3 border rounded-lg
+                className={`relative rounded-xl border overflow-hidden group
                   ${error ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}
                 `}
               >
-                {/* File Icon */}
-                <div className={`text-2xl ${color}`}>
-                  {icon}
-                </div>
-
-                {/* File Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {file.name}
-                  </p>
-                  {file.size > 0 && (
-                    <p className="text-xs text-gray-500">
-                      {formatFileSize(file.size)}
-                    </p>
-                  )}
-                  {error && (
-                    <p className="text-xs text-red-600 mt-1">
-                      {error}
-                    </p>
-                  )}
-                </div>
-
-                {/* Status Indicator */}
-                {file.status === 'uploading' && (
-                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                {/* Preview area */}
+                {isImage && file.url ? (
+                  <div className="w-full h-36 bg-gray-50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={file.url}
+                      alt={file.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-36 bg-slate-50 flex flex-col items-center justify-center gap-2">
+                    <span className={`text-4xl ${color}`}>{icon}</span>
+                  </div>
                 )}
 
-                {file.status === 'error' && (
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                )}
+                {/* File name + status bar */}
+                <div className="px-3 py-2 flex items-center gap-2">
+                  <p className="text-xs font-medium text-gray-700 truncate flex-1">{file.name}</p>
+                  {file.status === 'uploading' && (
+                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin shrink-0" />
+                  )}
+                  {file.status === 'error' && (
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                  )}
+                </div>
 
+                {/* Delete button */}
                 {file.status === 'success' && (
                   <button
                     type="button"
                     onClick={() => handleDelete(file.id)}
                     disabled={disabled}
-                    className="p-1 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
+                    className="absolute top-2 right-2 w-7 h-7 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
                   >
-                    <X className="w-4 h-4 text-gray-500" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
+                )}
+
+                {/* Uploading overlay */}
+                {file.status === 'uploading' && (
+                  <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                  </div>
+                )}
+
+                {error && (
+                  <p className="px-3 pb-2 text-xs text-red-600">{error}</p>
                 )}
               </div>
             )
