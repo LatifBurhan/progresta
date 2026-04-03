@@ -65,7 +65,7 @@ export default function CreateDivisionModal({
       if (result.success && result.departments) {
         setDepartments(result.departments)
       } else {
-        console.error('Failed to fetch departments:', result.message)
+        console.error('Failed to fetch departments :', result.message)
         setError('Gagal memuat data departemen')
       }
     } catch (error) {
