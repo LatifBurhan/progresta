@@ -343,7 +343,7 @@ export function CameraCapture({
 
   return (
     <CameraModal isOpen={isOpen} onClose={onClose} title="Ambil Foto">
-      <div className="flex flex-col items-center justify-center bg-black min-h-[400px] md:min-h-[500px]">
+      <div className="relative flex flex-col bg-black" style={{ height: 'calc(100dvh - 65px)' }}>
         {/* Error Display */}
         {state.error && (
           <div className="absolute inset-0 flex items-center justify-center p-6 bg-black/90 z-10">
@@ -358,80 +358,76 @@ export function CameraCapture({
 
         {/* Loading State */}
         {!state.isStreaming && !state.error && (
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex-1 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
             <p className="text-slate-400 text-sm">Memulai kamera...</p>
           </div>
         )}
 
-        {/* Video Preview */}
+        {/* Video Preview — flex-1 agar tidak dorong tombol keluar layar */}
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className={`w-full h-full object-cover ${state.isStreaming ? 'block' : 'hidden'}`}
+          className={`flex-1 w-full object-cover ${state.isStreaming ? 'block' : 'hidden'}`}
+          style={{ minHeight: 0 }}
         />
 
         {/* Camera Active Indicator */}
         {state.isStreaming && (
-          <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold">
+          <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold z-10">
             <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
             Kamera Aktif
           </div>
         )}
 
-        {/* Controls */}
+        {/* Controls — sticky di bawah, tidak absolute */}
         {state.isStreaming && (
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-            <div className="flex items-center justify-center gap-4">
-              {/* Camera Switch Button */}
-              {state.availableCameras.length > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  onClick={() => {
-                    const currentIndex = state.availableCameras.findIndex(
-                      cam => cam.deviceId === state.selectedCameraId
-                    )
-                    const nextIndex = (currentIndex + 1) % state.availableCameras.length
-                    switchCamera(state.availableCameras[nextIndex].deviceId)
-                  }}
-                  disabled={state.isSwitchingCamera}
-                  className="rounded-full"
-                >
-                  <RefreshCw className={`w-5 h-5 ${state.isSwitchingCamera ? 'animate-spin' : ''}`} />
-                </Button>
-              )}
-
-              {/* Capture Button */}
-              <Button
-                type="button"
-                size="lg"
-                onClick={capturePhoto}
-                disabled={state.isCapturing}
-                className="rounded-full bg-blue-500 hover:bg-blue-600 text-white px-8"
-              >
-                <Camera className="w-5 h-5 mr-2" />
-                {state.isCapturing ? 'Mengambil...' : 'Ambil Foto'}
-              </Button>
-
-              {/* Cancel Button */}
+          <div className="shrink-0 p-4 pb-safe bg-gradient-to-t from-black to-black/80 flex items-center justify-center gap-4">
+            {/* Camera Switch Button */}
+            {state.availableCameras.length > 1 && (
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
                 onClick={() => {
-                  cleanup()
-                  onClose()
+                  const currentIndex = state.availableCameras.findIndex(
+                    cam => cam.deviceId === state.selectedCameraId
+                  )
+                  const nextIndex = (currentIndex + 1) % state.availableCameras.length
+                  switchCamera(state.availableCameras[nextIndex].deviceId)
                 }}
-                className="rounded-full"
+                disabled={state.isSwitchingCamera}
+                className="rounded-full border-white/30 text-white hover:bg-white/10"
               >
-                <X className="w-5 h-5 mr-2" />
-                Batal
+                <RefreshCw className={`w-5 h-5 ${state.isSwitchingCamera ? 'animate-spin' : ''}`} />
               </Button>
-            </div>
+            )}
+
+            {/* Capture Button */}
+            <button
+              type="button"
+              onClick={capturePhoto}
+              disabled={state.isCapturing}
+              className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {state.isCapturing
+                ? <Loader2 className="w-7 h-7 text-slate-800 animate-spin" />
+                : <Camera className="w-7 h-7 text-slate-800" />
+              }
+            </button>
+
+            {/* Cancel Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => { cleanup(); onClose() }}
+              className="rounded-full border-white/30 text-white hover:bg-white/10"
+            >
+              <X className="w-5 h-5" />
+            </Button>
           </div>
         )}
       </div>

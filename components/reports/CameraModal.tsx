@@ -42,9 +42,9 @@ export function CameraModal({ isOpen, onClose, children, title = 'Ambil Foto' }:
       />
       
       {/* Modal Content */}
-      <div className="relative w-full h-full md:h-auto md:max-w-2xl md:max-h-[90vh] bg-slate-900 md:rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col">
+      <div className="relative w-full h-full md:h-auto md:max-w-2xl md:max-h-[90vh] bg-slate-900 md:rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700 shrink-0">
           <h2 className="text-lg font-bold text-white">{title}</h2>
           <button
             onClick={onClose}
@@ -56,7 +56,7 @@ export function CameraModal({ isOpen, onClose, children, title = 'Ambil Foto' }:
         </div>
         
         {/* Content */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 flex flex-col min-h-0">
           {children}
         </div>
       </div>
