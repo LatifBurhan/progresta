@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Progresta - Progress & Auto-Attendance',
   description: 'Sistem Progress & Auto-Attendance untuk manajemen karyawan dan project',
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=3',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
