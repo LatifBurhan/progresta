@@ -42,9 +42,14 @@ export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmploy
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [leaveMap, setLeaveMap] = useState<Map<number, EmployeeLeave>>(new Map())
 
+  // Sync state if initialPayslips prop changes
+  useEffect(() => {
+    setPayslips(initialPayslips)
+  }, [initialPayslips])
+
   // Fetch data cuti untuk semua tahun yang ada di slip gaji
   useEffect(() => {
-    const uniqueTahun = [...new Set(initialPayslips.map((p) => p.periode_tahun))]
+    const uniqueTahun = [...new Set(payslips.map((p) => p.periode_tahun))]
     if (uniqueTahun.length === 0) return
 
     Promise.all(
@@ -60,7 +65,7 @@ export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmploy
       })
       setLeaveMap(map)
     }).catch(() => {})
-  }, [initialPayslips])
+  }, [payslips])
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type })

@@ -39,7 +39,7 @@ export function validateReportForm(data: CreateReportRequest): ValidationErrors 
     errors.lokasi_kerja = 'Lokasi kerja harus dipilih';
   } else {
     // Validate lokasi_kerja is one of the allowed values
-    const validLocations: LokasiKerja[] = ['WFA', 'Al-Wustho', 'Client Site'];
+    const validLocations: LokasiKerja[] = ['Remote', 'Kantor', 'Lokasi Proyek'];
     if (!validLocations.includes(data.lokasi_kerja)) {
       errors.lokasi_kerja = 'Lokasi kerja tidak valid';
     }
@@ -130,7 +130,7 @@ export function canEditReport(report: ProjectReport, userId: string): boolean {
  * @returns true if valid, false otherwise
  */
 export function isValidLokasiKerja(lokasiKerja: string): lokasiKerja is LokasiKerja {
-  const validLocations: LokasiKerja[] = ['WFA', 'Al-Wustho', 'Client Site'];
+  const validLocations: LokasiKerja[] = ['Remote', 'Kantor', 'Lokasi Proyek'];
   return validLocations.includes(lokasiKerja as LokasiKerja);
 }
 

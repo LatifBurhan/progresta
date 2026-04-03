@@ -83,11 +83,11 @@ export async function GET(request: NextRequest) {
           id,
           name,
           description,
-          isActive
+          status
         )
       `)
       .eq('division_id', user.divisionId)
-      .eq('projects.isActive', true);
+      .eq('projects.status', 'Aktif');
 
     if (projectDivisionsError) {
       console.error('Error fetching project divisions:', projectDivisionsError);
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .in('id', projectIds)
-      .eq('isActive', true)
+      .eq('status', 'Aktif')
       .order('created_at', { ascending: false });
 
     if (projectsError) {

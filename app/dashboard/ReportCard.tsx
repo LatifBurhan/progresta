@@ -155,9 +155,9 @@ export default function ReportCard({
 
   const getLocationBadge = (location: string) => {
     const badges = {
-      'Al-Wustho': { label: '🏢 WFO', color: 'bg-blue-100 text-blue-800' },
-      'WFA': { label: '🏠 WFA', color: 'bg-green-100 text-green-800' },
-      'Client Site': { label: '🏛️ Client', color: 'bg-purple-100 text-purple-800' }
+      'Kantor': { label: '🏢 Kantor', color: 'bg-blue-100 text-blue-800' },
+      'Remote': { label: '🏠 Remote', color: 'bg-green-100 text-green-800' },
+      'Lokasi Proyek': { label: '🏛️ Proyek', color: 'bg-purple-100 text-purple-800' }
     }
     return badges[location as keyof typeof badges] || { label: location, color: 'bg-gray-100 text-gray-800' }
   }

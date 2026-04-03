@@ -5,8 +5,6 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 // Enum untuk status user
@@ -100,7 +98,7 @@ model ProjectDivision {
 model Report {
   id         String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
   userId     String    @map("user_id") @db.Uuid
-  location   String    // 'Al-Wustho', 'WFA', 'Client Site'
+  location   String    @default("Kantor") // 'Kantor', 'Lokasi Proyek', 'Remote'
   period     String    // '08-10', '10-12', '13-15', '15-17'
   futurePlan String    @map("future_plan")
   photoUrl   String?   @map("photo_url")

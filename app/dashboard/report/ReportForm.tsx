@@ -19,9 +19,9 @@ const PERIODS = [
 ];
 
 const LOCATIONS = [
-  { value: "Al-Wustho", label: "🏢 Al-Wustho" },
-  { value: "WFA", label: "🏠 WFA" },
-  { value: "Client Site", label: "🏛️ Client Site" },
+  { value: "Kantor", label: "🏢 Kantor" },
+  { value: "Lokasi Proyek", label: "🏛️ Lokasi Proyek" },
+  { value: "Remote", label: "🏠 Remote" },
 ];
 
 interface ProjectDetail {
@@ -42,7 +42,7 @@ interface ReportFormProps {
 }
 export default function ReportForm({ userId, lastReport, availableProjects, initialHistory }: ReportFormProps) {
   const [period, setPeriod] = useState("");
-  const [location, setLocation] = useState(lastReport?.location || "Al-Wustho");
+  const [location, setLocation] = useState(lastReport?.location || "Kantor");
   const [futurePlan, setFuturePlan] = useState("");
   const [projectDetails, setProjectDetails] = useState<ProjectDetail[]>([
     {
@@ -68,7 +68,7 @@ export default function ReportForm({ userId, lastReport, availableProjects, init
       try {
         const parsed = JSON.parse(savedData);
         setPeriod(parsed.period || "");
-        setLocation(parsed.location || lastReport?.location || "Al-Wustho");
+        setLocation(parsed.location || lastReport?.location || "Kantor");
         setFuturePlan(parsed.futurePlan || "");
         setProjectDetails(parsed.projectDetails || projectDetails);
       } catch (error) {

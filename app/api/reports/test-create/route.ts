@@ -80,7 +80,7 @@ export async function GET() {
     const testReport = {
       user_id: user.id,
       project_id: project.id,
-      lokasi_kerja: 'WFA',
+      lokasi_kerja: 'Kantor',
       pekerjaan_dikerjakan: 'Test report - automated test',
       kendala: 'Test kendala',
       rencana_kedepan: 'Test rencana',

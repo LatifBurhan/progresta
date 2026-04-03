@@ -19,14 +19,14 @@ import type { UpdateReportRequest, UpdateReportResponse } from "@/types/report";
  * - Current date must equal report creation date (same-day edit only)
  * - If project_id is changed, must reference an active project
  * - If project_id is changed, user must be involved in the new project
- * - lokasi_kerja must be one of: 'WFA', 'Al-Wustho', 'Client Site'
+ * - lokasi_kerja must be one of: 'Kantor', 'Lokasi Proyek', 'Remote'
  * - pekerjaan_dikerjakan is required
  * - foto_urls must contain 1-5 valid URLs
  * 
  * Request Body:
  * {
  *   project_id?: string;
- *   lokasi_kerja?: 'WFA' | 'Al-Wustho' | 'Client Site';
+ *   lokasi_kerja?: 'Kantor' | 'Lokasi Proyek' | 'Remote';
  *   pekerjaan_dikerjakan?: string;
  *   kendala?: string;
  *   rencana_kedepan?: string;
@@ -129,17 +129,19 @@ export async function PUT(
       );
     }
 
-    // Validate lokasi_kerja values
-    const validLokasiKerja = ['WFA', 'Al-Wustho', 'Client Site'];
-    if (!validLokasiKerja.includes(mergedData.lokasi_kerja)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid lokasi_kerja value",
-          details: { lokasi_kerja: "Must be one of: WFA, Al-Wustho, Client Site" }
-        },
-        { status: 400 }
-      );
+    // Validate lokasi_kerja if provided
+    if (body.lokasi_kerja) {
+      const validLokasiKerja = ['Kantor', 'Lokasi Proyek', 'Remote'];
+      if (!validLokasiKerja.includes(body.lokasi_kerja)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid lokasi_kerja value",
+            details: { lokasi_kerja: "Must be one of: Kantor, Lokasi Proyek, Remote" }
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate foto_urls count (1-5)

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS project_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    lokasi_kerja VARCHAR(50) NOT NULL CHECK (lokasi_kerja IN ('WFA', 'Al-Wustho', 'Client Site')),
+    lokasi_kerja VARCHAR(50) NOT NULL CHECK (lokasi_kerja IN ('Kantor', 'Lokasi Proyek', 'Remote')),
     pekerjaan_dikerjakan TEXT NOT NULL,
     kendala TEXT,
     rencana_kedepan TEXT,

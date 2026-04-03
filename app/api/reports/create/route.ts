@@ -16,14 +16,14 @@ import type { CreateReportRequest, CreateReportResponse } from "@/types/report";
  * - User must be authenticated
  * - project_id must reference an active project
  * - User must be involved in the project via project_divisions
- * - lokasi_kerja must be one of: 'WFA', 'Al-Wustho', 'Client Site'
+ * - lokasi_kerja must be one of: 'Kantor', 'Lokasi Proyek', 'Remote'
  * - pekerjaan_dikerjakan is required
  * - foto_urls must contain 1-5 valid URLs
  * 
  * Request Body:
  * {
  *   project_id: string;
- *   lokasi_kerja: 'WFA' | 'Al-Wustho' | 'Client Site';
+ *   lokasi_kerja: 'Kantor' | 'Lokasi Proyek' | 'Remote';
  *   pekerjaan_dikerjakan: string;
  *   kendala?: string;
  *   rencana_kedepan?: string;
@@ -77,13 +77,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Requirement 7.5: Validate lokasi_kerja values
-    const validLokasiKerja = ['WFA', 'Al-Wustho', 'Client Site'];
+    const validLokasiKerja = ['Kantor', 'Lokasi Proyek', 'Remote'];
     if (!validLokasiKerja.includes(body.lokasi_kerja)) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid lokasi_kerja value",
-          details: { lokasi_kerja: "Must be one of: WFA, Al-Wustho, Client Site" }
+          details: { lokasi_kerja: "Must be one of: Kantor, Lokasi Proyek, Remote" }
         },
         { status: 400 }
       );

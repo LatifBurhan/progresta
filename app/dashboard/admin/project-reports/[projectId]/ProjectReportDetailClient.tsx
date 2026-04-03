@@ -24,7 +24,7 @@ interface ProjectReport {
   id: string
   user_id: string
   project_id: string
-  lokasi_kerja: 'WFA' | 'Al-Wustho' | 'Client Site'
+  lokasi_kerja: 'Kantor' | 'Lokasi Proyek' | 'Remote'
   pekerjaan_dikerjakan: string
   kendala: string | null
   rencana_kedepan: string | null

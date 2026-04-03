@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     const testData = {
       user_id: session.userId,
       project_id: '00000000-0000-0000-0000-000000000001', // Fake UUID for test
-      lokasi_kerja: 'WFA',
+      lokasi_kerja: 'Kantor',
       pekerjaan_dikerjakan: 'TEST INSERT - DELETE ME',
       foto_urls: ['https://example.com/test.jpg']
     };

@@ -50,17 +50,17 @@ export default function ResponsiveLayout({ session, profile, children, logoutAct
               </button>
 
               {/* Partner Logos in Navbar - Desktop Only */}
-              <div className="hidden lg:flex items-center gap-3 sm:gap-6 ml-2 sm:ml-4">
-                <div className="relative h-8 w-24 sm:h-9 sm:w-28 transition-transform hover:scale-105 duration-300">
-                  <Image src="/alwustho.png" alt="Al-Wustho Logo" fill sizes="(max-width: 640px) 96px, 112px" className="object-contain" />
+              <div className="hidden lg:flex items-center gap-3 ml-6">
+                <div className="transition-transform hover:scale-105 duration-300">
+                  <Image src="/master-alwustho.png" alt="Al-Wustho Logo" width={100} height={32} className="h-8 w-auto object-contain" priority />
                 </div>
-                <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />
-                <div className="relative h-7 w-20 sm:h-8 sm:w-24 transition-transform hover:scale-105 duration-300">
-                  <Image src="/elfan.jfif" alt="Elfan Logo" fill sizes="(max-width: 640px) 80px, 96px" className="object-contain" />
+                <div className="h-5 w-[1px] bg-slate-200 hidden sm:block opacity-30 mx-1" />
+                <div className="transition-transform hover:scale-105 duration-300">
+                  <Image src="/master-elfan.png" alt="Elfan Logo" width={80} height={28} className="h-7 w-auto object-contain" priority />
                 </div>
-                <div className="h-6 w-[1px] bg-slate-200 hidden sm:block" />
-                <div className="relative h-7 w-20 sm:h-8 sm:w-24 transition-transform hover:scale-105 duration-300">
-                  <Image src="/ufuk.jfif" alt="Fan Ufuk Logo" fill sizes="(max-width: 640px) 80px, 96px" className="object-contain" />
+                <div className="h-5 w-[1px] bg-slate-200 hidden sm:block opacity-30 mx-1" />
+                <div className="transition-transform hover:scale-105 duration-300">
+                  <Image src="/master-ufuk.png" alt="Fan Ufuk Logo" width={80} height={28} className="h-7 w-auto object-contain" priority />
                 </div>
               </div>
             </div>
@@ -126,13 +126,13 @@ export default function ResponsiveLayout({ session, profile, children, logoutAct
 
                 <div className="flex items-center justify-center gap-4 w-full px-2">
                   <div className="relative h-6 w-16 transition-transform hover:scale-105 duration-300">
-                    <Image src="/alwustho.png" alt="Al-Wustho" fill className="object-contain" />
+                    <Image src="/master-alwustho.png" alt="Al-Wustho" fill className="object-contain" />
                   </div>
                   <div className="relative h-5 w-14 transition-transform hover:scale-105 duration-300">
-                    <Image src="/elfan.jfif" alt="Elfan" fill className="object-contain" />
+                    <Image src="/master-elfan.png" alt="Elfan" fill className="object-contain" />
                   </div>
                   <div className="relative h-5 w-14 transition-transform hover:scale-105 duration-300">
-                    <Image src="/ufuk.jfif" alt="Fan Ufuk" fill className="object-contain" />
+                    <Image src="/master-ufuk.png" alt="Fan Ufuk" fill className="object-contain" />
                   </div>
                 </div>
               </div>

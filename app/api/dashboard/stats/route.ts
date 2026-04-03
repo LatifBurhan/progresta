@@ -182,9 +182,9 @@ export async function GET(request: NextRequest) {
         .eq('user_id', userId);
 
       const locationCounts: Record<string, number> = {
-        'WFA': 0,
-        'Al-Wustho': 0,
-        'Client Site': 0
+        'Remote': 0,
+        'Kantor': 0,
+        'Lokasi Proyek': 0
       };
 
       (locationData || []).forEach((report: any) => {
@@ -192,9 +192,9 @@ export async function GET(request: NextRequest) {
       });
 
       locationBreakdown = [
-        { name: 'WFA', value: locationCounts['WFA'], color: '#3b82f6' },
-        { name: 'Al-Wustho', value: locationCounts['Al-Wustho'], color: '#f97316' },
-        { name: 'Client Site', value: locationCounts['Client Site'], color: '#10b981' }
+        { name: 'Remote', value: locationCounts['Remote'], color: '#3b82f6' },
+        { name: 'Kantor', value: locationCounts['Kantor'], color: '#f97316' },
+        { name: 'Lokasi Proyek', value: locationCounts['Lokasi Proyek'], color: '#10b981' }
       ];
     }
 

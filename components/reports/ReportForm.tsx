@@ -25,7 +25,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
 
   const [formData, setFormData] = useState<ReportFormData>({
     project_id: initialData?.project_id || "",
-    lokasi_kerja: initialData?.lokasi_kerja || "Al-Wustho",
+    lokasi_kerja: initialData?.lokasi_kerja || "Kantor",
     pekerjaan_dikerjakan: initialData?.pekerjaan_dikerjakan || "",
     kendala: initialData?.kendala || "",
     rencana_kedepan: initialData?.rencana_kedepan || "",
@@ -194,7 +194,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
           </Label>
         </div>
         <div className="flex flex-wrap gap-2">
-          {["WFA", "Al-Wustho", "Client Site"].map((loc) => (
+          {["Kantor", "Lokasi Proyek", "Remote"].map((loc) => (
             <button
               key={loc}
               type="button"

@@ -9,7 +9,7 @@
 /**
  * Lokasi Kerja (Work Location) options
  */
-export type LokasiKerja = 'WFA' | 'Al-Wustho' | 'Client Site';
+export type LokasiKerja = 'Remote' | 'Kantor' | 'Lokasi Proyek';
 
 /**
  * Base interface for project_reports table
