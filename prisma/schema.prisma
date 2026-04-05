@@ -99,7 +99,7 @@ model Report {
   id         String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
   userId     String    @map("user_id") @db.Uuid
   location   String    @default("Kantor") // 'Kantor', 'Lokasi Proyek', 'Remote'
-  period     String    // '08-10', '10-12', '13-15', '15-17'
+  period     String    // '08-10', '10-12', '12-14', '14-16'
   futurePlan String    @map("future_plan")
   photoUrl   String?   @map("photo_url")
   createdAt  DateTime? @default(now()) @map("created_at")

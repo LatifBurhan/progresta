@@ -25,6 +25,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
 
   const [formData, setFormData] = useState<ReportFormData>({
     project_id: initialData?.project_id || "",
+    period: initialData?.period || "",
     lokasi_kerja: initialData?.lokasi_kerja || "Kantor",
     pekerjaan_dikerjakan: initialData?.pekerjaan_dikerjakan || "",
     kendala: initialData?.kendala || "",
@@ -183,7 +184,47 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
         )}
       </section>
 
-      {/* 2. Lokasi Kerja Selection */}
+      {/* 2. Periode Waktu Selection */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <Label className="text-base font-bold text-slate-800">
+            Periode Waktu <span className="text-rose-500">*</span>
+          </Label>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { value: "08-10", label: "08:00 - 10:00" },
+            { value: "10-12", label: "10:00 - 12:00" },
+            { value: "12-14", label: "12:00 - 14:00" },
+            { value: "14-16", label: "14:00 - 16:00" },
+          ].map((period) => (
+            <button
+              key={period.value}
+              type="button"
+              onClick={() => updateField("period", period.value)}
+              className={`px-4 py-3 rounded-xl text-sm font-bold border-2 transition-all ${
+                formData.period === period.value 
+                  ? "border-purple-500 bg-purple-500 text-white shadow-lg shadow-purple-100" 
+                  : "border-slate-100 bg-white text-slate-500 hover:border-slate-200"
+              }`}
+            >
+              {period.label}
+            </button>
+          ))}
+        </div>
+        {errors.period && (
+          <p className="text-xs font-bold text-rose-500 flex items-center gap-1 mt-2">
+            <AlertCircle className="w-3 h-3" /> {errors.period}
+          </p>
+        )}
+      </section>
+
+      {/* 3. Lokasi Kerja Selection */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -209,7 +250,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
         </div>
       </section>
 
-      {/* 3. Text Inputs Section */}
+      {/* 4. Text Inputs Section */}
       <section className="grid grid-cols-1 gap-8 bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
         <div className="space-y-3">
           <Label htmlFor="pekerjaan_dikerjakan" className="flex items-center gap-2 font-bold text-slate-700">
@@ -260,7 +301,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
         </div>
       </section>
 
-      {/* 4. Photo Uploader Section */}
+      {/* 5. Photo Uploader Section */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">

@@ -34,6 +34,17 @@ export function validateReportForm(data: CreateReportRequest): ValidationErrors 
     errors.project_id = 'Project harus dipilih';
   }
   
+  // Period must be selected
+  if (!data.period || data.period.trim() === '') {
+    errors.period = 'Periode waktu harus dipilih';
+  } else {
+    // Validate period is one of the allowed values
+    const validPeriods = ['08-10', '10-12', '12-14', '14-16'];
+    if (!validPeriods.includes(data.period)) {
+      errors.period = 'Periode waktu tidak valid';
+    }
+  }
+  
   // Requirement 1.4: Work location must be selected
   if (!data.lokasi_kerja) {
     errors.lokasi_kerja = 'Lokasi kerja harus dipilih';
@@ -144,6 +155,7 @@ export function isValidLokasiKerja(lokasiKerja: string): lokasiKerja is LokasiKe
 export function hasRequiredFields(data: Partial<CreateReportRequest>): boolean {
   return !!(
     data.project_id &&
+    data.period &&
     data.lokasi_kerja &&
     data.pekerjaan_dikerjakan
     // foto_urls is optional, so not checked here

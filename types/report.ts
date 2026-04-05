@@ -12,6 +12,11 @@
 export type LokasiKerja = 'Remote' | 'Kantor' | 'Lokasi Proyek';
 
 /**
+ * Periode Waktu (Time Period) options
+ */
+export type PeriodeWaktu = '08-10' | '10-12' | '12-14' | '14-16';
+
+/**
  * Base interface for project_reports table
  * Represents a progress report record in the database
  * 
@@ -21,6 +26,7 @@ export interface ProjectReport {
   id: string;
   user_id: string;
   project_id: string;
+  period: PeriodeWaktu;
   lokasi_kerja: LokasiKerja;
   pekerjaan_dikerjakan: string;
   kendala: string | null;
@@ -87,6 +93,7 @@ export interface Division {
  */
 export interface CreateReportRequest {
   project_id: string;
+  period: PeriodeWaktu;
   lokasi_kerja: LokasiKerja;
   pekerjaan_dikerjakan: string;
   kendala?: string | null;
@@ -103,6 +110,7 @@ export interface CreateReportRequest {
 export interface UpdateReportRequest {
   id: string;
   project_id?: string;
+  period?: PeriodeWaktu;
   lokasi_kerja?: LokasiKerja;
   pekerjaan_dikerjakan?: string;
   kendala?: string;
@@ -203,6 +211,7 @@ export interface ListProjectsResponse {
  */
 export interface ReportFormData {
   project_id: string;
+  period: PeriodeWaktu | '';
   lokasi_kerja: LokasiKerja;
   pekerjaan_dikerjakan: string;
   kendala: string | null;

@@ -93,6 +93,13 @@ export function ReportCard({
               <span className="text-[10px] font-black uppercase tracking-tighter">{report.lokasi_kerja}</span>
             </div>
             
+            {report.period && (
+              <div className="bg-purple-600 text-white px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm shadow-purple-200">
+                <Clock className="w-3 h-3" />
+                <span className="text-[10px] font-black uppercase tracking-tighter">{report.period}</span>
+              </div>
+            )}
+            
             {(report.can_edit || report.can_delete) && (
               <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>

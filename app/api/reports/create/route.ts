@@ -181,6 +181,7 @@ export async function POST(request: NextRequest) {
       .insert([{
         user_id: session.userId,
         project_id: body.project_id,
+        period: body.period,
         lokasi_kerja: body.lokasi_kerja,
         pekerjaan_dikerjakan: body.pekerjaan_dikerjakan,
         kendala: body.kendala || null,
