@@ -11,6 +11,7 @@ export type OvertimeErrorCode =
   | 'EDIT_WINDOW_EXPIRED'
   | 'ALREADY_APPROVED'
   | 'NOT_FOUND'
+  | 'INVALID_COORDINATES'
 
 export function overtimeError(
   code: OvertimeErrorCode,

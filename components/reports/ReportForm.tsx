@@ -89,9 +89,15 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
     e.preventDefault();
 
     // Validate form (photos are optional, so we don't need placeholder)
-    const validationErrors = validateReportForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    // Only validate if period is not empty
+    if (formData.period) {
+      const validationErrors = validateReportForm(formData as any);
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+    } else {
+      setErrors({ period: 'Period harus dipilih' });
       return;
     }
 

@@ -113,7 +113,8 @@ export async function PUT(
       pekerjaan_dikerjakan: body.pekerjaan_dikerjakan ?? existingReport.pekerjaan_dikerjakan,
       kendala: body.kendala !== undefined ? body.kendala : existingReport.kendala,
       rencana_kedepan: body.rencana_kedepan !== undefined ? body.rencana_kedepan : existingReport.rencana_kedepan,
-      foto_urls: body.foto_urls ?? existingReport.foto_urls
+      foto_urls: body.foto_urls ?? existingReport.foto_urls,
+      period: body.period ?? existingReport.period
     };
 
     // Requirement 2.4: Validate request body (same rules as create)
