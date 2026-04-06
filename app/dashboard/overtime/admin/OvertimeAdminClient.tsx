@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatDurationFromInterval } from "@/lib/overtime/duration";
 import type { OvertimeRequest } from "../components/OvertimeHistory";
+import { LocationLink } from "@/components/overtime/LocationLink";
 
 interface AdminRequest extends OvertimeRequest {
   users?: {
@@ -14,6 +15,12 @@ interface AdminRequest extends OvertimeRequest {
         name: string;
       };
     };
+  };
+  overtime_sessions?: {
+    clock_in_lat: number | null;
+    clock_in_lng: number | null;
+    clock_out_lat: number | null;
+    clock_out_lng: number | null;
   };
 }
 
@@ -310,6 +317,7 @@ export default function OvertimeAdminClient() {
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Kerja</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tanggal</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Lokasi</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Lokasi GPS</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Leader</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tujuan</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Durasi</th>
@@ -327,6 +335,14 @@ export default function OvertimeAdminClient() {
                     </td>
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(req.created_at)}</td>
                     <td className="px-4 py-3 text-slate-600">{req.location}</td>
+                    <td className="px-4 py-3">
+                      <LocationLink
+                        clockInLat={req.overtime_sessions?.clock_in_lat ?? null}
+                        clockInLng={req.overtime_sessions?.clock_in_lng ?? null}
+                        clockOutLat={req.overtime_sessions?.clock_out_lat ?? null}
+                        clockOutLng={req.overtime_sessions?.clock_out_lng ?? null}
+                      />
+                    </td>
                     <td className="px-4 py-3 text-slate-600">{req.project_leader}</td>
                     <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate" title={req.purpose}>
                       {req.purpose}

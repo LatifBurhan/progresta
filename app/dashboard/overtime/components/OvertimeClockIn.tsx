@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useGeolocation } from '@/lib/hooks/useGeolocation'
 
 interface OvertimeClockInProps {
   onSuccess: (sessionId: string, startTime: string) => void
@@ -9,6 +10,7 @@ interface OvertimeClockInProps {
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export default function OvertimeClockIn({ onSuccess }: OvertimeClockInProps) {
+  const { getCurrentPosition } = useGeolocation()
   const [location, setLocation] = useState('')
   const [projectLeader, setProjectLeader] = useState('')
   const [purpose, setPurpose] = useState('')
@@ -59,6 +61,10 @@ export default function OvertimeClockIn({ onSuccess }: OvertimeClockInProps) {
     setErrors({})
 
     setLoading(true)
+    
+    // Capture location (non-blocking)
+    const locationData = await getCurrentPosition()
+    
     try {
       const formData = new FormData()
       formData.append('location', location.trim())
@@ -66,6 +72,14 @@ export default function OvertimeClockIn({ onSuccess }: OvertimeClockInProps) {
       formData.append('purpose', purpose.trim())
       if (startFile) {
         formData.append('startPhoto', startFile)
+      }
+      
+      // Add location coordinates if available
+      if (locationData.latitude !== null) {
+        formData.append('clockInLat', locationData.latitude.toString())
+      }
+      if (locationData.longitude !== null) {
+        formData.append('clockInLng', locationData.longitude.toString())
       }
 
       const res = await fetch('/api/overtime/clock-in', {

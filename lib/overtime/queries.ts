@@ -19,7 +19,15 @@ export async function getOvertimeRequests(userId: string, options: GetOvertimeRe
 
   let query = supabaseAdmin
     .from("overtime_requests")
-    .select("*")
+    .select(`
+      *,
+      overtime_sessions!overtime_requests_session_id_fkey(
+        clock_in_lat,
+        clock_in_lng,
+        clock_out_lat,
+        clock_out_lng
+      )
+    `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -78,6 +86,12 @@ export async function getAllOvertimeRequests(options: GetAllOvertimeRequestsOpti
           name,
           departments(name)
         )
+      ),
+      overtime_sessions!overtime_requests_session_id_fkey(
+        clock_in_lat,
+        clock_in_lng,
+        clock_out_lat,
+        clock_out_lng
       )
     `,
     )

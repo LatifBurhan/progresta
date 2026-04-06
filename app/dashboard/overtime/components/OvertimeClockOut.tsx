@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useGeolocation } from '@/lib/hooks/useGeolocation'
 
 interface ActiveSession {
   id: string
@@ -40,6 +41,7 @@ function formatStartTime(startTime: string): string {
 }
 
 export default function OvertimeClockOut({ session, onSuccess }: OvertimeClockOutProps) {
+  const { getCurrentPosition } = useGeolocation()
   const [duration, setDuration] = useState(formatLiveDuration(session.start_time))
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -84,9 +86,21 @@ export default function OvertimeClockOut({ session, onSuccess }: OvertimeClockOu
     }
 
     setLoading(true)
+    
+    // Capture location (non-blocking)
+    const locationData = await getCurrentPosition()
+    
     try {
       const formData = new FormData()
       formData.append('proofPhoto', proofFile)
+      
+      // Add location coordinates if available
+      if (locationData.latitude !== null) {
+        formData.append('clockOutLat', locationData.latitude.toString())
+      }
+      if (locationData.longitude !== null) {
+        formData.append('clockOutLng', locationData.longitude.toString())
+      }
 
       const res = await fetch('/api/overtime/clock-out', {
         method: 'POST',

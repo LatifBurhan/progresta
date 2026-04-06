@@ -18,6 +18,8 @@ export async function POST(request: Request) {
     const projectLeader = formData.get('projectLeader') as string
     const purpose = formData.get('purpose') as string
     const startPhoto = formData.get('startPhoto') as File | null
+    const clockInLatStr = formData.get('clockInLat') as string | null
+    const clockInLngStr = formData.get('clockInLng') as string | null
 
     if (
       !location || typeof location !== 'string' || location.trim() === '' ||
@@ -25,6 +27,35 @@ export async function POST(request: Request) {
       !purpose || typeof purpose !== 'string' || purpose.trim() === ''
     ) {
       return overtimeError('MISSING_FIELDS', 'location, projectLeader, and purpose are required', 400)
+    }
+
+    // Validate coordinates if present
+    let clockInLat: number | null = null
+    let clockInLng: number | null = null
+
+    if (clockInLatStr !== null || clockInLngStr !== null) {
+      // Both must be present or both null
+      if (clockInLatStr === null || clockInLngStr === null) {
+        return overtimeError('INVALID_COORDINATES', 'Both latitude and longitude must be provided together', 400)
+      }
+
+      // Parse coordinates
+      clockInLat = parseFloat(clockInLatStr)
+      clockInLng = parseFloat(clockInLngStr)
+
+      // Validate numeric values
+      if (isNaN(clockInLat) || isNaN(clockInLng)) {
+        return overtimeError('INVALID_COORDINATES', 'Coordinates must be valid numbers', 400)
+      }
+
+      // Validate coordinate ranges
+      if (clockInLat < -90 || clockInLat > 90) {
+        return overtimeError('INVALID_COORDINATES', 'Latitude must be between -90 and 90', 400)
+      }
+
+      if (clockInLng < -180 || clockInLng > 180) {
+        return overtimeError('INVALID_COORDINATES', 'Longitude must be between -180 and 180', 400)
+      }
     }
 
     if (!startPhoto) {
@@ -61,6 +92,8 @@ export async function POST(request: Request) {
         status: 'active',
         start_time: new Date().toISOString(),
         start_photo_url: uploadResult.url,
+        clock_in_lat: clockInLat,
+        clock_in_lng: clockInLng,
       })
       .select('id, start_time')
       .single()

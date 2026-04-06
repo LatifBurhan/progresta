@@ -22,9 +22,40 @@ export async function POST(request: Request) {
     // Parse multipart form data
     const formData = await request.formData()
     const proofPhoto = formData.get('proofPhoto') as File | null
+    const clockOutLatStr = formData.get('clockOutLat') as string | null
+    const clockOutLngStr = formData.get('clockOutLng') as string | null
 
     if (!proofPhoto) {
       return overtimeError('MISSING_FIELDS', 'Proof photo is required', 400)
+    }
+
+    // Validate coordinates if present
+    let clockOutLat: number | null = null
+    let clockOutLng: number | null = null
+
+    if (clockOutLatStr !== null || clockOutLngStr !== null) {
+      // Both must be present or both null
+      if (clockOutLatStr === null || clockOutLngStr === null) {
+        return overtimeError('INVALID_COORDINATES', 'Both latitude and longitude must be provided together', 400)
+      }
+
+      // Parse coordinates
+      clockOutLat = parseFloat(clockOutLatStr)
+      clockOutLng = parseFloat(clockOutLngStr)
+
+      // Validate numeric values
+      if (isNaN(clockOutLat) || isNaN(clockOutLng)) {
+        return overtimeError('INVALID_COORDINATES', 'Coordinates must be valid numbers', 400)
+      }
+
+      // Validate coordinate ranges
+      if (clockOutLat < -90 || clockOutLat > 90) {
+        return overtimeError('INVALID_COORDINATES', 'Latitude must be between -90 and 90', 400)
+      }
+
+      if (clockOutLng < -180 || clockOutLng > 180) {
+        return overtimeError('INVALID_COORDINATES', 'Longitude must be between -180 and 180', 400)
+      }
     }
 
     // Upload proof photo (throws on invalid type or size)
@@ -59,6 +90,8 @@ export async function POST(request: Request) {
       .update({
         end_time: endTime.toISOString(),
         status: 'completed',
+        clock_out_lat: clockOutLat,
+        clock_out_lng: clockOutLng,
         updated_at: endTime.toISOString(),
       })
       .eq('id', activeSession.id)
