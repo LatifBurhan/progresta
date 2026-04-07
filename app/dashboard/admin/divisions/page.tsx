@@ -46,22 +46,22 @@ export default async function DivisionManagePage() {
         const { count: userCount } = await supabase
           .from('users')
           .select('id', { count: 'exact', head: true })
-          .eq('division_id', division.id)
+          .eq('divisionId', division.id)
 
         // Count projects in this division (via project_divisions junction table)
         const { count: projectCount } = await supabase
           .from('project_divisions')
           .select('project_id', { count: 'exact', head: true })
-          .eq('division_id', division.id)
+          .eq('divisionId', division.id)
 
         return {
           id: division.id,
           name: division.name,
           description: division.description,
           color: division.color || '#3B82F6',
-          createdAt: division.created_at,
-          updatedAt: division.updated_at,
-          isActive: division.is_active ?? true,
+          createdAt: division.createdAt,
+          updatedAt: division.updatedAt,
+          isActive: division.isActive ?? true,
           userCount: userCount || 0,
           projectCount: projectCount || 0,
           department_id: division.department_id,

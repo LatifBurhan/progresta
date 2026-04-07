@@ -29,7 +29,7 @@ export async function PUT(request: NextRequest) {
     // Check if division exists
     const { data: existingDivision, error: fetchError } = await supabaseAdmin
       .from('divisions')
-      .select('id, name, is_active')
+      .select('*')
       .eq('id', divisionId)
       .maybeSingle()
 
@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest) {
       const { count: userCount } = await supabaseAdmin
         .from('users')
         .select('id', { count: 'exact', head: true })
-        .eq('division_id', divisionId)
+        .eq('divisionId', divisionId)
 
       if (userCount && userCount > 0) {
         return NextResponse.json({ 
@@ -69,8 +69,8 @@ export async function PUT(request: NextRequest) {
     const { data: updatedDivision, error: updateError } = await supabaseAdmin
       .from('divisions')
       .update({ 
-        is_active: isActive,
-        updated_at: new Date().toISOString()
+        isActive: isActive,
+        updatedAt: new Date().toISOString()
       })
       .eq('id', divisionId)
       .select()
@@ -99,9 +99,9 @@ export async function PUT(request: NextRequest) {
       division: {
         id: updatedDivision.id,
         name: updatedDivision.name,
-        isActive: updatedDivision.is_active,
-        createdAt: updatedDivision.created_at,
-        updatedAt: updatedDivision.updated_at
+        isActive: updatedDivision.isActive,
+        createdAt: updatedDivision.createdAt,
+        updatedAt: updatedDivision.updatedAt
       }
     })
 
