@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { X, Trash2, AlertTriangle } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast'
 
 interface Division {
   id: string
@@ -32,6 +33,7 @@ export default function DeleteDivisionModal({
   const [loading, setLoading] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [error, setError] = useState('')
+  const { toast } = useToast()
 
   if (!open || !division) return null
 
@@ -39,7 +41,7 @@ export default function DeleteDivisionModal({
 
   const handleDelete = async () => {
     if (!canDelete) {
-      setError('Divisi tidak dapat dihapus karena masih memiliki karyawan atau project')
+      setError(`Divisi tidak dapat dihapus karena masih memiliki ${division.userCount} karyawan dan ${division.projectCount} project. Pindahkan semua karyawan dan project ke divisi lain terlebih dahulu.`)
       return
     }
 
@@ -61,9 +63,13 @@ export default function DeleteDivisionModal({
       const result = await response.json()
 
       if (result.success) {
+        toast({
+          title: "Berhasil!",
+          description: result.message,
+          variant: "default"
+        })
         onSuccess(division.id)
         handleClose()
-        alert('Divisi berhasil dihapus!')
       } else {
         setError(result.message || 'Gagal menghapus divisi')
       }
@@ -131,9 +137,22 @@ export default function DeleteDivisionModal({
                 </div>
                 
                 {!canDelete ? (
-                  <div className="mt-3 p-2 bg-amber-100 border border-amber-300 rounded">
+                  <div className="mt-3 p-3 bg-amber-50 border-2 border-amber-300 rounded-lg">
+                    <p className="text-sm text-amber-900 font-semibold mb-2">
+                      ⚠️ Tidak dapat dihapus!
+                    </p>
                     <p className="text-sm text-amber-800">
-                      <strong>Tidak dapat dihapus!</strong> Divisi ini masih memiliki {division.userCount} karyawan dan {division.projectCount} project. 
+                      Divisi ini masih memiliki:
+                    </p>
+                    <ul className="text-sm text-amber-800 mt-2 space-y-1 ml-4">
+                      {division.userCount > 0 && (
+                        <li>• <strong>{division.userCount} karyawan</strong> yang terdaftar</li>
+                      )}
+                      {division.projectCount > 0 && (
+                        <li>• <strong>{division.projectCount} project</strong> yang terkait</li>
+                      )}
+                    </ul>
+                    <p className="text-sm text-amber-800 mt-2 font-medium">
                       Pindahkan semua karyawan dan project ke divisi lain terlebih dahulu.
                     </p>
                   </div>

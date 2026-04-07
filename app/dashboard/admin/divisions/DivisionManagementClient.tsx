@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { 
   Building, Users, FolderOpen, Search, Plus, 
-  Edit, Trash2, ArrowLeft, Eye, EyeOff
+  Edit, Trash2, ArrowLeft, Eye, EyeOff, Loader2
 } from 'lucide-react'
 import CreateDivisionModal from './CreateDivisionModal'
 import EditDivisionModal from './EditDivisionModal'
 import DeleteDivisionModal from './DeleteDivisionModal'
+import { useToast } from '@/components/ui/use-toast'
 
 interface Division {
   id: string
@@ -42,6 +43,8 @@ export default function DivisionManagementClient({ divisions: initialDivisions, 
   const [createModal, setCreateModal] = useState(false)
   const [editModal, setEditModal] = useState<{ open: boolean; division: Division | null }>({ open: false, division: null })
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; division: Division | null }>({ open: false, division: null })
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const filteredDivisions = divisions.filter(division => {
     const matchesSearch = division.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -64,17 +67,57 @@ export default function DivisionManagementClient({ divisions: initialDivisions, 
     setDivisions(prev => prev.filter(d => d.id !== deletedDivisionId))
   }
 
-  const handleToggleStatus = async (divisionId: string, newStatus: boolean) => {
+  const handleToggleStatus = async (divisionId: string, currentStatus: boolean, divisionName: string, userCount: number) => {
+    const newStatus = !currentStatus
+    
+    // Validasi: tidak bisa nonaktifkan divisi yang masih punya user
+    if (!newStatus && userCount > 0) {
+      toast({
+        title: "Tidak dapat menonaktifkan divisi",
+        description: `Divisi "${divisionName}" masih memiliki ${userCount} karyawan aktif. Pindahkan semua karyawan ke divisi lain terlebih dahulu.`,
+        variant: "destructive"
+      })
+      return
+    }
+
+    setTogglingId(divisionId)
+    
     try {
       const response = await fetch('/api/admin/divisions/toggle', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ divisionId, isActive: newStatus })
       })
-      if (response.ok) {
-        setDivisions(prev => prev.map(d => d.id === divisionId ? { ...d, isActive: newStatus } : d))
+      
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        setDivisions(prev => prev.map(d => 
+          d.id === divisionId ? { ...d, isActive: newStatus } : d
+        ))
+        
+        toast({
+          title: "Berhasil!",
+          description: result.message || `Divisi "${divisionName}" berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`,
+          variant: "default"
+        })
+      } else {
+        toast({
+          title: "Gagal",
+          description: result.message || "Terjadi kesalahan saat mengubah status divisi",
+          variant: "destructive"
+        })
       }
-    } catch (error) { console.error(error) }
+    } catch (error) {
+      console.error('Toggle status error:', error)
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan sistem. Silakan coba lagi.",
+        variant: "destructive"
+      })
+    } finally {
+      setTogglingId(null)
+    }
   }
 
   return (
@@ -224,20 +267,41 @@ export default function DivisionManagementClient({ divisions: initialDivisions, 
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleToggleStatus(division.id, !division.isActive)}
+                          onClick={() => handleToggleStatus(division.id, division.isActive, division.name, division.userCount)}
+                          disabled={togglingId === division.id}
                           className={`h-12 w-12 rounded-xl border-slate-100 transition-all ${
-                            division.isActive ? "text-amber-500 hover:bg-amber-50" : "text-emerald-500 hover:bg-emerald-50"
+                            togglingId === division.id 
+                              ? "opacity-50 cursor-not-allowed" 
+                              : division.isActive 
+                                ? "text-amber-500 hover:bg-amber-50" 
+                                : "text-emerald-500 hover:bg-emerald-50"
                           }`}
+                          title={division.isActive ? "Nonaktifkan divisi" : "Aktifkan divisi"}
                         >
-                          {division.isActive ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          {togglingId === division.id ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : division.isActive ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
                         </Button>
 
-                        {currentUserRole === 'ADMIN' && division.userCount === 0 && division.projectCount === 0 && (
+                        {['ADMIN', 'CEO', 'GENERAL_AFFAIR'].includes(currentUserRole) && (
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => setDeleteModal({ open: true, division })}
-                            className="h-12 w-12 rounded-xl border-slate-100 text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+                            className={`h-12 w-12 rounded-xl border-slate-100 transition-all ${
+                              division.userCount === 0 && division.projectCount === 0
+                                ? 'text-rose-500 hover:bg-rose-50 hover:text-rose-600'
+                                : 'text-rose-300 hover:bg-rose-50 hover:text-rose-400'
+                            }`}
+                            title={
+                              division.userCount > 0 || division.projectCount > 0
+                                ? `Divisi masih memiliki ${division.userCount} karyawan dan ${division.projectCount} project`
+                                : 'Hapus divisi'
+                            }
                           >
                             <Trash2 className="w-5 h-5" />
                           </Button>

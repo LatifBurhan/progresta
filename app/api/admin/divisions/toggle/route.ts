@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
-import prisma from '@/lib/prisma'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -17,6 +17,8 @@ export async function PUT(request: NextRequest) {
 
     const { divisionId, isActive } = await request.json()
 
+    console.log('Toggle request:', { divisionId, isActive })
+
     if (!divisionId || typeof isActive !== 'boolean') {
       return NextResponse.json({ 
         success: false, 
@@ -25,12 +27,21 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if division exists
-    const existingDivision = await prisma.division.findUnique({
-      where: { id: divisionId },
-      include: {
-        users: { select: { id: true } }
-      }
-    })
+    const { data: existingDivision, error: fetchError } = await supabaseAdmin
+      .from('divisions')
+      .select('id, name, is_active')
+      .eq('id', divisionId)
+      .maybeSingle()
+
+    console.log('Fetch result:', { existingDivision, fetchError })
+
+    if (fetchError) {
+      console.error('Fetch error:', fetchError)
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Error fetching division: ' + fetchError.message 
+      }, { status: 500 })
+    }
 
     if (!existingDivision) {
       return NextResponse.json({ 
@@ -39,27 +50,58 @@ export async function PUT(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Warning if deactivating division with users
-    if (!isActive && existingDivision.users.length > 0) {
-      return NextResponse.json({ 
-        success: false, 
-        message: `Cannot deactivate division. It has ${existingDivision.users.length} active users. Please move all users to other divisions first.` 
-      }, { status: 400 })
+    // Check if division has users (only if deactivating)
+    if (!isActive) {
+      const { count: userCount } = await supabaseAdmin
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('division_id', divisionId)
+
+      if (userCount && userCount > 0) {
+        return NextResponse.json({ 
+          success: false, 
+          message: `Tidak dapat menonaktifkan divisi. Masih ada ${userCount} karyawan aktif. Pindahkan semua karyawan ke divisi lain terlebih dahulu.` 
+        }, { status: 400 })
+      }
     }
 
     // Update division status
-    const updatedDivision = await prisma.division.update({
-      where: { id: divisionId },
-      data: { isActive }
-    })
+    const { data: updatedDivision, error: updateError } = await supabaseAdmin
+      .from('divisions')
+      .update({ 
+        is_active: isActive,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', divisionId)
+      .select()
+      .maybeSingle()
+
+    console.log('Update result:', { updatedDivision, updateError })
+
+    if (updateError) {
+      console.error('Update division error:', updateError)
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal mengupdate status divisi: ' + updateError.message
+      }, { status: 500 })
+    }
+
+    if (!updatedDivision) {
+      return NextResponse.json({
+        success: false,
+        message: 'Gagal mengupdate divisi'
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Division ${isActive ? 'activated' : 'deactivated'} successfully`,
+      message: `Divisi berhasil ${isActive ? 'diaktifkan' : 'dinonaktifkan'}`,
       division: {
-        ...updatedDivision,
-        createdAt: updatedDivision.createdAt.toISOString(),
-        updatedAt: updatedDivision.updatedAt.toISOString()
+        id: updatedDivision.id,
+        name: updatedDivision.name,
+        isActive: updatedDivision.is_active,
+        createdAt: updatedDivision.created_at,
+        updatedAt: updatedDivision.updated_at
       }
     })
 

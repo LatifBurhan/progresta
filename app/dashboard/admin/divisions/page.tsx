@@ -26,15 +26,8 @@ export default async function DivisionManagePage() {
     const { data: divisions, error } = await supabase
       .from('divisions')
       .select(`
-        id, 
-        name, 
-        description, 
-        color, 
-        createdAt, 
-        updatedAt, 
-        isActive,
-        department_id,
-        departments:department_id (
+        *,
+        departments (
           id,
           name,
           color
@@ -44,6 +37,7 @@ export default async function DivisionManagePage() {
 
     if (error) {
       console.error('Failed to fetch divisions:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
       divisionsWithCounts = []
     } else {
       // For each division, get real user count and project count
@@ -52,7 +46,7 @@ export default async function DivisionManagePage() {
         const { count: userCount } = await supabase
           .from('users')
           .select('id', { count: 'exact', head: true })
-          .eq('divisionId', division.id)
+          .eq('division_id', division.id)
 
         // Count projects in this division (via project_divisions junction table)
         const { count: projectCount } = await supabase
@@ -65,9 +59,9 @@ export default async function DivisionManagePage() {
           name: division.name,
           description: division.description,
           color: division.color || '#3B82F6',
-          createdAt: division.createdAt,
-          updatedAt: division.updatedAt,
-          isActive: division.isActive,
+          createdAt: division.created_at,
+          updatedAt: division.updated_at,
+          isActive: division.is_active ?? true,
           userCount: userCount || 0,
           projectCount: projectCount || 0,
           department_id: division.department_id,

@@ -10,9 +10,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
-    // Only ADMIN can delete divisions
-    if (session.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, message: 'Only ADMIN can delete divisions' }, { status: 403 })
+    // Only ADMIN, CEO, GENERAL_AFFAIR can delete divisions
+    if (!['ADMIN', 'CEO', 'GENERAL_AFFAIR'].includes(session.role)) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Hanya ADMIN, CEO, atau GENERAL_AFFAIR yang dapat menghapus divisi' 
+      }, { status: 403 })
     }
 
     const { divisionId } = await request.json()
@@ -29,49 +32,62 @@ export async function DELETE(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Check if division exists
-    const { data: existingDivision } = await supabase
+    const { data: existingDivision, error: fetchError } = await supabase
       .from('divisions')
       .select('id, name')
       .eq('id', divisionId)
       .single()
 
-    if (!existingDivision) {
+    if (fetchError || !existingDivision) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Division not found' 
+        message: 'Divisi tidak ditemukan' 
       }, { status: 404 })
     }
 
     // Check if division has users
     const { count: userCount } = await supabase
       .from('users')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('division_id', divisionId)
 
     if (userCount && userCount > 0) {
       return NextResponse.json({ 
         success: false, 
-        message: `Cannot delete division. It has ${userCount} users. Please move all users to other divisions first.` 
+        message: `Tidak dapat menghapus divisi. Masih ada ${userCount} karyawan. Pindahkan semua karyawan ke divisi lain terlebih dahulu.` 
+      }, { status: 400 })
+    }
+
+    // Check if division has projects
+    const { count: projectCount } = await supabase
+      .from('project_divisions')
+      .select('project_id', { count: 'exact', head: true })
+      .eq('division_id', divisionId)
+
+    if (projectCount && projectCount > 0) {
+      return NextResponse.json({ 
+        success: false, 
+        message: `Tidak dapat menghapus divisi. Masih ada ${projectCount} project terkait. Pindahkan atau hapus semua project terlebih dahulu.` 
       }, { status: 400 })
     }
 
     // Delete division
-    const { error } = await supabase
+    const { error: deleteError } = await supabase
       .from('divisions')
       .delete()
       .eq('id', divisionId)
 
-    if (error) {
-      console.error('Supabase delete division error:', error)
+    if (deleteError) {
+      console.error('Supabase delete division error:', deleteError)
       return NextResponse.json({
         success: false,
-        message: 'Gagal menghapus divisi: ' + error.message
+        message: 'Gagal menghapus divisi: ' + deleteError.message
       }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Divisi berhasil dihapus'
+      message: `Divisi "${existingDivision.name}" berhasil dihapus`
     })
 
   } catch (error: any) {
