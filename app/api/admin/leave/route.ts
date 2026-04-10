@@ -57,6 +57,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: 'user_id dan tahun wajib diisi' }, { status: 400 })
   }
 
+  // Hitung sisa cuti
+  const cutiTerpakaiValue = cuti_terpakai ?? 0
+  const sisaCuti = jatah_cuti - cutiTerpakaiValue
+
   const { data, error } = await supabaseAdmin
     .from('employee_leave')
     .upsert(
@@ -64,10 +68,11 @@ export async function POST(req: NextRequest) {
         user_id,
         tahun,
         jatah_cuti,
-        cuti_terpakai: cuti_terpakai ?? 0,
+        cuti_terpakai: cutiTerpakaiValue,
         jumlah_sakit: jumlah_sakit ?? 0,
         jumlah_izin: jumlah_izin ?? 0,
         jumlah_alpha: jumlah_alpha ?? 0,
+        sisa_cuti: sisaCuti,
         catatan: catatan || null,
         created_by: session.userId,
       },

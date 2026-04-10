@@ -5,6 +5,7 @@ import { payslipError } from '@/lib/payslip/errors'
 import { isPayslipManager } from '@/lib/payslip/roles'
 import { validateUpsertPayslip } from '@/lib/payslip/validators'
 import { getPayslipsForAdmin } from '@/lib/payslip/queries'
+import { hitungGajiBersih } from '@/lib/payslip/calculator'
 
 export async function GET(request: Request) {
   try {
@@ -53,6 +54,17 @@ export async function POST(request: Request) {
       return payslipError('MISSING_FIELDS', 'Validasi gagal', 400, validation.errors)
     }
 
+    // Hitung gaji bersih
+    const gajiBersih = hitungGajiBersih({
+      gaji_pokok: Number(body.gaji_pokok),
+      lembur: Number(body.lembur),
+      insentif: Number(body.insentif),
+      tunjangan: Number(body.tunjangan),
+      dinas_luar: Number(body.dinas_luar),
+      potongan_bpjs: Number(body.potongan_bpjs ?? 0),
+      potongan_pajak: Number(body.potongan_pajak ?? 0),
+    })
+
     const { data, error } = await supabaseAdmin
       .from('payslips')
       .insert({
@@ -67,6 +79,7 @@ export async function POST(request: Request) {
         dinas_luar: Number(body.dinas_luar),
         potongan_bpjs: Number(body.potongan_bpjs ?? 0),
         potongan_pajak: Number(body.potongan_pajak ?? 0),
+        gaji_bersih: gajiBersih,
         catatan: body.catatan ?? null,
         status: 'draft',
       })

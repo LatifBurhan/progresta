@@ -11,6 +11,19 @@ import { useToast } from "@/components/ui/use-toast";
 import type { ReportFormData, Project, LokasiKerja } from "@/types/report";
 import { Loader2, Briefcase, MapPin, CheckCircle2, AlertCircle, Rocket, Image as ImageIcon } from "lucide-react";
 
+// Helper function untuk generate UUID yang kompatibel dengan Node.js versi lama
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback untuk Node.js versi lama
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 interface ReportFormProps {
   mode: "create" | "edit";
   reportId?: string;
@@ -106,7 +119,7 @@ export function ReportForm({ mode, reportId, initialData, onSuccess, onCancel }:
       let photoUrls = formData.foto_urls;
       if (selectedFiles.length > 0) {
         if (!userId) throw new Error("User session not found");
-        const tempReportId = reportId || crypto.randomUUID();
+        const tempReportId = reportId || generateUUID();
         const uploadFormData = new FormData();
         uploadFormData.append("userId", userId);
         uploadFormData.append("reportId", tempReportId);
