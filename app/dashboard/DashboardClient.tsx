@@ -150,36 +150,36 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
   }
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div className="space-y-4 animate-in fade-in duration-500">
+      {/* Header Section - Compact */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
-          <p className="text-slate-500 text-sm md:text-base font-medium">
-            Halo, <span className="text-blue-600">{userName}</span> 👋
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">Dashboard Overview</h1>
+          <p className="text-slate-500 text-xs md:text-sm">
+            Halo, <span className="text-blue-600">{userName}</span>
           </p>
         </div>
 
-        {/* Period Filter */}
-        <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 flex gap-1 w-full sm:w-fit overflow-x-auto">
+        {/* Period Filter - Compact */}
+        <div className="bg-white p-0.5 rounded-lg shadow-sm border border-slate-200 flex gap-0.5 w-full sm:w-fit">
           {(['day', 'week', 'month', 'year'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`flex-1 sm:flex-none px-3 md:px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex-1 sm:flex-none px-2 md:px-3 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap ${
                 period === p 
-                ? 'bg-slate-900 text-white shadow-md' 
+                ? 'bg-slate-900 text-white' 
                 : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
-              {p === 'day' ? 'Harian' : p === 'week' ? 'Minggu' : p === 'month' ? 'Bulan' : 'Tahun'}
+              {p === 'day' ? 'Hari' : p === 'week' ? 'Minggu' : p === 'month' ? 'Bulan' : 'Tahun'}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Stats Cards - Grid 2 Kolom di Mobile */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+      {/* Stats Cards - Compact Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard 
           title="Total Laporan" 
           value={stats.totalReports} 
@@ -206,35 +206,35 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
         />
       </div>
 
-      {/* NEW: 3 Statistik Tambahan - Hanya untuk non-admin */}
+      {/* NEW: 3 Statistik Tambahan - Compact */}
       {!isAdmin && stats.avgReportsPerDay !== null && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* 1. Rata-rata Laporan per Hari */}
-          <Card className="border-none shadow-lg">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-white" />
+          <Card className="border border-slate-100 shadow-sm">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+                  <Activity className="w-4 h-4 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Rata-rata per Hari</p>
-                  <h3 className="text-2xl font-black text-slate-800">{stats.avgReportsPerDay.toFixed(2)}</h3>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-slate-500 font-medium">Rata-rata/Hari</p>
+                  <h3 className="text-xl font-bold text-slate-800">{stats.avgReportsPerDay.toFixed(2)}</h3>
                 </div>
               </div>
-              <p className="text-xs text-slate-400">Laporan sejak awal bergabung</p>
+              <p className="text-[10px] text-slate-400">Sejak bergabung</p>
             </CardContent>
           </Card>
 
-          {/* 2. Breakdown Lokasi Kerja - Pie Chart */}
-          <Card className="border-none shadow-lg md:col-span-2">
-            <CardHeader className="pb-2">
+          {/* 2. Breakdown Lokasi Kerja */}
+          <Card className="border border-slate-100 shadow-sm md:col-span-2">
+            <CardHeader className="p-3 pb-2">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-slate-600" />
-                <CardTitle className="text-sm font-bold text-slate-800">Breakdown Lokasi Kerja</CardTitle>
+                <MapPin className="w-3 h-3 text-slate-600" />
+                <CardTitle className="text-xs font-semibold text-slate-800">Breakdown Lokasi</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="h-[180px] flex items-center justify-center">
+            <CardContent className="p-3 pt-0">
+              <div className="h-[140px] flex items-center justify-center">
                 {stats.locationBreakdown.some(loc => loc.value > 0) ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -242,8 +242,8 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
                         data={stats.locationBreakdown.filter(loc => loc.value > 0)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
+                        innerRadius={30}
+                        outerRadius={55}
                         paddingAngle={5}
                         dataKey="value"
                       >
@@ -252,18 +252,18 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
                         ))}
                       </Pie>
                       <Tooltip 
-                        contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                        contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '11px' }}
                         formatter={(value: any) => [`${value} laporan`, '']}
                       />
                       <Legend 
                         iconType="circle"
-                        wrapperStyle={{ fontSize: '12px' }}
+                        wrapperStyle={{ fontSize: '10px' }}
                         formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-xs text-slate-400">Belum ada data lokasi</p>
+                  <p className="text-[10px] text-slate-400">Belum ada data</p>
                 )}
               </div>
             </CardContent>
@@ -271,47 +271,45 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
         </div>
       )}
 
-      {/* 3. Statistik Kendala - Hanya untuk non-admin */}
+      {/* 3. Statistik Kendala - Compact */}
       {!isAdmin && stats.kendalaStats && (
-        <Card className="border-none shadow-lg bg-gradient-to-br from-rose-50 to-orange-50">
-          <CardContent className="p-4 md:p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-white" />
+        <Card className="border border-rose-100 shadow-sm bg-gradient-to-br from-rose-50 to-orange-50">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-slate-600 font-medium mb-1">Statistik Kendala</p>
-                  <h3 className="text-3xl font-black text-slate-800">{stats.kendalaStats.percentage}%</h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {stats.kendalaStats.withKendala} dari {stats.kendalaStats.withKendala + stats.kendalaStats.withoutKendala} laporan mengalami kendala
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-slate-600 font-medium">Statistik Kendala</p>
+                  <h3 className="text-2xl font-bold text-slate-800">{stats.kendalaStats.percentage}%</h3>
+                  <p className="text-[10px] text-slate-500 truncate">
+                    {stats.kendalaStats.withKendala}/{stats.kendalaStats.withKendala + stats.kendalaStats.withoutKendala} laporan
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="bg-white rounded-lg px-3 py-2 shadow-sm">
-                  <p className="text-[10px] text-slate-500">Tanpa Kendala</p>
-                  <p className="text-lg font-bold text-green-600">{stats.kendalaStats.withoutKendala}</p>
-                </div>
+              <div className="bg-white rounded-lg px-2 py-1.5 shadow-sm flex-shrink-0">
+                <p className="text-[9px] text-slate-500">Tanpa Kendala</p>
+                <p className="text-base font-bold text-green-600">{stats.kendalaStats.withoutKendala}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        {/* Trend Chart */}
-        <Card className="lg:col-span-2 border-none shadow-xl shadow-slate-200/50 bg-white overflow-hidden">
-          <CardHeader className="p-4 md:p-6 pb-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Trend Chart - Compact */}
+        <Card className="lg:col-span-2 border border-slate-100 shadow-sm overflow-hidden">
+          <CardHeader className="p-3 md:p-4 pb-0">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm md:text-lg font-bold text-slate-800">Trend Aktivitas</CardTitle>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-blue-500 bg-blue-50 px-2 py-1 rounded">
+              <CardTitle className="text-sm font-semibold text-slate-800">Trend Aktivitas</CardTitle>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
                 Laporan
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-4 md:pt-6">
-            <div className="h-[200px] md:h-[320px] w-full">
+          <CardContent className="p-2 md:p-4 pt-2">
+            <div className="h-[180px] md:h-[240px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.trendData}>
                   <defs>
@@ -349,57 +347,57 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
           </CardContent>
         </Card>
 
-        {/* Active Projects */}
+        {/* Active Projects - Compact */}
         {!isAdmin && (
-          <Card className="border-none shadow-xl shadow-slate-200/50">
-            <CardHeader className="p-4 md:p-6">
-              <CardTitle className="text-sm md:text-lg font-bold text-slate-800 flex items-center justify-between">
+          <Card className="border border-slate-100 shadow-sm">
+            <CardHeader className="p-3 md:p-4">
+              <CardTitle className="text-sm font-semibold text-slate-800 flex items-center justify-between">
                 Project Aktif
-                <ArrowUpRight className="w-4 h-4 text-slate-400" />
+                <ArrowUpRight className="w-3 h-3 text-slate-400" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 md:p-6 pt-0 space-y-3">
+            <CardContent className="p-3 md:p-4 pt-0 space-y-2">
               {stats.activeProjectsList.length > 0 ? (
                 stats.activeProjectsList.slice(0, 4).map((project: any) => (
-                  <div key={project.id} className="group p-3 rounded-xl bg-slate-50 border border-transparent active:scale-[0.98] transition-all">
-                    <h4 className="font-bold text-slate-700 text-xs md:text-sm truncate">{project.name}</h4>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-[10px] text-slate-400 truncate flex-1 mr-2">{project.description || 'Tidak ada deskripsi'}</p>
+                  <div key={project.id} className="group p-2 rounded-lg bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
+                    <h4 className="font-semibold text-slate-700 text-xs truncate">{project.name}</h4>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <p className="text-[9px] text-slate-400 truncate flex-1 mr-2">{project.description || 'Tidak ada deskripsi'}</p>
                       <ChevronRight className="w-3 h-3 text-slate-300" />
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-center text-xs text-slate-400 py-4">Kosong</p>
+                <p className="text-center text-[10px] text-slate-400 py-3">Kosong</p>
               )}
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Project Activity Monitor - Only for Admin */}
+      {/* Project Activity Monitor - Compact for Admin */}
 {isAdmin && projectActivity && (
-  <div className="space-y-8 mt-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-    {/* Header Section */}
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+  <div className="space-y-4 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    {/* Header Section - Compact */}
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
       <div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-widest mb-3">
-          <Activity className="w-3 h-3" /> Admin Monitor
+        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[9px] font-semibold uppercase tracking-wider mb-2">
+          <Activity className="w-2.5 h-2.5" /> Admin Monitor
         </div>
-        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Aktivitas Project</h2>
-        <p className="text-slate-500 mt-1">Monitoring real-time performa laporan per project</p>
+        <h2 className="text-xl md:text-2xl font-bold text-slate-900">Aktivitas Project</h2>
+        <p className="text-slate-500 text-xs mt-0.5">Monitoring performa laporan per project</p>
       </div>
       
-      {/* Modern Period Switcher */}
-      <div className="bg-slate-100/80 backdrop-blur-md p-1.5 rounded-2xl flex gap-1 w-fit border border-white/50 shadow-inner">
+      {/* Period Switcher - Compact */}
+      <div className="bg-slate-100 p-0.5 rounded-lg flex gap-0.5 w-fit border border-slate-200">
         {['7', '30', '90'].map((p) => (
           <button
             key={p}
             onClick={() => setActivityPeriod(p)}
-            className={`px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
+            className={`px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all ${
               activityPeriod === p 
-                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                ? 'bg-white text-slate-900 shadow-sm' 
+                : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             {p} Hari
@@ -408,25 +406,25 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
       </div>
     </div>
 
-    {/* Summary Cards - Glass Effect */}
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+    {/* Summary Cards - Compact */}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {[
         { label: 'Sangat Aktif', val: projectActivity.summary.veryActive, color: 'emerald', icon: TrendingUp },
         { label: 'Aktif', val: projectActivity.summary.active, color: 'blue', icon: Activity },
         { label: 'Kurang Aktif', val: projectActivity.summary.lowActive, color: 'amber', icon: TrendingUp, rotate: true },
         { label: 'Stagnant', val: projectActivity.summary.stagnant, color: 'rose', icon: AlertTriangle },
       ].map((item, i) => (
-        <Card key={i} className="group border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 overflow-hidden bg-white">
+        <Card key={i} className="group border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
           <CardContent className="p-0">
-            <div className={`h-1 w-full bg-${item.color}-500`} />
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</p>
-                  <h3 className="text-4xl font-black text-slate-900 mt-1">{item.val}</h3>
+            <div className={`h-0.5 w-full bg-${item.color}-500`} />
+            <div className="p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider truncate">{item.label}</p>
+                  <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mt-0.5">{item.val}</h3>
                 </div>
-                <div className={`w-12 h-12 rounded-2xl bg-${item.color}-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-500`}>
-                  <item.icon className={`w-6 h-6 text-${item.color}-500 ${item.rotate ? 'rotate-180' : ''}`} />
+                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg bg-${item.color}-50 flex items-center justify-center flex-shrink-0`}>
+                  <item.icon className={`w-4 h-4 md:w-5 md:h-5 text-${item.color}-500 ${item.rotate ? 'rotate-180' : ''}`} />
                 </div>
               </div>
             </div>
@@ -435,92 +433,87 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
       ))}
     </div>
 
-    {/* Stagnant Projects Alert - Minimalist Style */}
+    {/* Stagnant Projects Alert - Compact */}
     {projectActivity.summary.stagnantProjects.length > 0 && (
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-rose-100 to-rose-50 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-        <Card className="relative border border-rose-100 bg-white/80 backdrop-blur-sm rounded-[1.5rem] overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold text-rose-600 flex items-center gap-2 uppercase tracking-tighter">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
-              Perlu Perhatian ({projectActivity.summary.stagnantProjects.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
-            {projectActivity.summary.stagnantProjects.slice(0, 6).map((project) => (
-              <div key={project.id} className="group/item p-4 bg-slate-50/50 hover:bg-white rounded-2xl border border-transparent hover:border-rose-100 hover:shadow-md transition-all duration-300">
-                <h4 className="font-bold text-slate-800 line-clamp-1">{project.name}</h4>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold uppercase italic text-slate-500">
-                    {project.pic?.substring(0, 2) || '??'}
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium">{project.pic || 'No PIC'}</p>
+      <Card className="border border-rose-100 bg-rose-50/30 shadow-sm">
+        <CardHeader className="p-3 pb-2">
+          <CardTitle className="text-xs font-semibold text-rose-600 flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
+            </span>
+            Perlu Perhatian ({projectActivity.summary.stagnantProjects.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
+          {projectActivity.summary.stagnantProjects.slice(0, 6).map((project) => (
+            <div key={project.id} className="p-2.5 bg-white rounded-lg border border-rose-100 hover:shadow-sm transition-all">
+              <h4 className="font-semibold text-slate-800 text-xs line-clamp-1">{project.name}</h4>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500">
+                  {project.pic?.substring(0, 2) || '??'}
                 </div>
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
-                  <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">
-                    {project.daysSinceLastReport} Hari Vacuum
-                  </span>
-                  <span className="text-[10px] font-medium text-slate-400">{project.reportCount} lap.</span>
-                </div>
+                <p className="text-[10px] text-slate-500 font-medium truncate">{project.pic || 'No PIC'}</p>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+              <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
+                <span className="text-[9px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">
+                  {project.daysSinceLastReport}d
+                </span>
+                <span className="text-[9px] font-medium text-slate-400">{project.reportCount} lap</span>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     )}
 
-    {/* Top Active Projects Table - Clean Professional */}
-    <Card className="border-none shadow-[0_20px_50px_rgba(0,0,0,0.04)] rounded-[2rem] overflow-hidden bg-white">
-      <CardHeader className="px-8 pt-8">
-        <CardTitle className="text-xl font-black text-slate-800">
-          Rank Activity <span className="text-slate-300 font-light ml-2">/ {activityPeriod} Days</span>
+    {/* Top Active Projects Table - Compact */}
+    <Card className="border border-slate-100 shadow-sm overflow-hidden">
+      <CardHeader className="p-3 md:p-4">
+        <CardTitle className="text-base font-bold text-slate-800">
+          Rank Activity <span className="text-slate-400 font-normal text-sm">/ {activityPeriod} Days</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
+      <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-y-2">
-            <thead>
+          <table className="w-full">
+            <thead className="bg-slate-50 border-y border-slate-100">
               <tr>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Project Name</th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">PIC</th>
-                <th className="px-6 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Activity</th>
-                <th className="px-6 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Issues</th>
-                <th className="px-6 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Last Update</th>
-                <th className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-3 md:px-4 py-2 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Project</th>
+                <th className="px-3 md:px-4 py-2 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider">PIC</th>
+                <th className="px-3 md:px-4 py-2 text-center text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Activity</th>
+                <th className="px-3 md:px-4 py-2 text-center text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Issues</th>
+                <th className="px-3 md:px-4 py-2 text-center text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Last</th>
+                <th className="px-3 md:px-4 py-2 text-right text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {projectActivity.projects
                 .sort((a, b) => b.reportCount - a.reportCount)
                 .slice(0, 10)
                 .map((project) => (
-                  <tr key={project.id} className="group hover:scale-[1.005] transition-all duration-300">
-                    <td className="px-6 py-4 bg-slate-50 group-hover:bg-slate-100/50 rounded-l-2xl transition-colors">
-                      <p className="font-bold text-slate-800">{project.name}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5 font-medium">{project.status}</p>
+                  <tr key={project.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-3 md:px-4 py-2.5">
+                      <p className="font-semibold text-slate-800 text-xs">{project.name}</p>
+                      <p className="text-[9px] text-slate-400 font-medium">{project.status}</p>
                     </td>
-                    <td className="px-6 py-4 bg-slate-50 group-hover:bg-slate-100/50 transition-colors text-sm text-slate-600 font-medium">
-                      {project.pic || '-'}
+                    <td className="px-3 md:px-4 py-2.5 text-xs text-slate-600">{project.pic || '-'}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-center">
+                      <span className="text-base font-bold text-slate-900">{project.reportCount}</span>
                     </td>
-                    <td className="px-6 py-4 bg-slate-50 group-hover:bg-slate-100/50 transition-colors text-center">
-                      <span className="text-lg font-black text-slate-900">{project.reportCount}</span>
-                    </td>
-                    <td className="px-6 py-4 bg-slate-50 group-hover:bg-slate-100/50 transition-colors text-center">
-                      <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${project.kendalaCount > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-200/50 text-slate-400'}`}>
+                    <td className="px-3 md:px-4 py-2.5 text-center">
+                      <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-bold text-[10px] ${project.kendalaCount > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'}`}>
                         {project.kendalaCount}
                       </div>
                     </td>
-                    <td className="px-6 py-4 bg-slate-50 group-hover:bg-slate-100/50 transition-colors text-center text-xs text-slate-500 font-medium">
-                      {project.lastReportDate ? `${project.daysSinceLastReport}d ago` : 'Empty'}
+                    <td className="px-3 md:px-4 py-2.5 text-center text-[10px] text-slate-500">
+                      {project.lastReportDate ? `${project.daysSinceLastReport}d` : '-'}
                     </td>
-                    <td className="px-6 py-4 bg-slate-50 group-hover:bg-slate-100/50 rounded-r-2xl transition-colors text-right">
+                    <td className="px-3 md:px-4 py-2.5 text-right">
                       <span 
-                        className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter shadow-sm"
+                        className="px-2 py-1 rounded-md text-[9px] font-bold uppercase"
                         style={{ 
-                          backgroundColor: getActivityColor(project.activityLevel) + '10',
+                          backgroundColor: getActivityColor(project.activityLevel) + '15',
                           color: getActivityColor(project.activityLevel)
                         }}
                       >
@@ -537,9 +530,9 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
   </div>
 )}
 
-      {/* Realtime Reports Monitor - Only for Admin */}
+      {/* Realtime Reports Monitor - Compact for Admin */}
       {isAdmin && (
-        <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <RealtimeReportsTable />
         </div>
       )}
@@ -557,14 +550,14 @@ function StatCard({ title, value, icon, color }: any) {
   }
 
   return (
-    <Card className="relative overflow-hidden border-none shadow-lg shadow-slate-200/40">
-      <CardContent className="p-3 md:p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-          <div className="order-2 md:order-1">
-            <p className="text-[9px] md:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">{title}</p>
-            <h3 className="text-lg md:text-3xl font-black text-slate-800 mt-0.5 md:mt-1 tracking-tight">{value}</h3>
+    <Card className="relative overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-3 md:p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-slate-500 truncate mb-1">{title}</p>
+            <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">{value}</h3>
           </div>
-          <div className={`order-1 md:order-2 w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-2xl bg-gradient-to-br ${colors[color]} flex items-center justify-center text-white shadow-sm`}>
+          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-br ${colors[color]} flex items-center justify-center text-white flex-shrink-0`}>
             {icon}
           </div>
         </div>

@@ -50,19 +50,18 @@ export function RealtimeReportsTable() {
   const { toast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "today">("all");
   const [selectedPeriods, setSelectedPeriods] = useState<string[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   useEffect(() => {
     loadReports();
-  }, [filter, selectedPeriods]);
+  }, [selectedPeriods]);
 
   const loadReports = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set("filter", filter);
+      params.set("filter", "today"); // Selalu hari ini
       if (selectedPeriods.length > 0) {
         params.set("periods", selectedPeriods.join(","));
       }
@@ -146,31 +145,7 @@ export function RealtimeReportsTable() {
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
           <Filter className="w-4 h-4" />
-          Filter Laporan
-        </div>
-
-        {/* Date Filter */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              filter === "all"
-                ? "bg-blue-500 text-white shadow-md"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Semua
-          </button>
-          <button
-            onClick={() => setFilter("today")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              filter === "today"
-                ? "bg-blue-500 text-white shadow-md"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Hari Ini
-          </button>
+          Filter Laporan Hari Ini
         </div>
 
         {/* Period Filter */}
