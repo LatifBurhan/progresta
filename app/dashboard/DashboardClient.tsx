@@ -15,6 +15,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RealtimeReportsTable } from '@/components/admin/RealtimeReportsTable'
 import {
   XAxis,
   YAxis,
@@ -535,6 +536,13 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
     </Card>
   </div>
 )}
+
+      {/* Realtime Reports Monitor - Only for Admin */}
+      {isAdmin && (
+        <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <RealtimeReportsTable />
+        </div>
+      )}
 
     </div>
   )
