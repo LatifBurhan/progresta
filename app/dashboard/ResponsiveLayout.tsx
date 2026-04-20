@@ -225,6 +225,21 @@ export default function ResponsiveLayout({ session, profile, children, logoutAct
                 </nav>
               </div>
             )}
+
+            {/* Logout Button - Paling Bawah Sidebar */}
+            <div className="mt-auto pt-6 border-t border-slate-200">
+              <form action={logoutAction} className="w-full">
+                <button
+                  type="submit"
+                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium transition-all duration-200 group w-full text-slate-600 hover:bg-rose-50 hover:text-rose-600"
+                >
+                  <svg className="w-5 h-5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span className="text-[14px] tracking-tight">Keluar</span>
+                </button>
+              </form>
+            </div>
           </div>
         </aside>
 
