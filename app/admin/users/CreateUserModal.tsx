@@ -66,7 +66,7 @@ export default function CreateUserModal({ open, divisions, onClose }: CreateUser
   const roles = [
     { value: 'STAFF', label: 'Staff', icon: '👨‍💻', color: 'blue' },
     { value: 'PM', label: 'Manager', icon: '📊', color: 'emerald' },
-    { value: 'GENERAL_AFFAIR', label: 'General Affair', icon: '👥', color: 'indigo' },
+    { value: 'GENERAL_AFFAIR', label: 'HRD', icon: '👥', color: 'indigo' },
     { value: 'CEO', label: 'CEO', icon: '👑', color: 'purple' }
   ]
 

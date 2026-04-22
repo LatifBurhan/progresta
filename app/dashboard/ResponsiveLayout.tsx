@@ -210,7 +210,7 @@ export default function ResponsiveLayout({ session, profile, children, logoutAct
                     active={pathname.startsWith("/dashboard/admin/project-reports")}
                     color="teal"
                   />
-                  {session.role === "GENERAL_AFFAIR" && (
+                  {["GENERAL_AFFAIR", "CEO", "ADMIN"].includes(session.role) && (
                     <SidebarLink href="/dashboard/overtime/admin" icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0" label="Kelola Lembur" active={pathname === "/dashboard/overtime/admin"} color="orange" />
                   )}
                   {["GENERAL_AFFAIR", "CEO", "ADMIN"].includes(session.role) && (

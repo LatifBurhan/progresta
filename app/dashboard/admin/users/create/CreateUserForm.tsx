@@ -155,7 +155,7 @@ export default function CreateUserForm({ divisions: allDivisions }: CreateUserFo
   const roles = [
     { value: "STAFF", label: "Staff", description: "Akses standar pelaporan", icon: User, color: "blue" },
     { value: "PM", label: "Project Manager", description: "Monitoring project & tim", icon: Briefcase, color: "emerald" },
-    { value: "GENERAL_AFFAIR", label: "General Affair", description: "Manajemen karyawan", icon: ShieldCheck, color: "amber" },
+    { value: "GENERAL_AFFAIR", label: "HRD", description: "Manajemen karyawan", icon: ShieldCheck, color: "amber" },
     { value: "CEO", label: "CEO", description: "Akses penuh sistem", icon: Sparkles, color: "purple" },
   ];
 
@@ -466,7 +466,7 @@ export default function CreateUserForm({ divisions: allDivisions }: CreateUserFo
                   className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-50/50 focus:border-amber-100 transition-all font-medium min-h-[100px] resize-none"
                   value={formData.notes}
                   onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Catatan internal (hanya untuk Admin & General Affair)"
+                  placeholder="Catatan internal (hanya untuk Admin & HRD)"
                 />
               </div>
               <p className="text-[10px] text-slate-400 font-bold ml-1 flex items-center gap-2">

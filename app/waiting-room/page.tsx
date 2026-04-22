@@ -58,7 +58,7 @@ export default async function WaitingRoomPage() {
               Halo, {userData.name || userData.email.split('@')[0]}!
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              Akun Anda sedang menunggu persetujuan dari Admin/General Affair.
+              Akun Anda sedang menunggu persetujuan dari Admin/HRD.
             </p>
           </div>
 
@@ -83,7 +83,7 @@ export default async function WaitingRoomPage() {
               <strong>Apa yang terjadi selanjutnya?</strong>
             </p>
             <ul className="text-xs text-blue-700 mt-2 space-y-1 text-left">
-              <li>• Admin/General Affair akan meninjau data pendaftaran Anda</li>
+              <li>• Admin/HRD akan meninjau data pendaftaran Anda</li>
               <li>• Anda akan diberikan role dan divisi yang sesuai</li>
               <li>• Setelah disetujui, Anda dapat mengakses dashboard</li>
               <li>• Proses ini biasanya memakan waktu 1-2 hari kerja</li>
@@ -92,7 +92,7 @@ export default async function WaitingRoomPage() {
 
           <div className="pt-4 border-t">
             <p className="text-xs text-gray-500 mb-3">
-              Jika ada pertanyaan, hubungi Admin/General Affair melalui WhatsApp atau email.
+              Jika ada pertanyaan, hubungi Admin/HRD melalui WhatsApp atau email.
             </p>
             
             <form action={logoutAction}>

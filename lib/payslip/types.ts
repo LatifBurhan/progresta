@@ -10,6 +10,7 @@ export interface Payslip {
   lembur: number
   insentif: number
   tunjangan: number
+  bonus_kpi: number
   dinas_luar: number
   potongan_bpjs: number
   potongan_pajak: number
@@ -47,6 +48,7 @@ export interface UpsertPayslipRequest {
   lembur: number
   insentif: number
   tunjangan: number
+  bonus_kpi?: number
   dinas_luar: number
   potongan_bpjs?: number
   potongan_pajak?: number
@@ -61,6 +63,7 @@ export interface BulkGenerateRequest {
   lembur: number
   insentif: number
   tunjangan: number
+  bonus_kpi?: number
   dinas_luar: number
   potongan_bpjs?: number
   potongan_pajak?: number
@@ -80,6 +83,7 @@ export interface RecapData {
   total_lembur: number
   total_insentif: number
   total_tunjangan: number
+  total_bonus_kpi: number
   total_dinas_luar: number
   total_potongan_bpjs: number
   total_potongan_pajak: number
@@ -92,6 +96,7 @@ export interface RecapTotals {
   total_lembur: number
   total_insentif: number
   total_tunjangan: number
+  total_bonus_kpi: number
   total_dinas_luar: number
   total_potongan_bpjs: number
   total_potongan_pajak: number
@@ -103,6 +108,7 @@ export interface PayslipKomponen {
   lembur: number
   insentif: number
   tunjangan: number
+  bonus_kpi?: number
   dinas_luar: number
   potongan_bpjs: number
   potongan_pajak: number

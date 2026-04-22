@@ -12,7 +12,7 @@ export async function PUT(request: Request) {
     }
 
     if (!canApproveOvertime(session.role)) {
-      return overtimeError('FORBIDDEN', 'Hanya GENERAL_AFFAIR yang dapat menyetujui lembur', 403)
+      return overtimeError('FORBIDDEN', 'Hanya HRD, CEO, atau ADMIN yang dapat menyetujui lembur', 403)
     }
 
     const body = await request.json()

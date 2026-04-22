@@ -6,12 +6,15 @@ export type OvertimeErrorCode =
   | 'ACTIVE_SESSION_EXISTS'
   | 'NO_ACTIVE_SESSION'
   | 'MISSING_FIELDS'
+  | 'INVALID_INPUT'
   | 'INVALID_FILE'
   | 'FILE_TOO_LARGE'
   | 'EDIT_WINDOW_EXPIRED'
   | 'ALREADY_APPROVED'
   | 'NOT_FOUND'
   | 'INVALID_COORDINATES'
+  | 'DATABASE_ERROR'
+  | 'INTERNAL_ERROR'
 
 export function overtimeError(
   code: OvertimeErrorCode,

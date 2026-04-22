@@ -146,7 +146,7 @@ export default function UserManagementClient({
   const getRoleBadge = (role: string) => {
     const config: any = {
       'CEO': { label: 'CEO', icon: '👑', color: 'bg-purple-50 text-purple-700 border-purple-100' },
-      'GENERAL_AFFAIR': { label: 'General Affair', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+      'GENERAL_AFFAIR': { label: 'HRD', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100' },
       'PM': { label: 'Manager', icon: '📊', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
       'ADMIN': { label: 'Admin', icon: '⚙️', color: 'bg-rose-50 text-rose-700 border-rose-100' },
       'STAFF': { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-600 border-slate-200' }
@@ -232,7 +232,7 @@ export default function UserManagementClient({
             <option value="all">Semua Otoritas</option>
             <option value="STAFF">Staff</option>
             <option value="PM">Project Manager</option>
-            <option value="GENERAL_AFFAIR">General Affair</option>
+            <option value="GENERAL_AFFAIR">HRD</option>
             <option value="CEO">CEO</option>
             <option value="ADMIN">Super Admin</option>
           </select>
@@ -247,14 +247,13 @@ export default function UserManagementClient({
               <tr className="bg-slate-50/50 border-b border-slate-50 text-slate-400 font-black text-[11px] uppercase tracking-[0.2em]">
                 <th className="px-8 py-6">Informasi Personel</th>
                 <th className="px-8 py-6">Otoritas & Penempatan</th>
-                <th className="px-8 py-6">Progres Harian</th>
                 <th className="px-8 py-6 text-right">Manajemen Akun</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-24 text-center">
+                  <td colSpan={3} className="py-24 text-center">
                     <User className="w-16 h-16 text-slate-200 mx-auto mb-4" />
                     <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">Personel Tidak Ditemukan</p>
                   </td>
@@ -321,34 +320,6 @@ export default function UserManagementClient({
                           <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
                             <Building className="w-4 h-4 text-slate-300" />
                             {user.division?.name || 'Lembaga Umum'}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Progres Harian */}
-                      <td className="px-8 py-6">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-bold text-slate-700">
-                              {user.todayReports || 0}/3 Laporan
-                            </span>
-                            <span className="text-xs font-bold text-slate-400">
-                              {user.todayProgress || 0}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                            <div
-                              className={`h-2.5 rounded-full transition-all duration-500 ${
-                                (user.todayProgress || 0) === 100
-                                  ? 'bg-emerald-500'
-                                  : (user.todayProgress || 0) >= 66
-                                  ? 'bg-blue-500'
-                                  : (user.todayProgress || 0) >= 33
-                                  ? 'bg-amber-500'
-                                  : 'bg-rose-500'
-                              }`}
-                              style={{ width: `${user.todayProgress || 0}%` }}
-                            />
                           </div>
                         </div>
                       </td>

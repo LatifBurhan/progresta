@@ -167,7 +167,7 @@ export default function UserManagement({
   const getRoleBadge = (role: string) => {
     const badges = {
       'CEO': { label: '👑 CEO', color: 'bg-purple-100 text-purple-800' },
-      'GENERAL_AFFAIR': { label: '👥 General Affair', color: 'bg-blue-100 text-blue-800' },
+      'GENERAL_AFFAIR': { label: '👥 HRD', color: 'bg-blue-100 text-blue-800' },
       'PM': { label: '📊 PM', color: 'bg-green-100 text-green-800' },
       'ADMIN': { label: '⚙️ Admin', color: 'bg-red-100 text-red-800' },
       'KARYAWAN': { label: '👨‍💻 Karyawan', color: 'bg-gray-100 text-gray-800' }

@@ -204,7 +204,7 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
   const roles = [
     { value: "STAFF", label: "👨‍💻 Staff", description: "Akses standar untuk pelaporan" },
     { value: "PM", label: "📊 Project Manager", description: "Monitoring project dan tim" },
-    { value: "GENERAL_AFFAIR", label: "👥 General Affair", description: "Manajemen karyawan dan approval" },
+    { value: "GENERAL_AFFAIR", label: "👥 HRD", description: "Manajemen karyawan dan approval" },
     { value: "CEO", label: "👑 CEO", description: "Akses penuh ke semua data" },
   ];
 
@@ -344,11 +344,11 @@ export default function EditUserModal({ open, user, divisions: allDivisions, onC
                     </Label>
                     <textarea
                       className="w-full px-4 py-3 h-24 rounded-2xl border-slate-100 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-base font-medium shadow-sm resize-none"
-                      placeholder="Catatan internal (hanya untuk Admin & General Affair)"
+                      placeholder="Catatan internal (hanya untuk Admin & HRD)"
                       value={formData.notes}
                       onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
                     />
-                    <p className="text-[10px] font-bold text-slate-400 ml-1">Hanya Admin dan General Affair yang dapat mengedit field ini</p>
+                    <p className="text-[10px] font-bold text-slate-400 ml-1">Hanya Admin dan HRD yang dapat mengedit field ini</p>
                   </div>
                 </div>
               </section>

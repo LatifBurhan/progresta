@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     if (!canApproveOvertime(session.role)) {
-      return overtimeError('FORBIDDEN', 'Hanya GENERAL_AFFAIR yang dapat mengakses rekap lembur', 403)
+      return overtimeError('FORBIDDEN', 'Hanya HRD, CEO, atau ADMIN yang dapat mengakses rekap lembur', 403)
     }
 
     // Get today's date range in Jakarta timezone

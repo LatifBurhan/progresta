@@ -46,6 +46,7 @@ export async function PUT(
         lembur: Number(body.lembur),
         insentif: Number(body.insentif),
         tunjangan: Number(body.tunjangan),
+        bonus_kpi: Number(body.bonus_kpi ?? 0),
         dinas_luar: Number(body.dinas_luar),
         potongan_bpjs: Number(body.potongan_bpjs ?? 0),
         potongan_pajak: Number(body.potongan_pajak ?? 0),
@@ -64,5 +65,68 @@ export async function PUT(
   } catch (error) {
     console.error('PUT /api/admin/payslips/[id] error:', error)
     return NextResponse.json({ success: false, message: 'Terjadi kesalahan server' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await verifySession()
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Only ADMIN, CEO, and HRD can delete payslips
+    if (!['ADMIN', 'CEO', 'GENERAL_AFFAIR'].includes(session.role)) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Hanya ADMIN, CEO, atau HRD yang dapat menghapus slip gaji' 
+      }, { status: 403 })
+    }
+
+    const { id } = await params
+
+    // Get payslip details before deleting
+    const { data: payslip, error: fetchError } = await supabaseAdmin
+      .from('payslips')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !payslip) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Slip gaji tidak ditemukan' 
+      }, { status: 404 })
+    }
+
+    // Delete the payslip
+    const { error: deleteError } = await supabaseAdmin
+      .from('payslips')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      console.error('Error deleting payslip:', deleteError)
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Gagal menghapus slip gaji' 
+      }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Slip gaji berhasil dihapus',
+      data: { id }
+    })
+
+  } catch (error) {
+    console.error('DELETE /api/admin/payslips/[id] error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Terjadi kesalahan server' 
+    }, { status: 500 })
   }
 }

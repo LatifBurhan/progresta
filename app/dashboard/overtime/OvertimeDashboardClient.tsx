@@ -65,6 +65,10 @@ export default function OvertimeDashboardClient({ initialSession }: OvertimeDash
     fetchRequests()
   }
 
+  const handleDeleteSuccess = (requestId: string) => {
+    setRequests((prev) => prev.filter((r) => r.id !== requestId))
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -120,7 +124,7 @@ export default function OvertimeDashboardClient({ initialSession }: OvertimeDash
             </svg>
           </div>
         ) : (
-          <OvertimeHistory requests={requests} onEdit={setEditingRequest} />
+          <OvertimeHistory requests={requests} onEdit={setEditingRequest} onDelete={handleDeleteSuccess} />
         )}
       </div>
     </div>

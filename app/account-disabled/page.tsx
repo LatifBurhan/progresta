@@ -87,7 +87,7 @@ export default async function AccountDisabledPage() {
               Halo, {userName}
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              Akun Anda telah dinonaktifkan oleh Admin/General Affair.
+              Akun Anda telah dinonaktifkan oleh Admin/HRD.
             </p>
           </div>
 
@@ -113,7 +113,7 @@ export default async function AccountDisabledPage() {
               <strong>Butuh bantuan?</strong>
             </p>
             <p className="text-xs text-orange-700 mt-2">
-              Hubungi Admin/General Affair untuk informasi lebih lanjut mengenai status akun Anda. 
+              Hubungi Admin/HRD untuk informasi lebih lanjut mengenai status akun Anda. 
               Mereka dapat memberikan penjelasan dan membantu mengaktifkan kembali akun jika diperlukan.
             </p>
           </div>
@@ -133,7 +133,7 @@ export default async function AccountDisabledPage() {
 
           <div className="pt-4 border-t">
             <p className="text-xs text-gray-500 mb-3">
-              Jika Anda merasa ini adalah kesalahan, segera hubungi Admin/General Affair.
+              Jika Anda merasa ini adalah kesalahan, segera hubungi Admin/HRD.
             </p>
             
             <form action={logoutAction}>

@@ -85,7 +85,7 @@ export default function ProfilePage() {
   const getRoleInfo = (role: string) => {
     const roles: Record<string, any> = {
       CEO: { label: 'CEO', icon: '👑', color: 'bg-indigo-50 text-indigo-700 border-indigo-100', full: 'Chief Executive Officer' },
-      GENERAL_AFFAIR: { label: 'General Affair', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100', full: 'General Affair' },
+      GENERAL_AFFAIR: { label: 'HRD', icon: '👥', color: 'bg-blue-50 text-blue-700 border-blue-100', full: 'Human Resource Development' },
       PM: { label: 'PM', icon: '📊', color: 'bg-emerald-50 text-emerald-700 border-emerald-100', full: 'Project Manager' },
       ADMIN: { label: 'Admin', icon: '⚙️', color: 'bg-rose-50 text-rose-700 border-rose-100', full: 'System Administrator' },
       STAFF: { label: 'Staff', icon: '👨‍💻', color: 'bg-slate-50 text-slate-700 border-slate-100', full: 'Staff' },
@@ -240,7 +240,7 @@ export default function ProfilePage() {
 
       {/* Security/Action Hint */}
       <p className="text-center text-[11px] text-slate-400 font-medium px-6">
-        Jika ada kesalahan data atau ingin merubah password, silakan hubungi tim <span className="text-blue-500 font-bold tracking-tight">IT Support</span> atau General Affair Al-Wustho.
+        Jika ada kesalahan data atau ingin merubah password, silakan hubungi tim <span className="text-blue-500 font-bold tracking-tight">IT Support</span> atau HRD Al-Wustho.
       </p>
 
       {/* Logout Button */}

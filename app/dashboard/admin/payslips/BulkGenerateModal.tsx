@@ -20,10 +20,11 @@ const FIELDS = [
   { key: 'gaji_pokok', label: 'Gaji Pokok', required: true },
   { key: 'lembur', label: 'Lembur', required: true },
   { key: 'insentif', label: 'Insentif', required: true },
-  { key: 'tunjangan', label: 'Tunjangan', required: true },
+  { key: 'tunjangan', label: 'Tunjangan Pokok', required: true },
+  { key: 'bonus_kpi', label: 'Bonus KPI', required: false },
   { key: 'dinas_luar', label: 'Dinas Luar', required: true },
   { key: 'potongan_bpjs', label: 'Potongan BPJS', required: false },
-  { key: 'potongan_pajak', label: 'Potongan Pajak', required: false },
+  { key: 'potongan_pajak', label: 'Potongan Pajak PPH21', required: false },
 ] as const
 
 type FieldKey = typeof FIELDS[number]['key']
@@ -39,6 +40,7 @@ export default function BulkGenerateModal({
     lembur: '0',
     insentif: '0',
     tunjangan: '0',
+    bonus_kpi: '0',
     dinas_luar: '0',
     potongan_bpjs: '0',
     potongan_pajak: '0',
@@ -56,6 +58,7 @@ export default function BulkGenerateModal({
       lembur: Number(values.lembur) || 0,
       insentif: Number(values.insentif) || 0,
       tunjangan: Number(values.tunjangan) || 0,
+      bonus_kpi: Number(values.bonus_kpi) || 0,
       dinas_luar: Number(values.dinas_luar) || 0,
       potongan_bpjs: Number(values.potongan_bpjs) || 0,
       potongan_pajak: Number(values.potongan_pajak) || 0,
@@ -97,6 +100,7 @@ export default function BulkGenerateModal({
           lembur: Number(values.lembur) || 0,
           insentif: Number(values.insentif) || 0,
           tunjangan: Number(values.tunjangan) || 0,
+          bonus_kpi: Number(values.bonus_kpi) || 0,
           dinas_luar: Number(values.dinas_luar) || 0,
           potongan_bpjs: Number(values.potongan_bpjs) || 0,
           potongan_pajak: Number(values.potongan_pajak) || 0,

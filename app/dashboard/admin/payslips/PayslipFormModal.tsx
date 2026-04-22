@@ -21,10 +21,11 @@ const FIELDS = [
   { key: 'gaji_pokok', label: 'Gaji Pokok', required: true },
   { key: 'lembur', label: 'Lembur', required: true },
   { key: 'insentif', label: 'Insentif', required: true },
-  { key: 'tunjangan', label: 'Tunjangan', required: true },
+  { key: 'tunjangan', label: 'Tunjangan Pokok', required: true },
+  { key: 'bonus_kpi', label: 'Bonus KPI', required: false },
   { key: 'dinas_luar', label: 'Dinas Luar', required: true },
   { key: 'potongan_bpjs', label: 'Potongan BPJS', required: false },
-  { key: 'potongan_pajak', label: 'Potongan Pajak', required: false },
+  { key: 'potongan_pajak', label: 'Potongan Pajak PPH21', required: false },
 ] as const
 
 type FieldKey = typeof FIELDS[number]['key']
@@ -51,6 +52,7 @@ export default function PayslipFormModal({
     lembur: existingPayslip ? formatThousands(String(existingPayslip.lembur)) : '',
     insentif: existingPayslip ? formatThousands(String(existingPayslip.insentif)) : '',
     tunjangan: existingPayslip ? formatThousands(String(existingPayslip.tunjangan)) : '',
+    bonus_kpi: existingPayslip ? formatThousands(String((existingPayslip as any).bonus_kpi || 0)) : '0',
     dinas_luar: existingPayslip ? formatThousands(String(existingPayslip.dinas_luar)) : '',
     potongan_bpjs: existingPayslip ? formatThousands(String(existingPayslip.potongan_bpjs)) : '0',
     potongan_pajak: existingPayslip ? formatThousands(String(existingPayslip.potongan_pajak)) : '0',
@@ -66,6 +68,7 @@ export default function PayslipFormModal({
       lembur: Number(parseRaw(values.lembur)) || 0,
       insentif: Number(parseRaw(values.insentif)) || 0,
       tunjangan: Number(parseRaw(values.tunjangan)) || 0,
+      bonus_kpi: Number(parseRaw(values.bonus_kpi)) || 0,
       dinas_luar: Number(parseRaw(values.dinas_luar)) || 0,
       potongan_bpjs: Number(parseRaw(values.potongan_bpjs)) || 0,
       potongan_pajak: Number(parseRaw(values.potongan_pajak)) || 0,
@@ -106,6 +109,7 @@ export default function PayslipFormModal({
         lembur: Number(parseRaw(values.lembur)),
         insentif: Number(parseRaw(values.insentif)),
         tunjangan: Number(parseRaw(values.tunjangan)),
+        bonus_kpi: Number(parseRaw(values.bonus_kpi)) || 0,
         dinas_luar: Number(parseRaw(values.dinas_luar)),
         potongan_bpjs: Number(parseRaw(values.potongan_bpjs)) || 0,
         potongan_pajak: Number(parseRaw(values.potongan_pajak)) || 0,

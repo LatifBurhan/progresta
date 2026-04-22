@@ -2,7 +2,7 @@ import type { Payslip, PayslipKomponen, RecapTotals } from './types'
 
 /**
  * Hitung gaji bersih dari komponen gaji.
- * Formula: (gaji_pokok + lembur + insentif + tunjangan + dinas_luar) - (potongan_bpjs + potongan_pajak)
+ * Formula: (gaji_pokok + lembur + insentif + tunjangan + bonus_kpi + dinas_luar) - (potongan_bpjs + potongan_pajak)
  */
 export function hitungGajiBersih(komponen: PayslipKomponen): number {
   const pendapatan =
@@ -10,6 +10,7 @@ export function hitungGajiBersih(komponen: PayslipKomponen): number {
     komponen.lembur +
     komponen.insentif +
     komponen.tunjangan +
+    (komponen.bonus_kpi || 0) +
     komponen.dinas_luar
 
   const potongan = komponen.potongan_bpjs + komponen.potongan_pajak
@@ -27,6 +28,7 @@ export function hitungTotalRekap(payslips: Payslip[]): RecapTotals {
       total_lembur: acc.total_lembur + Number(p.lembur),
       total_insentif: acc.total_insentif + Number(p.insentif),
       total_tunjangan: acc.total_tunjangan + Number(p.tunjangan),
+      total_bonus_kpi: acc.total_bonus_kpi + Number((p as any).bonus_kpi || 0),
       total_dinas_luar: acc.total_dinas_luar + Number(p.dinas_luar),
       total_potongan_bpjs: acc.total_potongan_bpjs + Number(p.potongan_bpjs),
       total_potongan_pajak: acc.total_potongan_pajak + Number(p.potongan_pajak),
@@ -37,6 +39,7 @@ export function hitungTotalRekap(payslips: Payslip[]): RecapTotals {
       total_lembur: 0,
       total_insentif: 0,
       total_tunjangan: 0,
+      total_bonus_kpi: 0,
       total_dinas_luar: 0,
       total_potongan_bpjs: 0,
       total_potongan_pajak: 0,

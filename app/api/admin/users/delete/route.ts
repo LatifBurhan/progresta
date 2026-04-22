@@ -12,7 +12,7 @@ export async function DELETE(request: NextRequest) {
 
     // Only ADMIN and GENERAL_AFFAIR can delete users
     if (!['ADMIN', 'GENERAL_AFFAIR'].includes(session.role)) {
-      return NextResponse.json({ success: false, message: 'Hanya ADMIN atau GENERAL AFFAIR yang dapat menghapus user' }, { status: 403 })
+      return NextResponse.json({ success: false, message: 'Hanya ADMIN atau HRD yang dapat menghapus user' }, { status: 403 })
     }
 
     const { userId } = await request.json()

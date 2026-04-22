@@ -67,6 +67,8 @@ export default function OvertimeAdminClient() {
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ open: boolean; request: AdminRequest | null }>({ open: false, request: null });
   const [now, setNow] = useState(new Date());
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -149,6 +151,26 @@ export default function OvertimeAdminClient() {
       // silently fail
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    setDeletingId(requestId);
+    try {
+      const res = await fetch(`/api/overtime/delete?requestId=${requestId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRequests((prev) => prev.filter((r) => r.id !== requestId));
+        setDeleteConfirmModal({ open: false, request: null });
+      } else {
+        alert(data.message || "Gagal menghapus lembur");
+      }
+    } catch (error) {
+      alert("Terjadi kesalahan saat menghapus lembur");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -323,6 +345,7 @@ export default function OvertimeAdminClient() {
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Durasi</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Foto</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Setujui</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -370,6 +393,18 @@ export default function OvertimeAdminClient() {
                         </span>
                       </label>
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setDeleteConfirmModal({ open: true, request: req })}
+                        disabled={deletingId === req.id}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Hapus Lembur"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -377,6 +412,73 @@ export default function OvertimeAdminClient() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmModal.open && deleteConfirmModal.request && (
+        <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setDeleteConfirmModal({ open: false, request: null })}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Hapus Lembur?</h3>
+                <p className="text-sm text-slate-500">Tindakan ini tidak dapat dibatalkan</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Karyawan:</span>
+                <span className="font-semibold text-slate-900">{deleteConfirmModal.request.users?.name || deleteConfirmModal.request.users?.email}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Lokasi:</span>
+                <span className="font-semibold text-slate-900">{deleteConfirmModal.request.location}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Durasi:</span>
+                <span className="font-semibold text-orange-600">{formatDurationFromInterval(deleteConfirmModal.request.duration)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Status:</span>
+                <span className={`font-semibold ${deleteConfirmModal.request.approval_status === 'approved' ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {deleteConfirmModal.request.approval_status === 'approved' ? 'Disetujui' : 'Menunggu'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmModal({ open: false, request: null })}
+                disabled={deletingId === deleteConfirmModal.request.id}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => handleDeleteRequest(deleteConfirmModal.request!.id)}
+                disabled={deletingId === deleteConfirmModal.request.id}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deletingId === deleteConfirmModal.request.id ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Menghapus...
+                  </>
+                ) : (
+                  'Ya, Hapus'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightboxUrl && (

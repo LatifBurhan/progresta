@@ -54,7 +54,7 @@ export default function PayslipRecapClient({ departments, divisions }: PayslipRe
   const exportCSV = () => {
     if (!recap || recap.detail.length === 0) return
 
-    const headers = ['Nama', 'Email', 'Gaji Pokok', 'Lembur', 'Insentif', 'Tunjangan', 'Dinas Luar', 'Potongan BPJS', 'Potongan Pajak', 'Gaji Bersih', 'Status']
+    const headers = ['Nama', 'Email', 'Gaji Pokok', 'Lembur', 'Insentif', 'Tunjangan Pokok', 'Bonus KPI', 'Dinas Luar', 'Potongan BPJS', 'Potongan Pajak PPH21', 'Gaji Bersih', 'Status']
     const rows = recap.detail.map((p) => [
       p.users?.name || '',
       p.users?.email || '',
@@ -62,6 +62,7 @@ export default function PayslipRecapClient({ departments, divisions }: PayslipRe
       p.lembur,
       p.insentif,
       p.tunjangan,
+      (p as any).bonus_kpi || 0,
       p.dinas_luar,
       p.potongan_bpjs,
       p.potongan_pajak,
@@ -187,10 +188,11 @@ export default function PayslipRecapClient({ departments, divisions }: PayslipRe
               {[
                 { label: 'Lembur', val: recap.total_lembur },
                 { label: 'Insentif', val: recap.total_insentif },
-                { label: 'Tunjangan', val: recap.total_tunjangan },
+                { label: 'Tunjangan Pokok', val: recap.total_tunjangan },
+                { label: 'Bonus KPI', val: (recap as any).total_bonus_kpi || 0 },
                 { label: 'Dinas Luar', val: recap.total_dinas_luar },
                 { label: 'Potongan BPJS', val: recap.total_potongan_bpjs },
-                { label: 'Potongan Pajak', val: recap.total_potongan_pajak },
+                { label: 'Potongan Pajak PPH21', val: recap.total_potongan_pajak },
               ].map((item) => (
                 <div key={item.label}>
                   <p className="text-xs text-slate-500">{item.label}</p>

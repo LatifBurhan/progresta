@@ -46,6 +46,8 @@ export default function PayslipAdminClient({
   const [editPayslip, setEditPayslip] = useState<Payslip | null>(null)
   const [showBulkModal, setShowBulkModal] = useState(false)
   const [leaveEmployee, setLeaveEmployee] = useState<Employee | null>(null)
+  const [deletePayslip, setDeletePayslip] = useState<Payslip | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
 
@@ -124,6 +126,28 @@ export default function PayslipAdminClient({
       showToast('Terjadi kesalahan', 'error')
     } finally {
       setPublishing(false)
+    }
+  }
+
+  const handleDeletePayslip = async () => {
+    if (!deletePayslip) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/payslips/${deletePayslip.id}`, {
+        method: 'DELETE',
+      })
+      const json = await res.json()
+      if (json.success) {
+        showToast('Slip gaji berhasil dihapus')
+        setDeletePayslip(null)
+        fetchPayslips()
+      } else {
+        showToast(json.message || 'Gagal menghapus slip gaji', 'error')
+      }
+    } catch {
+      showToast('Terjadi kesalahan', 'error')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -323,6 +347,15 @@ export default function PayslipAdminClient({
                           >
                             {ps ? 'Edit' : 'Buat Slip'}
                           </button>
+                          {ps && (
+                            <button
+                              onClick={() => setDeletePayslip(ps)}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-medium transition-colors"
+                              title="Hapus Slip Gaji"
+                            >
+                              Hapus
+                            </button>
+                          )}
                           <button
                             onClick={() => setLeaveEmployee(emp)}
                             className="text-xs px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 font-medium transition-colors"
@@ -369,6 +402,85 @@ export default function PayslipAdminClient({
           onSuccess={() => { setLeaveEmployee(null); showToast('Data cuti berhasil disimpan'); fetchPayslips() }}
           onCancel={() => setLeaveEmployee(null)}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletePayslip && (
+        <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setDeletePayslip(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Hapus Slip Gaji?</h3>
+                <p className="text-sm text-slate-500">Tindakan ini tidak dapat dibatalkan</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Karyawan:</span>
+                <span className="font-semibold text-slate-900">
+                  {filteredEmployees.find(e => e.id === deletePayslip.user_id)?.name || 
+                   filteredEmployees.find(e => e.id === deletePayslip.user_id)?.email || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Periode:</span>
+                <span className="font-semibold text-slate-900">
+                  {BULAN_NAMES[deletePayslip.periode_bulan]} {deletePayslip.periode_tahun}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Gaji Bersih:</span>
+                <span className="font-semibold text-teal-600">
+                  {new Intl.NumberFormat('id-ID', { 
+                    style: 'currency', 
+                    currency: 'IDR', 
+                    minimumFractionDigits: 0, 
+                    maximumFractionDigits: 0 
+                  }).format(Math.round(Number(deletePayslip.gaji_bersih)))}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Status:</span>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[deletePayslip.status]}`}>
+                  {deletePayslip.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeletePayslip(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDeletePayslip}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Menghapus...
+                  </>
+                ) : (
+                  'Ya, Hapus'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

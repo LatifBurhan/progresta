@@ -206,10 +206,11 @@ export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmploy
                       <div className="bg-slate-50/50 rounded-2xl p-4 space-y-3 border border-slate-100">
                         {[
                           { label: 'Gaji Pokok', val: p.gaji_pokok, icon: <Wallet className="w-3 h-3" /> },
-                          { label: 'Uang Lembur', val: p.lembur, icon: <Clock className="w-3 h-3" /> },
-                          { label: 'Insentif Performa', val: p.insentif, icon: <Sparkles className="w-3 h-3 text-amber-500" /> },
-                          { label: 'Tunjangan Jabatan', val: p.tunjangan, icon: <Building2 className="w-3 h-3 text-indigo-500" /> },
-                          { label: 'Dinas Luar Kota', val: p.dinas_luar, icon: <TrendingUp className="w-3 h-3 text-emerald-500" /> },
+                          { label: 'Lembur', val: p.lembur, icon: <Clock className="w-3 h-3" /> },
+                          { label: 'Insentif', val: p.insentif, icon: <Sparkles className="w-3 h-3 text-amber-500" /> },
+                          { label: 'Tunjangan Pokok', val: p.tunjangan, icon: <Building2 className="w-3 h-3 text-indigo-500" /> },
+                          { label: 'Bonus KPI', val: (p as any).bonus_kpi || 0, icon: <Sparkles className="w-3 h-3 text-purple-500" /> },
+                          { label: 'Dinas Luar', val: p.dinas_luar, icon: <TrendingUp className="w-3 h-3 text-emerald-500" /> },
                         ].map((item) => (
                           <div key={item.label} className="flex items-center justify-between group/row">
                             <div className="flex items-center gap-2.5">
@@ -234,8 +235,8 @@ export default function PayslipEmployeeClient({ initialPayslips }: PayslipEmploy
                       </div>
                       <div className="bg-slate-50/50 rounded-2xl p-4 space-y-3 border border-slate-100">
                         {[
-                          { label: 'Iuran BPJS (Kes/TK)', val: p.potongan_bpjs, icon: <Stethoscope className="w-3 h-3" /> },
-                          { label: 'Pajak Penghasilan (PPh)', val: p.potongan_pajak, icon: <TrendingDown className="w-3 h-3" /> },
+                          { label: 'Potongan BPJS', val: p.potongan_bpjs, icon: <Stethoscope className="w-3 h-3" /> },
+                          { label: 'Potongan Pajak PPH21', val: p.potongan_pajak, icon: <TrendingDown className="w-3 h-3" /> },
                         ].map((item) => (
                           <div key={item.label} className="flex items-center justify-between group/row">
                             <div className="flex items-center gap-2.5">

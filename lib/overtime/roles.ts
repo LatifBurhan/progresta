@@ -3,5 +3,5 @@ export function isGeneralAffair(role: string): boolean {
 }
 
 export function canApproveOvertime(role: string): boolean {
-  return isGeneralAffair(role)
+  return ['GENERAL_AFFAIR', 'CEO', 'ADMIN'].includes(role)
 }
