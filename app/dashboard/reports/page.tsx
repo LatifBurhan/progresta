@@ -92,7 +92,8 @@ function ReportsPageContent() {
 
   const loadProjects = async () => {
     try {
-      const res = await fetch('/api/reports/projects')
+      // Include completed projects for history view
+      const res = await fetch('/api/reports/projects?include_completed=true')
       const data = await res.json()
       
       if (data.success) {

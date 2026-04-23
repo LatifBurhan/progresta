@@ -181,7 +181,7 @@ export async function PUT(
         );
       }
 
-      // Validate user-project relationship via project_divisions
+      // Validate user-project relationship via project_assignments or project_divisions
       const { data: user, error: userError } = await supabaseAdmin
         .from('users')
         .select('"divisionId"')
@@ -205,29 +205,72 @@ export async function PUT(
         );
       }
 
-      // Check if user's division is involved in the new project
-      const { data: projectDivision, error: pdError } = await supabaseAdmin
-        .from('project_divisions')
+      // First check if user is specifically assigned to this project
+      const { data: userAssignment, error: assignmentError } = await supabaseAdmin
+        .from('project_assignments')
         .select('id')
         .eq('project_id', body.project_id)
-        .eq('division_id', userDivisionId)
+        .eq('user_id', session.userId)
         .maybeSingle();
 
-      if (pdError) {
-        console.error('Error checking project division:', pdError);
+      if (assignmentError) {
+        console.error('Error checking project assignment:', assignmentError);
         return NextResponse.json(
           { success: false, error: "Failed to verify project access" },
           { status: 500 }
         );
       }
 
-      if (!projectDivision) {
-        return NextResponse.json(
-          { success: false, error: "You are not authorized to report on this project" },
-          { status: 403 }
-        );
+      // If user is not specifically assigned, check division access
+      if (!userAssignment) {
+        // Check if user's division is involved in the new project
+        const { data: projectDivision, error: pdError } = await supabaseAdmin
+          .from('project_divisions')
+          .select('id')
+          .eq('project_id', body.project_id)
+          .eq('division_id', userDivisionId)
+          .maybeSingle();
+
+        if (pdError) {
+          console.error('Error checking project division:', pdError);
+          return NextResponse.json(
+            { success: false, error: "Failed to verify project access" },
+            { status: 500 }
+          );
+        }
+
+        if (!projectDivision) {
+          return NextResponse.json(
+            { success: false, error: "You are not authorized to report on this project" },
+            { status: 403 }
+          );
+        }
+
+        // Check if this project has specific assignments
+        const { data: projectAssignments, error: paError } = await supabaseAdmin
+          .from('project_assignments')
+          .select('id')
+          .eq('project_id', body.project_id)
+          .limit(1);
+
+        if (paError) {
+          console.error('Error checking project assignments:', paError);
+          return NextResponse.json(
+            { success: false, error: "Failed to verify project access" },
+            { status: 500 }
+          );
+        }
+
+        // If project has specific assignments but user is not assigned, deny access
+        if (projectAssignments && projectAssignments.length > 0) {
+          return NextResponse.json(
+            { success: false, error: "You are not assigned to this project" },
+            { status: 403 }
+          );
+        }
       }
     }
+
 
     // Prepare update data
     const updateData: any = {};

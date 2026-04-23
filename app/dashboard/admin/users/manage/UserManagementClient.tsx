@@ -14,6 +14,7 @@ import {
 import EditUserModal from './EditUserModal'
 import DeleteUserModal from './DeleteUserModal'
 import UserActionModal from './UserActionModal'
+import UserDetailModal from './UserDetailModal'
 
 interface UserProfile {
   name?: string
@@ -35,6 +36,7 @@ interface UserData {
   role: string
   status: string
   createdAt: string
+  updatedAt?: string
   divisionId: string | null
   employee_status?: string
   address?: string
@@ -72,6 +74,7 @@ export default function UserManagementClient({
   const [editModal, setEditModal] = useState<{ open: boolean; user: UserData | null }>({ open: false, user: null })
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; user: UserData | null }>({ open: false, user: null })
   const [actionModal, setActionModal] = useState<{ open: boolean; user: UserData | null; action: 'activate' | 'deactivate' | null }>({ open: false, user: null, action: null })
+  const [detailModal, setDetailModal] = useState<{ open: boolean; user: UserData | null }>({ open: false, user: null })
 
   const handleEditSuccess = (updatedUser: UserData) => {
     console.log('handleEditSuccess - Updated user from API:', updatedUser); // Debug
@@ -262,7 +265,11 @@ export default function UserManagementClient({
                 filteredUsers.map((user) => {
                   const roleBadge = getRoleBadge(user.role);
                   return (
-                    <tr key={user.id} className="group hover:bg-slate-50/30 transition-colors">
+                    <tr 
+                      key={user.id} 
+                      className="group hover:bg-slate-50/30 transition-colors cursor-pointer"
+                      onClick={() => setDetailModal({ open: true, user })}
+                    >
                       {/* Avatar & Identitas */}
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-5">
@@ -325,13 +332,16 @@ export default function UserManagementClient({
                       </td>
 
                       {/* Actions */}
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-8 py-6 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
                           {canEditUser(user) && (
                             <Button
                               variant="outline"
                               size="icon"
-                              onClick={() => setEditModal({ open: true, user })}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setEditModal({ open: true, user })
+                              }}
                               className="h-11 w-11 rounded-xl border-slate-100 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
                               title="Edit User"
                             >
@@ -342,7 +352,10 @@ export default function UserManagementClient({
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => setActionModal({ open: true, user, action: user.status === 'ACTIVE' ? 'deactivate' : 'activate' })}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setActionModal({ open: true, user, action: user.status === 'ACTIVE' ? 'deactivate' : 'activate' })
+                            }}
                             className={`h-11 w-11 rounded-xl border-slate-100 transition-all ${
                               user.status === 'ACTIVE' ? "text-amber-500 hover:bg-amber-50" : "text-emerald-500 hover:bg-emerald-50"
                             }`}
@@ -355,7 +368,10 @@ export default function UserManagementClient({
                             <Button
                               variant="outline"
                               size="icon"
-                              onClick={() => setDeleteModal({ open: true, user })}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setDeleteModal({ open: true, user })
+                              }}
                               className="h-11 w-11 rounded-xl border-slate-100 text-rose-500 hover:bg-rose-50"
                               title="Hapus User"
                             >
@@ -374,6 +390,12 @@ export default function UserManagementClient({
       </div>
 
       {/* Modals Container */}
+      <UserDetailModal
+        open={detailModal.open}
+        user={detailModal.user}
+        onClose={() => setDetailModal({ open: false, user: null })}
+      />
+
       <EditUserModal
         open={editModal.open}
         user={editModal.user}

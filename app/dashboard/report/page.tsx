@@ -17,6 +17,7 @@ export default async function ReportPage() {
   let initialHistory: any[] = []
 
   if (supabaseAdmin) {
+    // Fetch available projects using the fixed API logic
     const { data: userData } = await supabaseAdmin
       .from('users')
       .select('divisionId')
@@ -25,36 +26,68 @@ export default async function ReportPage() {
 
     const userDivisionId = userData?.divisionId
 
-    const { data: allProjects } = await supabaseAdmin
-      .from('projects')
-      .select(`
-        id,
-        name,
-        status,
-        isActive,
-        divisionId,
-        project_divisions (
-          division_id
-        )
-      `)
-      .order('name', { ascending: true })
+    if (userDivisionId) {
+      // Get projects where user is specifically assigned
+      const { data: userAssignments } = await supabaseAdmin
+        .from('project_assignments')
+        .select('project_id')
+        .eq('user_id', session.userId)
 
-    availableProjects = (allProjects || [])
-      .filter((project: any) => {
-        const isActive = project.isActive === true || project.status === 'Aktif'
-        if (!isActive || !userDivisionId) return false
+      const assignedProjectIds = userAssignments?.map((a: any) => a.project_id) || []
 
-        const involvedByLegacy = project.divisionId === userDivisionId
-        const involvedByManyToMany = (project.project_divisions || []).some(
-          (pd: any) => pd.division_id === userDivisionId
-        )
+      // Get projects from user's division
+      const { data: projectDivisions } = await supabaseAdmin
+        .from('project_divisions')
+        .select(`
+          project_id,
+          projects!inner (
+            id,
+            name,
+            status
+          )
+        `)
+        .eq('division_id', userDivisionId)
+        .eq('projects.status', 'Aktif')
 
-        return involvedByLegacy || involvedByManyToMany
+      const divisionProjectIds = projectDivisions?.map((pd: any) => pd.project_id) || []
+
+      // Get all assignments for division projects to determine which have specific assignments
+      const { data: allAssignments } = await supabaseAdmin
+        .from('project_assignments')
+        .select('project_id')
+        .in('project_id', divisionProjectIds)
+
+      const projectsWithAssignments = [...new Set(allAssignments?.map((a: any) => a.project_id) || [])]
+
+      // Filter projects based on assignment logic
+      const accessibleProjectIds = divisionProjectIds.filter((projectId: string) => {
+        const hasAssignments = projectsWithAssignments.includes(projectId)
+        const userIsAssigned = assignedProjectIds.includes(projectId)
+        
+        if (hasAssignments) {
+          // Project has specific assignments, only include if user is assigned
+          return userIsAssigned
+        } else {
+          // Project has no specific assignments, include for all division members
+          return true
+        }
       })
-      .map((project: any) => ({
-        id: project.id,
-        name: project.name
-      }))
+
+      // Fetch complete project data
+      if (accessibleProjectIds.length > 0) {
+        const { data: allProjects } = await supabaseAdmin
+          .from('projects')
+          .select('id, name')
+          .in('id', accessibleProjectIds)
+          .eq('status', 'Aktif')
+          .order('name', { ascending: true })
+
+        availableProjects = (allProjects || []).map((project: any) => ({
+          id: project.id,
+          name: project.name
+        }))
+      }
+    }
 
     const { data: historyData } = await supabaseAdmin
       .from('reports')

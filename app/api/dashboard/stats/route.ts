@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     const uniqueProjects = new Set((reportProjects || []).map((r: any) => r.project_id));
     const totalProjectsWorked = uniqueProjects.size;
 
-    // 4. Active Projects User is Involved In (via division)
+    // 4. Active Projects User is Involved In (via division or specific assignment)
     let activeProjects = 0;
     let activeProjectsList: any[] = [];
 
@@ -112,6 +112,14 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (user && (user as any).divisionId) {
+        // Get projects where user is specifically assigned
+        const { data: userAssignments } = await supabaseAdmin
+          .from('project_assignments')
+          .select('project_id')
+          .eq('user_id', userId);
+
+        const assignedProjectIds = userAssignments?.map((a: any) => a.project_id) || [];
+
         // Get active projects for this division
         const { data: projectDivisions } = await supabaseAdmin
           .from('project_divisions')
@@ -127,8 +135,33 @@ export async function GET(request: NextRequest) {
           .eq('division_id', (user as any).divisionId)
           .eq('projects.isActive', true);
 
-        activeProjects = projectDivisions?.length || 0;
-        activeProjectsList = (projectDivisions || []).map((pd: any) => pd.projects);
+        const divisionProjectIds = projectDivisions?.map((pd: any) => pd.project_id) || [];
+
+        // Get all assignments for division projects to determine which have specific assignments
+        const { data: allAssignments } = await supabaseAdmin
+          .from('project_assignments')
+          .select('project_id')
+          .in('project_id', divisionProjectIds);
+
+        const projectsWithAssignments = [...new Set(allAssignments?.map((a: any) => a.project_id) || [])];
+
+        // Filter projects based on assignment logic
+        const filteredProjectDivisions = (projectDivisions || []).filter((pd: any) => {
+          const projectId = pd.project_id;
+          const hasAssignments = projectsWithAssignments.includes(projectId);
+          const userIsAssigned = assignedProjectIds.includes(projectId);
+          
+          if (hasAssignments) {
+            // Project has specific assignments, only include if user is assigned
+            return userIsAssigned;
+          } else {
+            // Project has no specific assignments, include for all division members
+            return true;
+          }
+        });
+
+        activeProjects = filteredProjectDivisions.length;
+        activeProjectsList = filteredProjectDivisions.map((pd: any) => pd.projects);
       }
     } else {
       // For admin overview, count all active projects

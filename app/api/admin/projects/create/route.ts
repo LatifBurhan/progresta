@@ -180,19 +180,39 @@ export async function POST(request: NextRequest) {
       }
 
       // Insert project assignments (Specific Users) if userIds provided
+      console.log("Checking userIds for assignments:", { userIds, isArray: Array.isArray(userIds), length: userIds?.length });
+      
       if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+        console.log("Creating project assignments for users:", userIds);
+        
         const projectAssignments = userIds.map((userId) => ({
           project_id: newProject.id,
           user_id: userId,
         }));
 
-        const { error: assignmentsError } = await supabaseAdmin.from("project_assignments").insert(projectAssignments);
+        console.log("Project assignments to insert:", projectAssignments);
+
+        const { data: insertedAssignments, error: assignmentsError } = await supabaseAdmin
+          .from("project_assignments")
+          .insert(projectAssignments)
+          .select();
 
         if (assignmentsError) {
           console.error("Project assignments creation failed:", assignmentsError);
-          // Kita tidak perlu delete project di sini karena ini optional,
-          // tapi log error tetap penting.
+          console.error("Assignment error details:", JSON.stringify(assignmentsError, null, 2));
+          // Return error instead of just logging
+          return NextResponse.json(
+            {
+              success: false,
+              message: "Gagal menambahkan user assignments: " + assignmentsError.message,
+            },
+            { status: 500 },
+          );
         }
+        
+        console.log("Project assignments created successfully:", insertedAssignments);
+      } else {
+        console.log("No userIds provided or userIds is empty - project will be accessible to all division members");
       }
 
       // Insert project_department_divisions for multi-department support
