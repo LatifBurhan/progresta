@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
 import { createClient } from '@supabase/supabase-js'
 
+// Increase timeout and body size limit for photo uploads
+export const maxDuration = 30 // 30 seconds
+export const runtime = 'nodejs'
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
@@ -23,8 +27,18 @@ export async function POST(request: NextRequest) {
 
     console.log('User ID:', session.userId)
 
-    // Get form data
-    const formData = await request.formData()
+    // Get form data with error handling
+    let formData
+    try {
+      formData = await request.formData()
+    } catch (error: any) {
+      console.error('❌ Failed to parse form data:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to parse upload data. File might be too large (max 10MB).' },
+        { status: 413 }
+      )
+    }
+
     const photo = formData.get('photo') as File
 
     if (!photo) {
@@ -38,21 +52,21 @@ export async function POST(request: NextRequest) {
     console.log('Photo received:', photo.name, photo.type, photo.size, 'bytes')
 
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png']
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!validTypes.includes(photo.type)) {
       console.error('❌ Invalid file type:', photo.type)
       return NextResponse.json(
-        { success: false, error: 'Invalid file type. Only JPG, JPEG, and PNG are allowed' },
+        { success: false, error: 'Invalid file type. Only JPG, JPEG, PNG, and WEBP are allowed' },
         { status: 400 }
       )
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024
+    // Validate file size (max 10MB - increased from 5MB)
+    const maxSize = 10 * 1024 * 1024
     if (photo.size > maxSize) {
       console.error('❌ File too large:', photo.size)
       return NextResponse.json(
-        { success: false, error: 'File size exceeds 5MB limit' },
+        { success: false, error: `File size exceeds 10MB limit. Your file is ${(photo.size / 1024 / 1024).toFixed(2)}MB` },
         { status: 400 }
       )
     }

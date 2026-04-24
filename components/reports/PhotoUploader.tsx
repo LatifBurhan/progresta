@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react'
-import { X, Upload, Image as ImageIcon, Camera } from 'lucide-react'
+import { X, Upload, Image as ImageIcon, Camera, Clipboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { validatePhotoFiles } from '@/lib/validations/report-validation'
 import { CameraCapture } from './CameraCapture'
@@ -27,6 +27,8 @@ export function PhotoUploader({
   const [files, setFiles] = useState<File[]>([])
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false)
   const [cameraSupported, setCameraSupported] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Check camera support
@@ -37,6 +39,72 @@ export function PhotoUploader({
     }
     checkCameraSupport()
   }, [])
+
+  // Handle paste from clipboard
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Only handle paste if container is focused or if paste happens anywhere on page
+      if (!containerRef.current) return
+      
+      // Check if max photos reached
+      if (files.length >= maxPhotos) {
+        alert(`Maksimal ${maxPhotos} foto sudah tercapai. Hapus foto yang ada untuk menambah foto baru.`)
+        return
+      }
+
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      // Find image items in clipboard
+      const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'))
+      
+      if (imageItems.length === 0) return
+
+      // Prevent default paste behavior
+      e.preventDefault()
+
+      // Process each image
+      for (const item of imageItems) {
+        if (files.length >= maxPhotos) {
+          alert(`Maksimal ${maxPhotos} foto. Beberapa foto tidak ditambahkan.`)
+          break
+        }
+
+        const blob = item.getAsFile()
+        if (!blob) continue
+
+        // Create File object with proper name
+        const timestamp = Date.now()
+        const file = new File([blob], `pasted_image_${timestamp}.png`, { type: blob.type })
+
+        // Validate file
+        const validationError = validatePhotoFiles([file])
+        if (validationError) {
+          alert(validationError)
+          continue
+        }
+
+        // Add to files
+        const newFiles = [...files, file]
+        
+        // Generate preview
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setPreviews(prev => [...prev, reader.result as string])
+          setFiles(newFiles)
+          onFilesSelected(newFiles)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+
+    // Add paste event listener to document
+    document.addEventListener('paste', handlePaste)
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [files, maxPhotos, onFilesSelected])
 
   const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files
@@ -124,7 +192,13 @@ export function PhotoUploader({
   }
 
   return (
-    <div className="space-y-3">
+    <div 
+      ref={containerRef}
+      className="space-y-3"
+      tabIndex={0}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+    >
       <div className="flex items-center gap-2">
         {/* Camera Button */}
         {enableCamera && cameraSupported && (
@@ -160,6 +234,14 @@ export function PhotoUploader({
           onChange={handleFileInput}
           className="hidden"
         />
+      </div>
+
+      {/* Paste Indicator */}
+      <div className="flex items-center justify-center gap-2 py-2 px-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <Clipboard className="w-4 h-4 text-blue-600" />
+        <p className="text-xs text-blue-700 font-medium">
+          Atau tekan <kbd className="px-1.5 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Ctrl+V</kbd> untuk paste foto dari clipboard
+        </p>
       </div>
 
       {/* Max photos reached message */}

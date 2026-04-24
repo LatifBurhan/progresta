@@ -32,6 +32,10 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  // Increase body size limit for file uploads
+  serverRuntimeConfig: {
+    maxRequestBodySize: '10mb',
+  },
   // Ensure environment variables are available during build
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',

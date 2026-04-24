@@ -203,7 +203,9 @@ export function CameraCapture({
       ...prev,
       stream: null,
       isStreaming: false,
-      error: null
+      error: null,
+      isCapturing: false,
+      isSwitchingCamera: false
     }))
   }
 
@@ -315,6 +317,9 @@ export function CameraCapture({
       // Compress if needed
       file = await compressImage(file)
       
+      // Reset capturing state BEFORE cleanup
+      setState(prev => ({ ...prev, isCapturing: false }))
+      
       // Stop stream and cleanup
       cleanup()
       
@@ -343,10 +348,10 @@ export function CameraCapture({
 
   return (
     <CameraModal isOpen={isOpen} onClose={onClose} title="Ambil Foto">
-      <div className="relative flex flex-col bg-black" style={{ height: 'calc(100dvh - 65px)' }}>
+      <div className="relative flex flex-col bg-black overflow-hidden" style={{ height: 'calc(100dvh - 65px)', maxHeight: 'calc(100dvh - 65px)' }}>
         {/* Error Display */}
         {state.error && (
-          <div className="absolute inset-0 flex items-center justify-center p-6 bg-black/90 z-10">
+          <div className="absolute inset-0 flex items-center justify-center p-6 bg-black/90 z-20">
             <div className="text-center space-y-3 max-w-md">
               <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto">
                 <X className="w-8 h-8 text-red-500" />
@@ -358,33 +363,34 @@ export function CameraCapture({
 
         {/* Loading State */}
         {!state.isStreaming && !state.error && (
-          <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+          <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 z-10">
             <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
             <p className="text-slate-400 text-sm">Memulai kamera...</p>
           </div>
         )}
 
-        {/* Video Preview — flex-1 agar tidak dorong tombol keluar layar */}
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={`flex-1 w-full object-cover ${state.isStreaming ? 'block' : 'hidden'}`}
-          style={{ minHeight: 0 }}
-        />
+        {/* Video Preview Container - dengan max-height agar tidak dorong controls */}
+        <div className="flex-1 relative overflow-hidden" style={{ minHeight: 0 }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`absolute inset-0 w-full h-full object-cover ${state.isStreaming ? 'block' : 'hidden'}`}
+          />
+        </div>
 
         {/* Camera Active Indicator */}
         {state.isStreaming && (
-          <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold z-10">
+          <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold z-10 shadow-lg">
             <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
             Kamera Aktif
           </div>
         )}
 
-        {/* Controls — sticky di bawah, tidak absolute */}
+        {/* Controls - Fixed di bawah dengan safe area */}
         {state.isStreaming && (
-          <div className="shrink-0 p-4 pb-safe bg-gradient-to-t from-black to-black/80 flex items-center justify-center gap-4">
+          <div className="shrink-0 w-full p-6 pb-8 bg-gradient-to-t from-black via-black/95 to-black/80 flex items-center justify-center gap-6 z-10" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
             {/* Camera Switch Button */}
             {state.availableCameras.length > 1 && (
               <Button
@@ -399,22 +405,22 @@ export function CameraCapture({
                   switchCamera(state.availableCameras[nextIndex].deviceId)
                 }}
                 disabled={state.isSwitchingCamera}
-                className="rounded-full border-white/30 text-white hover:bg-white/10"
+                className="w-14 h-14 rounded-full border-2 border-white/40 text-white hover:bg-white/20 hover:border-white/60 transition-all shadow-xl"
               >
-                <RefreshCw className={`w-5 h-5 ${state.isSwitchingCamera ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-6 h-6 ${state.isSwitchingCamera ? 'animate-spin' : ''}`} />
               </Button>
             )}
 
-            {/* Capture Button */}
+            {/* Capture Button - Lebih besar dan jelas */}
             <button
               type="button"
               onClick={capturePhoto}
               disabled={state.isCapturing}
-              className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform disabled:opacity-50"
+              className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-50 ring-4 ring-white/30"
             >
               {state.isCapturing
-                ? <Loader2 className="w-7 h-7 text-slate-800 animate-spin" />
-                : <Camera className="w-7 h-7 text-slate-800" />
+                ? <Loader2 className="w-8 h-8 text-slate-800 animate-spin" />
+                : <Camera className="w-8 h-8 text-slate-800" />
               }
             </button>
 
@@ -424,9 +430,9 @@ export function CameraCapture({
               variant="outline"
               size="lg"
               onClick={() => { cleanup(); onClose() }}
-              className="rounded-full border-white/30 text-white hover:bg-white/10"
+              className="w-14 h-14 rounded-full border-2 border-white/40 text-white hover:bg-white/20 hover:border-white/60 transition-all shadow-xl"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </Button>
           </div>
         )}

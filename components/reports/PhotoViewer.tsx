@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { VisuallyHidden } from '@/components/ui/visually-hidden'
 import { Button } from '@/components/ui/button'
 
 interface PhotoViewerProps {
@@ -54,6 +55,9 @@ export function PhotoViewer({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full p-0 bg-black/95">
+        <VisuallyHidden>
+          <DialogTitle>Photo Viewer - Image {currentIndex + 1} of {photos.length}</DialogTitle>
+        </VisuallyHidden>
         <div className="relative w-full h-[80vh] flex items-center justify-center">
           {/* Close Button */}
           <button

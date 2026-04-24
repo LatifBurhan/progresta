@@ -60,9 +60,10 @@ export function ReportCard({
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
       {/* User Info Header */}
       <div className="p-4 border-b border-slate-50 bg-slate-50/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-sm bg-white">
+        <div className="flex items-start justify-between gap-3">
+          {/* Left: Avatar & User Info */}
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-sm bg-white shrink-0">
               {report.user_foto_profil ? (
                 <Image src={report.user_foto_profil} alt="avatar" fill className="object-cover" unoptimized />
               ) : (
@@ -71,71 +72,76 @@ export function ReportCard({
                 </div>
               )}
             </div>
-            <div>
-              <h4 className="font-black text-slate-800 text-[13px] uppercase tracking-tight leading-none mb-1">
+            
+            <div className="flex-1 min-w-0">
+              <h4 className="font-black text-slate-800 text-sm uppercase tracking-tight leading-none mb-2 truncate">
                 {report.user_name || 'Unknown User'}
               </h4>
-              <div className="flex items-center gap-2 text-slate-400">
-                <span className="flex items-center gap-1 text-[10px] font-bold">
-                  <Calendar className="w-3 h-3" /> {formatDate(report.created_at)}
+              
+              {/* Date & Time - Stack on mobile */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-slate-400 mb-2">
+                <span className="flex items-center gap-1 text-[10px] font-bold whitespace-nowrap">
+                  <Calendar className="w-3 h-3 shrink-0" /> {formatDate(report.created_at)}
                 </span>
-                <span className="text-slate-300 text-[10px]">•</span>
-                <span className="flex items-center gap-1 text-[10px] font-bold">
-                  <Clock className="w-3 h-3" /> {formatTime(report.created_at)}
+                <span className="text-slate-300 text-[10px] hidden sm:inline">•</span>
+                <span className="flex items-center gap-1 text-[10px] font-bold whitespace-nowrap">
+                  <Clock className="w-3 h-3 shrink-0" /> {formatTime(report.created_at)}
                 </span>
+              </div>
+              
+              {/* Location & Period Badges - Stack on mobile */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="bg-blue-600 text-white px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm shadow-blue-200">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span className="text-[10px] font-black uppercase tracking-tighter whitespace-nowrap">{report.lokasi_kerja}</span>
+                </div>
+                
+                {report.period && (
+                  <div className="bg-purple-600 text-white px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm shadow-purple-200">
+                    <Clock className="w-3 h-3 shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-tighter whitespace-nowrap">{report.period}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-600 text-white px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm shadow-blue-200">
-              <MapPin className="w-3 h-3" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">{report.lokasi_kerja}</span>
-            </div>
-            
-            {report.period && (
-              <div className="bg-purple-600 text-white px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm shadow-purple-200">
-                <Clock className="w-3 h-3" />
-                <span className="text-[10px] font-black uppercase tracking-tighter">{report.period}</span>
-              </div>
-            )}
-            
-            {(report.can_edit || report.can_delete) && (
-              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                    <MoreVertical className="w-5 h-5 text-slate-400" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {report.can_edit && (
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        setMenuOpen(false)
-                        onEdit(report.id)
-                      }}
-                      className="cursor-pointer"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Laporan
-                    </DropdownMenuItem>
-                  )}
-                  {report.can_delete && (
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        setMenuOpen(false)
-                        onDelete(report.id)
-                      }}
-                      className="cursor-pointer text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Hapus Laporan
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+          {/* Right: Menu Button */}
+          {(report.can_edit || report.can_delete) && (
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors shrink-0">
+                  <MoreVertical className="w-5 h-5 text-slate-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {report.can_edit && (
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onEdit(report.id)
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Laporan
+                  </DropdownMenuItem>
+                )}
+                {report.can_delete && (
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onDelete(report.id)
+                    }}
+                    className="cursor-pointer text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Hapus Laporan
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
