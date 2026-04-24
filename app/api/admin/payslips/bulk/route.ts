@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { payslipError } from '@/lib/payslip/errors'
 import { isPayslipManager } from '@/lib/payslip/roles'
 import { validateBulkGenerate } from '@/lib/payslip/validators'
+import { getAdminDepartment, validateUsersDepartment } from '@/lib/payslip/department'
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +40,20 @@ export async function POST(request: Request) {
 
     const bulan = Number(periode_bulan)
     const tahun = Number(periode_tahun)
+
+    // Validate department access - admin can only create payslips for their department
+    // UNLESS they have unrestricted role (GENERAL_AFFAIR, CEO, ADMIN)
+    const adminDepartmentId = await getAdminDepartment(session.userId, session.role)
+    if (adminDepartmentId) {
+      const validation = await validateUsersDepartment(user_ids, adminDepartmentId)
+      if (!validation.valid) {
+        return payslipError(
+          'FORBIDDEN',
+          `Anda hanya dapat membuat slip gaji untuk karyawan di departemen Anda. ${validation.invalidUsers.length} karyawan tidak valid.`,
+          403
+        )
+      }
+    }
 
     // Cek slip yang sudah ada
     const { data: existing } = await supabaseAdmin

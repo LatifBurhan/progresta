@@ -15,6 +15,7 @@ interface PayslipAdminClientProps {
   initialEmployees: Employee[]
   departments: Department[]
   divisions: Division[]
+  adminDepartmentId?: string | null
 }
 
 const BULAN_NAMES = [
@@ -32,11 +33,12 @@ export default function PayslipAdminClient({
   initialEmployees,
   departments,
   divisions,
+  adminDepartmentId,
 }: PayslipAdminClientProps) {
   const now = new Date()
   const [bulan, setBulan] = useState(now.getMonth() + 1)
   const [tahun, setTahun] = useState(now.getFullYear())
-  const [departemenId, setDepartemenId] = useState('')
+  const [departemenId, setDepartemenId] = useState(adminDepartmentId || '')
   const [divisiId, setDivisiId] = useState('')
   const [payslips, setPayslips] = useState<Payslip[]>([])
   const [leaveMap, setLeaveMap] = useState<Map<string, EmployeeLeave>>(new Map())
@@ -208,9 +210,10 @@ export default function PayslipAdminClient({
             <select
               value={departemenId}
               onChange={(e) => setDepartemenId(e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              disabled={!!adminDepartmentId}
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-slate-100 disabled:cursor-not-allowed"
             >
-              <option value="">Semua Departemen</option>
+              {!adminDepartmentId && <option value="">Semua Departemen</option>}
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}

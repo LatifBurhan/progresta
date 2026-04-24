@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { verifySession } from '@/lib/session'
 import { isPayslipManager } from '@/lib/payslip/roles'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getAdminDepartment } from '@/lib/payslip/department'
 import PayslipAdminClient from './PayslipAdminClient'
 
 export default async function PayslipAdminPage() {
@@ -21,26 +22,48 @@ export default async function PayslipAdminPage() {
     )
   }
 
-  // Fetch data awal di server
-  const [employeesRes, departmentsRes, divisionsRes] = await Promise.all([
-    supabaseAdmin
-      .from('users')
-      .select('id, name, email, role, employee_status')
-      .eq('status', 'ACTIVE')
-      .order('name'),
+  // Get admin's department (null if unrestricted role like GENERAL_AFFAIR, CEO, ADMIN)
+  const adminDepartmentId = await getAdminDepartment(session.userId, session.role)
+
+  // Fetch employees - filter by admin's department
+  let employeesQuery = supabaseAdmin
+    .from('users')
+    .select('id, name, email, role, employee_status')
+    .eq('status', 'ACTIVE')
+
+  if (adminDepartmentId) {
+    // Only show employees from admin's department
+    const { data: userIds } = await supabaseAdmin
+      .from('user_departments')
+      .select('user_id')
+      .eq('department_id', adminDepartmentId)
+    
+    const ids = (userIds ?? []).map((r: any) => r.user_id)
+    if (ids.length > 0) {
+      employeesQuery = employeesQuery.in('id', ids)
+    } else {
+      // No employees in this department
+      employeesQuery = employeesQuery.eq('id', '00000000-0000-0000-0000-000000000000') // Return empty
+    }
+  }
+
+  const { data: employees } = await employeesQuery.order('name')
+
+  // Fetch all departments and divisions
+  const [departmentsRes, divisionsRes] = await Promise.all([
     supabaseAdmin.from('departments').select('id, name').order('name'),
     supabaseAdmin.from('divisions').select('id, name').order('name'),
   ])
 
-  const employees = employeesRes.data ?? []
   const departments = departmentsRes.data ?? []
   const divisions = divisionsRes.data ?? []
 
   return (
     <PayslipAdminClient
-      initialEmployees={employees}
+      initialEmployees={employees ?? []}
       departments={departments}
       divisions={divisions}
+      adminDepartmentId={adminDepartmentId}
     />
   )
 }

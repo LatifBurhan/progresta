@@ -5,6 +5,7 @@ import { payslipError } from '@/lib/payslip/errors'
 import { isPayslipManager } from '@/lib/payslip/roles'
 import { validateUpsertPayslip } from '@/lib/payslip/validators'
 import { getPayslipsForAdmin } from '@/lib/payslip/queries'
+import { getAdminDepartment, validateUsersDepartment } from '@/lib/payslip/department'
 
 export async function GET(request: Request) {
   try {
@@ -51,6 +52,20 @@ export async function POST(request: Request) {
     const validation = validateUpsertPayslip(body)
     if (!validation.valid) {
       return payslipError('MISSING_FIELDS', 'Validasi gagal', 400, validation.errors)
+    }
+
+    // Validate department access - admin can only create payslips for their department
+    // UNLESS they have unrestricted role (GENERAL_AFFAIR, CEO, ADMIN)
+    const adminDepartmentId = await getAdminDepartment(session.userId, session.role)
+    if (adminDepartmentId) {
+      const validation = await validateUsersDepartment([body.user_id], adminDepartmentId)
+      if (!validation.valid) {
+        return payslipError(
+          'FORBIDDEN',
+          'Anda hanya dapat membuat slip gaji untuk karyawan di departemen Anda',
+          403
+        )
+      }
     }
 
     const { data, error } = await supabaseAdmin

@@ -5,6 +5,7 @@ import { payslipError } from '@/lib/payslip/errors'
 import { isPayslipManager } from '@/lib/payslip/roles'
 import { validateUpsertPayslip } from '@/lib/payslip/validators'
 import { getPayslipById } from '@/lib/payslip/queries'
+import { getAdminDepartment, validateUsersDepartment } from '@/lib/payslip/department'
 
 export async function PUT(
   request: Request,
@@ -37,6 +38,20 @@ export async function PUT(
     const validation = validateUpsertPayslip({ ...body, user_id: existing.user_id })
     if (!validation.valid) {
       return payslipError('MISSING_FIELDS', 'Validasi gagal', 400, validation.errors)
+    }
+
+    // Validate department access - admin can only update payslips for their department
+    // UNLESS they have unrestricted role (GENERAL_AFFAIR, CEO, ADMIN)
+    const adminDepartmentId = await getAdminDepartment(session.userId, session.role)
+    if (adminDepartmentId) {
+      const validation = await validateUsersDepartment([existing.user_id], adminDepartmentId)
+      if (!validation.valid) {
+        return payslipError(
+          'FORBIDDEN',
+          'Anda hanya dapat mengubah slip gaji untuk karyawan di departemen Anda',
+          403
+        )
+      }
     }
 
     const { data, error } = await supabaseAdmin
@@ -100,6 +115,19 @@ export async function DELETE(
         success: false, 
         message: 'Slip gaji tidak ditemukan' 
       }, { status: 404 })
+    }
+
+    // Validate department access - admin can only delete payslips for their department
+    // UNLESS they have unrestricted role (GENERAL_AFFAIR, CEO, ADMIN)
+    const adminDepartmentId = await getAdminDepartment(session.userId, session.role)
+    if (adminDepartmentId) {
+      const validation = await validateUsersDepartment([payslip.user_id], adminDepartmentId)
+      if (!validation.valid) {
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Anda hanya dapat menghapus slip gaji untuk karyawan di departemen Anda' 
+        }, { status: 403 })
+      }
     }
 
     // Delete the payslip

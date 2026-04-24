@@ -7,15 +7,93 @@ import { getPayslipById } from '@/lib/payslip/queries'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
+// Department configuration
+interface DepartmentInfo {
+  name: string
+  address: string
+  logoFile: string
+}
+
+const DEPARTMENT_CONFIG: Record<string, DepartmentInfo> = {
+  'Al-Wustho': {
+    name: 'Alwustho Technologies',
+    address: 'Jl. Semenromo, Gg. Melon Jl. Waringinrejo No.15, Ngruki, Cemani, Kec. Grogol, Kabupaten Sukoharjo, Jawa Tengah 57552',
+    logoFile: 'master-alwustho.png'
+  },
+  'Ufuk Hijau': {
+    name: 'Ufuk Hijau Energy',
+    address: 'Jl. Puntodewo No.53, Cemani, Kec. Grogol, Kabupaten Sukoharjo, Jawa Tengah 57552',
+    logoFile: 'master-ufuk.png'
+  },
+  'Elfan Academy': {
+    name: 'Elfan Academy',
+    address: 'CR76+MMC Jalan Semen Romo Cemani, Gg. Melon Jl. Waringinrejo No.15, Ngruki, Cemani, Kec. Grogol, Kabupaten Sukoharjo, Jawa Tengah 57552',
+    logoFile: 'master-elfan.png'
+  },
+  'Aflaha': {
+    name: 'Aflaha',
+    address: 'Jl. Semenromo, Gg. Melon Jl. Waringinrejo No.15, Ngruki, Cemani, Kec. Grogol, Kabupaten Sukoharjo, Jawa Tengah 57552',
+    logoFile: 'master-alwustho.png'  // Using alwustho logo as default for Aflaha
+  }
+}
+
 // Baca logo dari filesystem dan encode ke base64
-function getLogoBase64(): string {
+function getLogoBase64(logoFileName: string): string {
   try {
-    const logoPath = join(process.cwd(), 'public', 'alwustho.png')
+    const logoPath = join(process.cwd(), 'public', logoFileName)
     const logoBuffer = readFileSync(logoPath)
     return `data:image/png;base64,${logoBuffer.toString('base64')}`
-  } catch {
+  } catch (error) {
+    console.error(`Failed to load logo: ${logoFileName}`, error)
     return ''
   }
+}
+
+// Get department info by name (case-insensitive match with flexible matching)
+function getDepartmentInfo(departmentName: string | null): DepartmentInfo {
+  console.log('getDepartmentInfo called with:', departmentName)
+  
+  if (!departmentName) {
+    console.log('No department name, defaulting to Al-Wustho')
+    return DEPARTMENT_CONFIG['Al-Wustho']
+  }
+
+  // Try exact match first
+  if (DEPARTMENT_CONFIG[departmentName]) {
+    console.log('Exact match found:', departmentName)
+    return DEPARTMENT_CONFIG[departmentName]
+  }
+
+  // Try case-insensitive match
+  const lowerName = departmentName.toLowerCase()
+  for (const key in DEPARTMENT_CONFIG) {
+    if (key.toLowerCase() === lowerName) {
+      console.log('Case-insensitive match found:', key)
+      return DEPARTMENT_CONFIG[key]
+    }
+  }
+
+  // Try partial match (contains)
+  if (lowerName.includes('ufuk') || lowerName.includes('hijau')) {
+    console.log('Partial match: Ufuk Hijau')
+    return DEPARTMENT_CONFIG['Ufuk Hijau']
+  }
+  if (lowerName.includes('elfan') || lowerName.includes('academy')) {
+    console.log('Partial match: Elfan Academy')
+    return DEPARTMENT_CONFIG['Elfan Academy']
+  }
+  if (lowerName.includes('alwustho') || lowerName.includes('al-wustho') || lowerName.includes('wustho')) {
+    console.log('Partial match: Al-Wustho')
+    return DEPARTMENT_CONFIG['Al-Wustho']
+  }
+  if (lowerName.includes('aflaha')) {
+    console.log('Partial match: Aflaha')
+    return DEPARTMENT_CONFIG['Aflaha']
+  }
+
+  // Default to Al-Wustho if not found
+  console.log('No match found, defaulting to Al-Wustho')
+  return DEPARTMENT_CONFIG['Al-Wustho']
 }
 
 const BULAN_NAMES = [
@@ -49,7 +127,7 @@ export async function GET(
       return payslipError('FORBIDDEN', 'Akses ditolak', 403)
     }
 
-    // Ambil data karyawan dan GA yang publish
+    // Ambil data karyawan dan departemen
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
       .select('name, email, role, employee_status')
@@ -59,6 +137,25 @@ export async function GET(
     if (userError || !userData) {
       return payslipError('NOT_FOUND', 'Data karyawan tidak ditemukan', 404)
     }
+
+    // Ambil departemen karyawan
+    const { data: userDeptData } = await supabaseAdmin
+      .from('user_departments')
+      .select('department_id, departments!inner(name)')
+      .eq('user_id', payslip.user_id)
+      .maybeSingle()
+
+    console.log('=== DEBUG PAYSLIP PDF ===')
+    console.log('User ID:', payslip.user_id)
+    console.log('User Dept Data:', JSON.stringify(userDeptData, null, 2))
+    
+    const departmentName = (userDeptData?.departments as any)?.name || null
+    console.log('Department Name:', departmentName)
+    
+    const deptInfo = getDepartmentInfo(departmentName)
+    console.log('Department Info:', JSON.stringify(deptInfo, null, 2))
+    console.log('=== END DEBUG ===')
+
 
     // Ambil nama GA yang publish
     let namaGA = '-'
@@ -76,7 +173,7 @@ export async function GET(
     const tahun = payslip.periode_tahun
     const totalPendapatan = Number(payslip.gaji_pokok) + Number(payslip.lembur) + Number(payslip.insentif) + Number(payslip.tunjangan) + Number(payslip.dinas_luar)
     const totalPotongan = Number(payslip.potongan_bpjs) + Number(payslip.potongan_pajak)
-    const logoSrc = getLogoBase64()
+    const logoSrc = getLogoBase64(deptInfo.logoFile)
 
     const html = `<!DOCTYPE html>
 <html lang="id">
@@ -136,10 +233,10 @@ export async function GET(
   <div class="page">
     <!-- Header -->
     <div class="header">
-      <img src="${logoSrc}" class="logo" alt="Logo Alwustho" ${!logoSrc ? 'style="display:none"' : ''} />
+      <img src="${logoSrc}" class="logo" alt="Logo ${deptInfo.name}" ${!logoSrc ? 'style="display:none"' : ''} />
       <div class="company-info">
-        <div class="company-name">Alwustho Technologies</div>
-        <div class="company-address">Gang Melom No. 15, Waringinrejo, Cemani, Grogol, Sukoharjo</div>
+        <div class="company-name">${deptInfo.name}</div>
+        <div class="company-address">${deptInfo.address}</div>
       </div>
     </div>
 
