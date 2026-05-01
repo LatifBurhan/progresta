@@ -65,7 +65,14 @@ export function ReportCard({
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <div className="relative w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white shadow-sm bg-white shrink-0">
               {report.user_foto_profil ? (
-                <Image src={report.user_foto_profil} alt="avatar" fill className="object-cover" unoptimized />
+                <Image 
+                  src={report.user_foto_profil} 
+                  alt="avatar" 
+                  fill 
+                  className="object-cover"
+                  sizes="40px"
+                  quality={75}
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 font-black text-xs">
                   {(report.user_name || 'U').substring(0,2).toUpperCase()}
@@ -199,7 +206,14 @@ export function ReportCard({
                   onClick={() => onPhotoClick(photo, photos)}
                   className="group/img relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-200"
                 >
-                  <Image src={photo} alt="doc" fill className="object-cover group-hover/img:scale-110 transition-transform duration-500" unoptimized />
+                  <Image 
+                    src={photo} 
+                    alt="doc" 
+                    fill 
+                    className="object-cover group-hover/img:scale-110 transition-transform duration-500"
+                    sizes="96px"
+                    quality={75}
+                  />
                 </button>
               ))}
             </div>
