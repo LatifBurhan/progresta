@@ -35,21 +35,13 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
   },
-  // Increase body size limit for file uploads
-  serverRuntimeConfig: {
-    maxRequestBodySize: '10mb',
-  },
   // Ensure environment variables are available during build
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
   },
-  // Enable SWC minification for better performance
-  swcMinify: true,
-  // Optimize production builds
+  // Production optimizations (already default in Next.js 15)
   productionBrowserSourceMaps: false,
-  // Optimize CSS
-  optimizeFonts: true,
 }
 
 export default withPWA(nextConfig)

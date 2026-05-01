@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, lazy, Suspense } from "react";
-import { Plus, Search, Filter, Calendar, User, Target, Paperclip, Layers, ChevronRight, LayoutGrid, Sparkles, Briefcase, Users, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Search, Filter, Calendar, User, Target, Paperclip, Layers, ChevronRight, LayoutGrid, Sparkles, Briefcase, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-// Lazy load modal components
-const CreateProjectModal = lazy(() => import("./CreateProjectModal"));
-const EditProjectModal = lazy(() => import("./EditProjectModal"));
-const DeleteProjectModal = lazy(() => import("./DeleteProjectModal"));
-const FilePreviewModal = lazy(() => import("@/components/projects/FilePreviewModal"));
+import CreateProjectModal from "./CreateProjectModal";
+import EditProjectModal from "./EditProjectModal";
+import DeleteProjectModal from "./DeleteProjectModal";
+import FilePreviewModal from "@/components/projects/FilePreviewModal";
 
 interface Division {
   id: string;
@@ -319,12 +317,10 @@ export default function ProjectManagementClient({ projects: initialProjects, div
       )}
 
       {/* Modals Container */}
-      <Suspense fallback={null}>
-        {createModalOpen && (
-          <CreateProjectModal open={createModalOpen} divisions={divisions} onClose={() => setCreateModalOpen(false)} onSuccess={handleCreateSuccess} />
-        )}
+      <CreateProjectModal open={createModalOpen} divisions={divisions} onClose={() => setCreateModalOpen(false)} onSuccess={handleCreateSuccess} />
 
-        {selectedProject && editModalOpen && (
+      {selectedProject && (
+        <>
           <EditProjectModal
             open={editModalOpen}
             project={selectedProject}
@@ -339,9 +335,6 @@ export default function ProjectManagementClient({ projects: initialProjects, div
               setDeleteModalOpen(true);
             }}
           />
-        )}
-        
-        {selectedProject && deleteModalOpen && (
           <DeleteProjectModal
             open={deleteModalOpen}
             project={selectedProject}
@@ -352,9 +345,6 @@ export default function ProjectManagementClient({ projects: initialProjects, div
             onDeleteSuccess={handleDeleteSuccess}
             onDeactivateSuccess={handleDeactivateSuccess}
           />
-        )}
-        
-        {selectedProject && filePreviewModalOpen && (
           <FilePreviewModal
             open={filePreviewModalOpen}
             files={selectedProject.lampiran_files || []}
@@ -364,8 +354,8 @@ export default function ProjectManagementClient({ projects: initialProjects, div
               setSelectedProject(null);
             }}
           />
-        )}
-      </Suspense>
+        </>
+      )}
     </div>
   );
 }

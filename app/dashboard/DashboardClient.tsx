@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, lazy, Suspense } from 'react'
+import { useEffect, useState } from 'react'
 import { 
   FileText, 
   FolderKanban, 
@@ -15,45 +15,20 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
-// Lazy load heavy components
-const RealtimeReportsTable = lazy(() => 
-  import('@/components/admin/RealtimeReportsTable').then(mod => ({ default: mod.RealtimeReportsTable }))
-)
-
-const AreaChart = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.AreaChart }))
-)
-const Area = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.Area }))
-)
-const PieChart = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.PieChart }))
-)
-const Pie = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.Pie }))
-)
-const Cell = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.Cell }))
-)
-const Legend = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.Legend }))
-)
-const XAxis = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.XAxis }))
-)
-const YAxis = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.YAxis }))
-)
-const CartesianGrid = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.CartesianGrid }))
-)
-const Tooltip = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.Tooltip }))
-)
-const ResponsiveContainer = lazy(() => 
-  import('recharts').then(mod => ({ default: mod.ResponsiveContainer }))
-)
+import { RealtimeReportsTable } from '@/components/admin/RealtimeReportsTable'
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts'
 
 interface DashboardStats {
   totalReports: number
@@ -263,34 +238,32 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
             <CardContent className="p-3 pt-0">
               <div className="h-[140px] flex items-center justify-center">
                 {stats.locationBreakdown.some(loc => loc.value > 0) ? (
-                  <Suspense fallback={<Loader2 className="w-6 h-6 animate-spin text-blue-500" />}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={stats.locationBreakdown.filter(loc => loc.value > 0)}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={30}
-                          outerRadius={55}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {stats.locationBreakdown.filter(loc => loc.value > 0).map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '11px' }}
-                          formatter={(value: any) => [`${value} laporan`, '']}
-                        />
-                        <Legend 
-                          iconType="circle"
-                          wrapperStyle={{ fontSize: '10px' }}
-                          formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </Suspense>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.locationBreakdown.filter(loc => loc.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
+                        outerRadius={55}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {stats.locationBreakdown.filter(loc => loc.value > 0).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '11px' }}
+                        formatter={(value: any) => [`${value} laporan`, '']}
+                      />
+                      <Legend 
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: '10px' }}
+                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 ) : (
                   <p className="text-[10px] text-slate-400">Belum ada data</p>
                 )}
@@ -337,43 +310,41 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-2">
+          <CardContent className="p-2 md:p-4 pt-2">
             <div className="h-[180px] md:h-[240px] w-full">
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={stats.trendData}>
-                    <defs>
-                      <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="date" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#94a3b8', fontSize: 10 }}
-                      dy={10}
-                    />
-                    <YAxis 
-                      hide={true}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '12px' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="count" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      fill="url(#colorCount)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Suspense>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.trendData}>
+                  <defs>
+                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 10 }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    hide={true}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '12px' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="count" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    fill="url(#colorCount)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
@@ -564,15 +535,7 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
       {/* Realtime Reports Monitor - Compact for Admin */}
       {isAdmin && (
         <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <Suspense fallback={
-            <Card className="border border-slate-100 shadow-sm">
-              <CardContent className="p-8 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-              </CardContent>
-            </Card>
-          }>
-            <RealtimeReportsTable />
-          </Suspense>
+          <RealtimeReportsTable />
         </div>
       )}
 

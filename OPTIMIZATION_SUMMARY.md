@@ -37,14 +37,13 @@ Website telah dioptimasi untuk **mobile-first performance** dengan fokus pada:
 - `supabase/migrations/add_performance_indexes.sql` (NEW)
 
 ### 2. Code Splitting
-- ✅ Lazy load Recharts (~100KB)
-- ✅ Lazy load all modals
-- ✅ Dynamic imports for heavy components
-- ✅ Suspense boundaries for loading states
+- ⚠️ **REVERTED** - Lazy loading Recharts caused client-side errors
+- ✅ Kept optimized package imports in next.config.mjs
+- ℹ️ Future: Consider lazy loading entire dashboard sections instead
 
 **Files:**
-- `app/dashboard/DashboardClient.tsx` (MODIFIED)
-- `app/dashboard/admin/projects/ProjectManagementClient.tsx` (MODIFIED)
+- `app/dashboard/DashboardClient.tsx` (REVERTED to normal imports)
+- `app/dashboard/admin/projects/ProjectManagementClient.tsx` (REVERTED to normal imports)
 
 ### 3. Image Optimization
 - ✅ Removed `unoptimized` flag
