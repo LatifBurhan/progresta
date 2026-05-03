@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 
-// Enable caching with 60 second revalidation
-export const revalidate = 60;
+// Force dynamic rendering (uses cookies for auth)
+export const dynamic = 'force-dynamic'
 
 /**
  * OPTIMIZED VERSION - Reduces 15+ queries to 3-4 queries
