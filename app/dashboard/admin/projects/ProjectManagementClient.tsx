@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Search, Filter, Calendar, User, Target, Paperclip, Layers, ChevronRight, LayoutGrid, Sparkles, Briefcase, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/notifications/ToastNotification";
 import CreateProjectModal from "./CreateProjectModal";
 import EditProjectModal from "./EditProjectModal";
 import DeleteProjectModal from "./DeleteProjectModal";
@@ -70,10 +71,26 @@ export default function ProjectManagementClient({ projects: initialProjects, div
     return matchesSearch && matchesStatus && matchesPrioritas;
   });
 
-  const handleCreateSuccess = (newProject: Project) => setProjects((prev) => [newProject, ...prev]);
-  const handleEditSuccess = (updatedProject: Project) => setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)));
-  const handleDeleteSuccess = (deletedProjectId: string) => setProjects((prev) => prev.filter((p) => p.id !== deletedProjectId));
-  const handleDeactivateSuccess = (updatedProject: Project) => setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)));
+  const handleCreateSuccess = (newProject: Project) => {
+    setProjects((prev) => [newProject, ...prev])
+    toast.success('Project Dibuat!', `Project "${newProject.name}" berhasil dibuat`)
+  }
+  
+  const handleEditSuccess = (updatedProject: Project) => {
+    setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)))
+    toast.success('Project Diupdate!', `Project "${updatedProject.name}" berhasil diupdate`)
+  }
+  
+  const handleDeleteSuccess = (deletedProjectId: string) => {
+    setProjects((prev) => prev.filter((p) => p.id !== deletedProjectId))
+    toast.success('Project Dihapus!', 'Project berhasil dihapus')
+  }
+  
+  const handleDeactivateSuccess = (updatedProject: Project) => {
+    setProjects((prev) => prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)))
+    const statusText = updatedProject.status === 'Selesai' ? 'diselesaikan' : 'dinonaktifkan'
+    toast.success('Status Diubah!', `Project berhasil ${statusText}`)
+  }
 
   const openEditModal = (project: Project) => {
     setSelectedProject(project);

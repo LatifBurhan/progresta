@@ -17,7 +17,7 @@ export default async function ProjectManagePage() {
     if (!supabaseAdmin) {
       console.error("Supabase admin client not configured");
     } else {
-      // Fetch projects with divisions (Many-to-Many)
+      // Fetch projects with divisions and assignments (Many-to-Many)
       const { data: projectsResult, error: projectsError } = await supabaseAdmin
         .from("projects")
         .select(`
@@ -28,6 +28,14 @@ export default async function ProjectManagePage() {
               id,
               name,
               color
+            )
+          ),
+          project_assignments (
+            user_id,
+            users (
+              id,
+              name,
+              email
             )
           )
         `)
@@ -40,6 +48,7 @@ export default async function ProjectManagePage() {
           tanggal_selesai: p.tanggal_selesai || p.endDate,
           status: p.status || (p.isActive ? "Aktif" : "Non-Aktif"),
           divisions: p.project_divisions?.map((pd: any) => pd.divisions).filter(Boolean) || [],
+          assignments: p.project_assignments?.map((pa: any) => pa.users).filter(Boolean) || [],
         }));
       }
 

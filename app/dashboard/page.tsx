@@ -1,7 +1,7 @@
 import { verifySession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
-import { DashboardClient } from './DashboardClient'
+import { DashboardClientRefactored } from './DashboardClientRefactored'
 
 export default async function DashboardPage() {
   const session = await verifySession()
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-6">
-      <DashboardClient userRole={session.role} userName={userName} />
+      <DashboardClientRefactored userRole={session.role} userName={userName} />
     </div>
   )
 }

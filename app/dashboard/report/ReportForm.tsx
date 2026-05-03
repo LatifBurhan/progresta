@@ -9,6 +9,7 @@ import { Plus, Camera, Copy, Save, AlertCircle } from "lucide-react";
 import { compressImage } from "@/lib/image-utils";
 import { submitReport } from "@/app/actions/report-actions";
 import { generateWhatsAppText } from "@/lib/whatsapp-utils";
+import { toast } from "@/components/notifications/ToastNotification";
 
 const PERIODS = [
   { value: "08:00-10:00", label: "08-10" },
@@ -129,14 +130,14 @@ export default function ReportForm({ userId, lastReport, availableProjects, init
 
   const handleSubmit = async () => {
     if (!period) {
-      alert("Pilih periode waktu terlebih dahulu");
+      toast.warning('Periode Belum Dipilih', 'Pilih periode waktu terlebih dahulu')
       return;
     }
 
     const hasValidProject = projectDetails.some((p) => p.projectId && p.task.trim() && p.progress.trim());
 
     if (!hasValidProject) {
-      alert("Minimal satu project harus diisi lengkap");
+      toast.warning('Project Belum Lengkap', 'Minimal satu project harus diisi lengkap')
       return;
     }
 
@@ -152,6 +153,8 @@ export default function ReportForm({ userId, lastReport, availableProjects, init
 
       if (result.success) {
         setSubmitSuccess(true);
+        toast.success('Laporan Terkirim!', 'Laporan berhasil disubmit')
+        
         const waText = generateWhatsAppText({
           period,
           location,
@@ -182,11 +185,11 @@ export default function ReportForm({ userId, lastReport, availableProjects, init
           setHistoryReports((prev) => [result.report, ...prev]);
         }
       } else {
-        alert(result.message || "Gagal menyimpan laporan");
+        toast.error('Gagal Submit Laporan', result.message || 'Gagal menyimpan laporan')
       }
     } catch (error) {
       console.error("Submit error:", error);
-      alert("Terjadi kesalahan saat menyimpan");
+      toast.error('Error!', 'Terjadi kesalahan saat menyimpan')
     } finally {
       setIsSubmitting(false);
     }
@@ -194,7 +197,7 @@ export default function ReportForm({ userId, lastReport, availableProjects, init
 
   const copyToWhatsApp = () => {
     navigator.clipboard.writeText(whatsappText);
-    alert("Teks berhasil disalin ke clipboard!");
+    toast.success('Berhasil!', 'Teks berhasil disalin ke clipboard')
   };
   if (submitSuccess) {
     return (

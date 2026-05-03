@@ -32,7 +32,10 @@ export async function GET(request: NextRequest) {
     const targetUserId = searchParams.get('user_id');
 
     const isAdmin = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(session.role);
-    const userId = (isAdmin && targetUserId) ? targetUserId : session.userId;
+    
+    // For admin without specific user_id, show all reports
+    // For non-admin or admin with user_id, show specific user reports
+    const userId = targetUserId || (!isAdmin ? session.userId : null);
 
     // Get date range
     const now = new Date();
@@ -62,13 +65,19 @@ export async function GET(request: NextRequest) {
     today.setHours(0, 0, 0, 0);
 
     // OPTIMIZATION 1: Single query for all report stats
-    const reportStatsPromise = supabaseAdmin
+    let reportStatsQuery = supabaseAdmin
       .from('project_reports')
-      .select('id, created_at, project_id, lokasi_kerja, kendala')
-      .eq('user_id', userId);
+      .select('id, created_at, project_id, lokasi_kerja, kendala');
+    
+    // Filter by user_id only if specified (non-admin or admin viewing specific user)
+    if (userId) {
+      reportStatsQuery = reportStatsQuery.eq('user_id', userId);
+    }
+    
+    const reportStatsPromise = reportStatsQuery;
 
     // OPTIMIZATION 2: Get user division and projects in parallel
-    const userDataPromise = !isAdmin || targetUserId 
+    const userDataPromise = userId
       ? supabaseAdmin
           .from('users')
           .select('"divisionId"')
@@ -97,14 +106,14 @@ export async function GET(request: NextRequest) {
     const uniqueProjects = new Set(allReports.map(r => r.project_id));
     const totalProjectsWorked = uniqueProjects.size;
 
-    // Today's progress
-    const todayProgress = !isAdmin || targetUserId 
+    // Today's progress (only for specific user view)
+    const todayProgress = userId
       ? Math.min((todayReports / 3) * 100, 100)
       : 0;
 
-    // Average reports per day
+    // Average reports per day (only for specific user view)
     let avgReportsPerDay = 0;
-    if ((!isAdmin || targetUserId) && allReports.length > 0) {
+    if (userId && allReports.length > 0) {
       const sortedReports = [...allReports].sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
@@ -113,14 +122,14 @@ export async function GET(request: NextRequest) {
       avgReportsPerDay = daysDiff > 0 ? allReports.length / daysDiff : 0;
     }
 
-    // Location breakdown
+    // Location breakdown (only for specific user view)
     const locationCounts: Record<string, number> = {
       'Remote': 0,
       'Kantor': 0,
       'Lokasi Proyek': 0
     };
     
-    if (!isAdmin || targetUserId) {
+    if (userId) {
       allReports.forEach(report => {
         locationCounts[report.lokasi_kerja] = (locationCounts[report.lokasi_kerja] || 0) + 1;
       });
@@ -232,7 +241,7 @@ export async function GET(request: NextRequest) {
     let activeProjects = 0;
     let activeProjectsList: any[] = [];
 
-    if (!isAdmin || targetUserId) {
+    if (userId) {
       const userData = userDataResult.data;
       
       if (userData && (userData as any).divisionId) {
@@ -297,11 +306,11 @@ export async function GET(request: NextRequest) {
         periodReports,
         totalProjectsWorked,
         activeProjects,
-        activeProjectsList: (!isAdmin || targetUserId) ? activeProjectsList : [],
-        todayProgress: (!isAdmin || targetUserId) ? Math.round(todayProgress) : null,
-        avgReportsPerDay: (!isAdmin || targetUserId) ? Number(avgReportsPerDay.toFixed(2)) : null,
-        locationBreakdown: (!isAdmin || targetUserId) ? locationBreakdown : [],
-        kendalaStats: (!isAdmin || targetUserId) ? kendalaStats : null,
+        activeProjectsList: userId ? activeProjectsList : [],
+        todayProgress: userId ? Math.round(todayProgress) : null,
+        avgReportsPerDay: userId ? Number(avgReportsPerDay.toFixed(2)) : null,
+        locationBreakdown: userId ? locationBreakdown : [],
+        kendalaStats: userId ? kendalaStats : null,
         trendData,
         period
       }

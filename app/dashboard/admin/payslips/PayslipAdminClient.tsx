@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { toast } from '@/components/notifications/ToastNotification'
 import type { Employee, Payslip } from '@/lib/payslip/types'
 import type { EmployeeLeave } from '@/lib/leave/types'
 import PayslipFormModal from './PayslipFormModal'
@@ -51,12 +52,6 @@ export default function PayslipAdminClient({
   const [deletePayslip, setDeletePayslip] = useState<Payslip | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
-
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
-  }
 
   const fetchPayslips = useCallback(async () => {
     setLoading(true)
@@ -119,13 +114,13 @@ export default function PayslipAdminClient({
       })
       const json = await res.json()
       if (json.success) {
-        showToast(`Berhasil menerbitkan ${json.data.published_count} slip gaji`)
+        toast.success('Slip Gaji Diterbitkan!', `Berhasil menerbitkan ${json.data.published_count} slip gaji`)
         fetchPayslips()
       } else {
-        showToast(json.message || 'Gagal menerbitkan', 'error')
+        toast.error('Gagal Menerbitkan', json.message || 'Gagal menerbitkan slip gaji')
       }
     } catch {
-      showToast('Terjadi kesalahan', 'error')
+      toast.error('Error!', 'Terjadi kesalahan saat menerbitkan')
     } finally {
       setPublishing(false)
     }
@@ -140,14 +135,14 @@ export default function PayslipAdminClient({
       })
       const json = await res.json()
       if (json.success) {
-        showToast('Slip gaji berhasil dihapus')
+        toast.success('Slip Gaji Dihapus!', 'Slip gaji berhasil dihapus')
         setDeletePayslip(null)
         fetchPayslips()
       } else {
-        showToast(json.message || 'Gagal menghapus slip gaji', 'error')
+        toast.error('Gagal Menghapus', json.message || 'Gagal menghapus slip gaji')
       }
     } catch {
-      showToast('Terjadi kesalahan', 'error')
+      toast.error('Error!', 'Terjadi kesalahan saat menghapus')
     } finally {
       setDeleting(false)
     }
@@ -157,13 +152,6 @@ export default function PayslipAdminClient({
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-          {toast.msg}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -392,7 +380,12 @@ export default function PayslipAdminClient({
         <BulkGenerateModal
           selectedEmployees={selectedEmployees.length > 0 ? selectedEmployees : filteredEmployees}
           periode={{ bulan, tahun }}
-          onSuccess={(count) => { setShowBulkModal(false); setSelectedIds(new Set()); fetchPayslips(); showToast(`Berhasil membuat ${count} slip gaji`) }}
+          onSuccess={(count) => { 
+            setShowBulkModal(false); 
+            setSelectedIds(new Set()); 
+            fetchPayslips(); 
+            toast.success('Slip Gaji Dibuat!', `Berhasil membuat ${count} slip gaji`) 
+          }}
           onCancel={() => setShowBulkModal(false)}
         />
       )}
@@ -402,7 +395,11 @@ export default function PayslipAdminClient({
         <LeaveFormModal
           employee={leaveEmployee}
           tahun={tahun}
-          onSuccess={() => { setLeaveEmployee(null); showToast('Data cuti berhasil disimpan'); fetchPayslips() }}
+          onSuccess={() => { 
+            setLeaveEmployee(null); 
+            toast.success('Data Cuti Disimpan!', 'Data cuti berhasil disimpan'); 
+            fetchPayslips() 
+          }}
           onCancel={() => setLeaveEmployee(null)}
         />
       )}

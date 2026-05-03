@@ -122,11 +122,30 @@ export async function GET(request: NextRequest) {
         ? Math.floor((Date.now() - new Date(lastReportDate).getTime()) / (1000 * 60 * 60 * 24))
         : 999
 
-      // Determine activity level
+      // Determine activity level based on report frequency
       let activityLevel = 'stagnant'
-      if (reportCount >= 30) activityLevel = 'very_active'
-      else if (reportCount >= 15) activityLevel = 'active'
-      else if (reportCount >= 5) activityLevel = 'low_active'
+      const daysInPeriod = daysAgo
+      
+      if (reportCount > 0) {
+        const reportsPerDay = reportCount / daysInPeriod
+        
+        // Very Active: > 0.5 reports per day (e.g., 15+ reports in 30 days)
+        if (reportsPerDay > 0.5) {
+          activityLevel = 'very_active'
+        }
+        // Active: 0.2 - 0.5 reports per day (e.g., 6-15 reports in 30 days)
+        else if (reportsPerDay >= 0.2) {
+          activityLevel = 'active'
+        }
+        // Low Active: 0.05 - 0.2 reports per day (e.g., 2-6 reports in 30 days)
+        else if (reportsPerDay >= 0.05) {
+          activityLevel = 'low_active'
+        }
+        // Stagnant: < 0.05 reports per day (e.g., < 2 reports in 30 days)
+        else {
+          activityLevel = 'stagnant'
+        }
+      }
 
       const isStagnant = daysSinceLastReport > 7 && project.status === 'Aktif'
 

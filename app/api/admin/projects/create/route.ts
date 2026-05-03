@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
 import { v4 as uuidv4 } from "uuid";
+import { sendNotification, NotificationTemplates } from "@/lib/notifications";
 
 export async function POST(request: NextRequest) {
   try {
@@ -294,6 +295,41 @@ export async function POST(request: NextRequest) {
       };
 
       console.log("Project created successfully:", transformedProject);
+
+      // Send notifications
+      try {
+        console.log('=== PROJECT CREATION NOTIFICATION START ===');
+        
+        // Get creator info
+        const { data: creatorData } = await supabaseAdmin
+          .from('users')
+          .select('name, email')
+          .eq('id', session.userId)
+          .single();
+
+        const createdBy = creatorData?.name || creatorData?.email || 'Admin';
+
+        // Notify CEO about new project
+        await sendNotification(
+          NotificationTemplates.projectCreated(name.trim(), createdBy)
+        );
+        console.log('✅ CEO notification sent');
+
+        // Send notification to assigned users
+        if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+          for (const userId of userIds) {
+            await sendNotification(
+              NotificationTemplates.projectAssigned(name.trim(), userId)
+            );
+          }
+          console.log(`✅ Notifications sent to ${userIds.length} assigned users`);
+        }
+
+        console.log('=== PROJECT CREATION NOTIFICATION END ===');
+      } catch (notifError) {
+        console.error("Failed to send notifications:", notifError);
+        // Don't fail the request if notification fails
+      }
 
       return NextResponse.json({
         success: true,

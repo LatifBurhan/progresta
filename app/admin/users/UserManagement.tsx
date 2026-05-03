@@ -22,6 +22,7 @@ import {
   Edit
 } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from '@/components/notifications/ToastNotification'
 import ApprovalModal from './ApprovalModal'
 import UserActionModal from './UserActionModal'
 
@@ -105,17 +106,18 @@ export default function UserManagement({
         }
         
         setApprovalModal({ open: false, user: null })
-        alert('User berhasil disetujui!')
+        toast.success('User Disetujui!', `User ${updatedUser?.email} berhasil disetujui`)
       } else {
-        alert(result.message || 'Gagal menyetujui user')
+        toast.error('Gagal Menyetujui', result.message || 'Gagal menyetujui user')
       }
     } catch (error) {
       console.error('Approval error:', error)
-      alert('Terjadi kesalahan saat menyetujui user')
+      toast.error('Error!', 'Terjadi kesalahan saat menyetujui user')
     }
   }
 
   const handleCreateSuccess = () => {
+    toast.success('User Dibuat!', 'User baru berhasil dibuat')
     // Refresh page to show new user
     window.location.reload()
   }
@@ -133,22 +135,24 @@ export default function UserManagement({
       if (result.success) {
         if (action === 'delete') {
           setAllUsers(prev => prev.filter(u => u.id !== userId))
+          toast.success('User Dihapus!', 'User berhasil dihapus')
         } else {
           setAllUsers(prev => prev.map(u => 
             u.id === userId 
               ? { ...u, status: action === 'activate' ? 'ACTIVE' : 'INACTIVE' }
               : u
           ))
+          const actionText = action === 'activate' ? 'diaktifkan' : 'dinonaktifkan'
+          toast.success('Status Diubah!', `User berhasil ${actionText}`)
         }
         
         setActionModal({ open: false, user: null, action: null })
-        alert(`User berhasil ${action === 'activate' ? 'diaktifkan' : action === 'deactivate' ? 'dinonaktifkan' : 'dihapus'}!`)
       } else {
-        alert(result.message || `Gagal ${action} user`)
+        toast.error('Gagal!', result.message || `Gagal ${action} user`)
       }
     } catch (error) {
       console.error('User action error:', error)
-      alert(`Terjadi kesalahan saat ${action} user`)
+      toast.error('Error!', `Terjadi kesalahan saat ${action} user`)
     }
   }
 

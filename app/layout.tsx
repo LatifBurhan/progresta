@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import PerformanceMonitor from '@/components/PerformanceMonitor'
 import { Toaster } from '@/components/ui/toaster'
+import { ToastContainer } from '@/components/notifications/ToastNotification'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -53,6 +54,7 @@ export default function RootLayout({
         {process.env.NODE_ENV === 'development' && <PerformanceMonitor />}
         {children}
         <Toaster />
+        <ToastContainer />
       </body>
     </html>
   )

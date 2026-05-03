@@ -6,6 +6,7 @@ import { isPayslipManager } from '@/lib/payslip/roles'
 import { validateUpsertPayslip } from '@/lib/payslip/validators'
 import { getPayslipById } from '@/lib/payslip/queries'
 import { getAdminDepartment, validateUsersDepartment } from '@/lib/payslip/department'
+import { sendNotification, NotificationTemplates } from '@/lib/notifications'
 
 export async function PUT(
   request: Request,
@@ -76,6 +77,34 @@ export async function PUT(
       return NextResponse.json({ success: false, message: 'Terjadi kesalahan server' }, { status: 500 })
     }
 
+    // Send notification to user if payslip is published
+    if (data && existing.status === 'published') {
+      try {
+        console.log('=== PAYSLIP UPDATE NOTIFICATION START ===')
+        console.log('Updated payslip ID:', id)
+        console.log('User ID:', existing.user_id)
+        console.log('Periode:', `${existing.periode_bulan}/${existing.periode_tahun}`)
+
+        // Format month name
+        const monthNames = [
+          'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ]
+        const monthName = monthNames[existing.periode_bulan - 1] || existing.periode_bulan.toString()
+        const monthYear = `${monthName} ${existing.periode_tahun}`
+
+        await sendNotification(
+          NotificationTemplates.payslipUpdated(monthYear, existing.user_id)
+        )
+
+        console.log('✅ Payslip update notification sent')
+        console.log('=== PAYSLIP UPDATE NOTIFICATION END ===')
+      } catch (notifError) {
+        console.error('❌ Failed to send payslip update notification:', notifError)
+        // Don't fail the request if notification fails
+      }
+    }
+
     return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error('PUT /api/admin/payslips/[id] error:', error)
@@ -142,6 +171,34 @@ export async function DELETE(
         success: false, 
         message: 'Gagal menghapus slip gaji' 
       }, { status: 500 })
+    }
+
+    // Send notification to user if payslip was published
+    if (payslip.status === 'published') {
+      try {
+        console.log('=== PAYSLIP DELETE NOTIFICATION START ===')
+        console.log('Deleted payslip ID:', id)
+        console.log('User ID:', payslip.user_id)
+        console.log('Periode:', `${payslip.periode_bulan}/${payslip.periode_tahun}`)
+
+        // Format month name
+        const monthNames = [
+          'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ]
+        const monthName = monthNames[payslip.periode_bulan - 1] || payslip.periode_bulan.toString()
+        const monthYear = `${monthName} ${payslip.periode_tahun}`
+
+        await sendNotification(
+          NotificationTemplates.payslipDeleted(monthYear, payslip.user_id)
+        )
+
+        console.log('✅ Payslip delete notification sent')
+        console.log('=== PAYSLIP DELETE NOTIFICATION END ===')
+      } catch (notifError) {
+        console.error('❌ Failed to send payslip delete notification:', notifError)
+        // Don't fail the request if notification fails
+      }
     }
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/session";
 import { supabaseAdmin } from "@/lib/supabase";
+import { sendNotification, NotificationTemplates } from "@/lib/notifications";
 
 // GET - Get single project
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -224,6 +225,16 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         );
       }
 
+      // Get old project status BEFORE update (for notification comparison)
+      const { data: oldProjectData } = await supabaseAdmin
+        .from('projects')
+        .select('status')
+        .eq('id', projectId)
+        .single();
+
+      const oldStatus = oldProjectData?.status;
+      console.log('📌 Old project status before update:', oldStatus);
+
       // Update project data
       const projectData: any = {
         name: name.trim(),
@@ -296,7 +307,22 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       }
 
       // Update project assignments (Specific Users)
+      // Get old assignments first before updating
+      const { data: oldAssignments } = await supabaseAdmin
+        .from("project_assignments")
+        .select("user_id")
+        .eq("project_id", projectId);
+
+      const oldUserIds = oldAssignments?.map(a => a.user_id) || [];
+
+      console.log('📋 Assignment update logic:');
+      console.log('  Old assignments from DB:', oldUserIds);
+      console.log('  New userIds from request:', userIds);
+      console.log('  userIds is undefined?', userIds === undefined);
+
       if (userIds !== undefined) {
+        console.log('  ⚠️ userIds is defined, will update assignments');
+        
         // Delete old assignments
         const { error: deleteError } = await supabaseAdmin.from("project_assignments").delete().eq("project_id", projectId);
 
@@ -311,7 +337,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
           );
         }
 
+        console.log('  ✅ Old assignments deleted');
+
         if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+          console.log('  ✅ Inserting new assignments:', userIds);
+          
           const projectAssignments = userIds.map((userId: string) => ({
             project_id: projectId,
             user_id: userId,
@@ -329,7 +359,13 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
               { status: 500 },
             );
           }
+          
+          console.log('  ✅ New assignments inserted');
+        } else {
+          console.log('  ⚠️ userIds is empty array, no new assignments to insert');
         }
+      } else {
+        console.log('  ℹ️ userIds is undefined, keeping existing assignments');
       }
 
       // Get the complete updated project with divisions
@@ -387,6 +423,82 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         assignments: assignedUsers,
       };
 
+      // Send notifications for project updates
+      try {
+        console.log('=== NOTIFICATION DEBUG START ===');
+        console.log('Status from request:', status);
+        console.log('Old user IDs:', oldUserIds);
+        console.log('New user IDs:', userIds);
+        console.log('Assigned users:', assignedUsers);
+        
+        const newUserIds = userIds || [];
+
+        // Find newly assigned users
+        const newlyAssignedUsers = newUserIds.filter((id: string) => !oldUserIds.includes(id));
+
+        console.log('Newly assigned users:', newlyAssignedUsers);
+
+        // Send notification to newly assigned users
+        if (newlyAssignedUsers.length > 0) {
+          console.log(`Sending notifications to ${newlyAssignedUsers.length} newly assigned users...`);
+          for (const userId of newlyAssignedUsers) {
+            await sendNotification(
+              NotificationTemplates.projectAssigned(name.trim(), userId)
+            );
+          }
+          console.log(`✅ Notifications sent to ${newlyAssignedUsers.length} newly assigned users`);
+        } else {
+          console.log('No newly assigned users to notify');
+        }
+
+        const statusChanged = status && oldStatus && status !== oldStatus;
+
+        console.log('Status change detection:');
+        console.log('  Old status:', oldStatus);
+        console.log('  New status:', status);
+        console.log('  Status changed?', statusChanged);
+
+        // If status changed, notify all assigned users
+        if (statusChanged) {
+          const allAssignedUserIds = assignedUsers.map(u => u.id);
+          console.log('All assigned user IDs for status notification:', allAssignedUserIds);
+          
+          if (allAssignedUserIds.length > 0) {
+            console.log(`Sending status change notification to ${allAssignedUserIds.length} users...`);
+            
+            // Determine priority based on status
+            let priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium';
+            if (status === 'Dibatalkan') priority = 'high';
+            else if (status === 'Selesai') priority = 'medium';
+            else if (status === 'Ditunda') priority = 'high';
+            else if (status === 'Non-Aktif') priority = 'medium';
+            
+            await sendNotification({
+              type: 'project_status_changed',
+              title: 'Status Project Berubah',
+              message: `Project "${name.trim()}" statusnya berubah dari ${oldStatus} menjadi ${status}`,
+              priority: priority,
+              userIds: allAssignedUserIds,
+              actionUrl: '/dashboard/admin/projects',
+              data: { projectName: name.trim(), oldStatus, newStatus: status }
+            });
+            
+            console.log(`✅ Status change notification sent to ${allAssignedUserIds.length} users`);
+          } else {
+            console.log('⚠️ No assigned users to notify about status change');
+            console.log('💡 Tip: Tambahkan user di "Personel Terpilih" saat edit project');
+          }
+        } else {
+          console.log('Status not changed, skipping status notification');
+        }
+        
+        console.log('=== NOTIFICATION DEBUG END ===');
+      } catch (notifError) {
+        console.error("Failed to send notifications:", notifError);
+        console.error("Notification error stack:", notifError);
+        // Don't fail the request if notification fails
+      }
+
       return NextResponse.json({
         success: true,
         message: "Project berhasil diupdate!",
@@ -439,8 +551,40 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
         );
       }
 
+      // Get project details and assigned users BEFORE deletion
+      const { data: projectData } = await supabaseAdmin
+        .from('projects')
+        .select('name')
+        .eq('id', projectId)
+        .single();
+
+      const projectName = projectData?.name || 'Project';
+
+      // Get assigned users
+      const { data: assignmentsData } = await supabaseAdmin
+        .from('project_assignments')
+        .select('user_id')
+        .eq('project_id', projectId);
+
+      const assignedUserIds = assignmentsData?.map(a => a.user_id) || [];
+
+      // Get user info for notification
+      const { data: userData } = await supabaseAdmin
+        .from('users')
+        .select('name, email')
+        .eq('id', session.userId)
+        .single();
+
+      const deletedBy = userData?.name || userData?.email || 'Admin';
+
       // Delete from project_divisions first (if exists)
       await supabaseAdmin.from("project_divisions").delete().eq("project_id", projectId);
+
+      // Delete from project_assignments
+      await supabaseAdmin.from("project_assignments").delete().eq("project_id", projectId);
+
+      // Delete from project_department_divisions
+      await supabaseAdmin.from("project_department_divisions").delete().eq("project_id", projectId);
 
       // Delete the project
       const { error: deleteError } = await supabaseAdmin.from("projects").delete().eq("id", projectId);
@@ -454,6 +598,33 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
           },
           { status: 500 },
         );
+      }
+
+      // Send notifications after successful deletion
+      try {
+        console.log('=== PROJECT DELETION NOTIFICATION START ===');
+        console.log('Project name:', projectName);
+        console.log('Deleted by:', deletedBy);
+        console.log('Assigned users:', assignedUserIds);
+
+        // Notify CEO about project deletion
+        await sendNotification(
+          NotificationTemplates.projectDeleted(projectName, deletedBy)
+        );
+        console.log('✅ CEO notification sent');
+
+        // Notify assigned staff members
+        if (assignedUserIds.length > 0) {
+          await sendNotification(
+            NotificationTemplates.projectDeletedStaff(projectName, assignedUserIds)
+          );
+          console.log(`✅ Staff notifications sent to ${assignedUserIds.length} users`);
+        }
+
+        console.log('=== PROJECT DELETION NOTIFICATION END ===');
+      } catch (notifError) {
+        console.error("Failed to send deletion notifications:", notifError);
+        // Don't fail the request if notification fails
       }
 
       return NextResponse.json({

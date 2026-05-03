@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RealtimeReportsTable } from '@/components/admin/RealtimeReportsTable'
+import { getCache, setCache } from '@/lib/utils/simple-cache'
 import {
   XAxis,
   YAxis,
@@ -86,43 +87,69 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
   const isAdmin = ['ADMIN', 'GENERAL_AFFAIR', 'CEO'].includes(userRole)
 
   useEffect(() => {
+    const loadStats = async () => {
+      // Try to load from cache first
+      const cacheKey = `stats_${period}_${userId || 'all'}`
+      const cached = getCache<DashboardStats>(cacheKey)
+      
+      if (cached) {
+        // Show cached data immediately
+        setStats(cached)
+        setLoading(false)
+      } else {
+        setLoading(true)
+      }
+      
+      try {
+        const params = new URLSearchParams({ period })
+        if (userId) params.append('user_id', userId)
+        // Use optimized endpoint
+        const res = await fetch(`/api/dashboard/stats-optimized?${params.toString()}`)
+        const data = await res.json()
+        if (data.success) {
+          setStats(data.data)
+          // Cache the result
+          setCache(cacheKey, data.data)
+        }
+      } catch (error) {
+        console.error('Failed to load stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
     loadStats()
   }, [period, userId])
 
   useEffect(() => {
-    if (isAdmin) {
-      loadProjectActivity()
-    }
-  }, [activityPeriod, isAdmin])
-
-  const loadStats = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({ period })
-      if (userId) params.append('user_id', userId)
-      // Use optimized endpoint
-      const res = await fetch(`/api/dashboard/stats-optimized?${params.toString()}`)
-      const data = await res.json()
-      if (data.success) setStats(data.data)
-    } catch (error) {
-      console.error('Failed to load stats:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadProjectActivity = async () => {
-    try {
-      // Use optimized endpoint
-      const res = await fetch(`/api/admin/project-activity-optimized?period=${activityPeriod}`)
-      const result = await res.json()
-      if (result.success) {
-        setProjectActivity(result.data)
+    if (!isAdmin) return
+    
+    const loadProjectActivity = async () => {
+      // Try to load from cache first
+      const cacheKey = `activity_${activityPeriod}`
+      const cached = getCache<ProjectActivityData>(cacheKey)
+      
+      if (cached) {
+        setProjectActivity(cached)
+        return
       }
-    } catch (error) {
-      console.error('Failed to load activity data:', error)
+      
+      try {
+        // Use optimized endpoint
+        const res = await fetch(`/api/admin/project-activity-optimized?period=${activityPeriod}`)
+        const result = await res.json()
+        if (result.success) {
+          setProjectActivity(result.data)
+          // Cache the result
+          setCache(cacheKey, result.data)
+        }
+      } catch (error) {
+        console.error('Failed to load activity data:', error)
+      }
     }
-  }
+    
+    loadProjectActivity()
+  }, [activityPeriod, isAdmin])
 
   const getActivityColor = (level: string) => {
     switch (level) {
@@ -209,7 +236,7 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
       </div>
 
       {/* NEW: 3 Statistik Tambahan - Compact */}
-      {!isAdmin && stats.avgReportsPerDay !== null && (
+      {stats.avgReportsPerDay !== null && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* 1. Rata-rata Laporan per Hari */}
           <Card className="border border-slate-100 shadow-sm">
@@ -274,7 +301,7 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
       )}
 
       {/* 3. Statistik Kendala - Compact */}
-      {!isAdmin && stats.kendalaStats && (
+      {stats.kendalaStats && (
         <Card className="border border-rose-100 shadow-sm bg-gradient-to-br from-rose-50 to-orange-50">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center justify-between gap-3">
@@ -350,8 +377,7 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
         </Card>
 
         {/* Active Projects - Compact */}
-        {!isAdmin && (
-          <Card className="border border-slate-100 shadow-sm">
+        <Card className="border border-slate-100 shadow-sm">
             <CardHeader className="p-3 md:p-4">
               <CardTitle className="text-sm font-semibold text-slate-800 flex items-center justify-between">
                 Project Aktif
@@ -374,7 +400,6 @@ export function DashboardClient({ userRole, userName, userId }: DashboardClientP
               )}
             </CardContent>
           </Card>
-        )}
       </div>
 
       {/* Project Activity Monitor - Compact for Admin */}

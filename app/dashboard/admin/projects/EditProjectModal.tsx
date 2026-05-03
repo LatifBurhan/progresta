@@ -213,21 +213,36 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return setError("Nama project wajib diisi");
+    
+    console.log('🔵 EditProjectModal - Submitting with formData:', {
+      name: formData.name,
+      userIds: formData.userIds,
+      userIdsLength: formData.userIds?.length,
+      status: formData.status,
+    });
+    
     setLoading(true);
     setError("");
 
     try {
+      const payload = {
+        ...formData,
+        name: formData.name.trim(),
+        lampiranFiles: formData.lampiranFiles.length > 0 ? formData.lampiranFiles : null,
+      };
+      
+      console.log('🔵 EditProjectModal - Payload to send:', payload);
+      
       const response = await fetch(`/api/admin/projects/${project.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          name: formData.name.trim(),
-          lampiranFiles: formData.lampiranFiles.length > 0 ? formData.lampiranFiles : null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
+      
+      console.log('🔵 EditProjectModal - Response:', result);
+      
       if (result.success) {
         onSuccess(result.project);
         onClose();
@@ -235,6 +250,7 @@ export default function EditProjectModal({ open, project, divisions, onClose, on
         setError(result.message || "Gagal mengupdate project");
       }
     } catch (err) {
+      console.error('🔵 EditProjectModal - Error:', err);
       setError("Terjadi kesalahan sistem");
     } finally {
       setLoading(false);

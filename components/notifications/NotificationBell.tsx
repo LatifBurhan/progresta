@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Bell, X, Check, AlertCircle, Info, CheckCircle } from 'lucide-react'
-import { supabaseAdmin } from '@/lib/supabase'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseBrowserClient } from '@/lib/supabase-client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,58 +29,248 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(false)
+  const [isDevelopment, setIsDevelopment] = useState(false)
+
+  // Check if we're in development mode (client-side only to avoid hydration mismatch)
+  useEffect(() => {
+    setIsDevelopment(window.location.hostname === 'localhost')
+  }, [])
 
   useEffect(() => {
     if (!userId) return
 
-    // Initialize Supabase client for realtime
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    // Subscribe to realtime notifications
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on('broadcast', { event: 'notification' }, (payload) => {
-        const notification = payload.payload as Notification
+    // Load existing notifications from database
+    const loadNotifications = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
         
-        // Add to notifications list
-        setNotifications(prev => [notification, ...prev].slice(0, 50)) // Keep last 50
-        setUnreadCount(prev => prev + 1)
+        // Check if supabase client is available
+        if (!supabase) {
+          console.warn('Supabase client not available')
+          return
+        }
+        
+        // Note: This app uses custom JWT auth, not Supabase Auth
+        // So we skip the Supabase session check and rely on userId prop
+        if (!userId) {
+          console.warn('No userId provided, skipping notification load')
+          return
+        }
+        
+        console.log('Loading notifications for user:', userId)
+        
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(50)
 
-        // Show toast notification
-        showToast(notification)
-      })
-      .subscribe()
+        if (error) {
+          console.error('Failed to load notifications:', error)
+          console.error('Error details:', JSON.stringify(error, null, 2))
+          return
+        }
+
+        console.log('Loaded notifications:', data?.length || 0)
+
+        if (data && data.length > 0) {
+          const formattedNotifications = data.map(n => ({
+            id: n.id,
+            type: n.type,
+            title: n.title,
+            message: n.message,
+            priority: n.priority as 'low' | 'medium' | 'high' | 'urgent',
+            timestamp: n.created_at,
+            actionUrl: n.action_url,
+            data: n.data,
+            read: n.read,
+          }))
+          
+          setNotifications(formattedNotifications)
+          setUnreadCount(formattedNotifications.filter(n => !n.read).length)
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+      }
+    }
+
+    loadNotifications()
+
+    // Disable realtime in development to avoid transformAlgorithm error
+    // This error occurs due to Next.js hot reloading interfering with Supabase Realtime streams
+    if (isDevelopment) {
+      console.log('Realtime notifications disabled in development mode')
+      setIsRealtimeEnabled(false)
+      return
+    }
+
+    let channel: any = null
+    let isSubscribed = false
+
+    const setupChannel = async () => {
+      try {
+        // Initialize Supabase client for realtime
+        const supabase = getSupabaseBrowserClient()
+        
+        if (!supabase) {
+          console.warn('Supabase client not available for realtime')
+          setIsRealtimeEnabled(false)
+          return
+        }
+
+        // Subscribe to realtime notifications
+        channel = supabase
+          .channel(`notifications:${userId}`, {
+            config: {
+              broadcast: { self: true }
+            }
+          })
+          .on('broadcast', { event: 'notification' }, (payload) => {
+            if (!isSubscribed) return
+            
+            try {
+              const notification = payload.payload as Notification
+              
+              // Add to notifications list
+              setNotifications(prev => [notification, ...prev].slice(0, 50))
+              setUnreadCount(prev => prev + 1)
+
+              // Show toast notification
+              showToast(notification)
+            } catch (error) {
+              console.error('Error handling notification:', error)
+            }
+          })
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              isSubscribed = true
+              setIsRealtimeEnabled(true)
+              console.log('Notification channel subscribed')
+            } else if (status === 'CHANNEL_ERROR') {
+              isSubscribed = false
+              setIsRealtimeEnabled(false)
+              console.error('Notification channel error')
+            } else if (status === 'CLOSED') {
+              isSubscribed = false
+              setIsRealtimeEnabled(false)
+            }
+          })
+      } catch (error) {
+        console.error('Failed to setup notification channel:', error)
+        setIsRealtimeEnabled(false)
+      }
+    }
+
+    setupChannel()
 
     return () => {
-      supabase.removeChannel(channel)
+      isSubscribed = false
+      if (channel) {
+        try {
+          channel.unsubscribe()
+        } catch (error) {
+          // Silently fail - channel might already be closed
+        }
+      }
     }
-  }, [userId])
+  }, [userId, isDevelopment])
 
   const showToast = (notification: Notification) => {
     // Trigger toast notification
     if (typeof window !== 'undefined' && 'showNotificationToast' in window) {
-      (window as any).showNotificationToast(notification)
+      try {
+        (window as any).showNotificationToast(notification)
+      } catch (error) {
+        console.error('Error showing toast:', error)
+      }
     }
   }
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
+    // Update UI immediately
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     )
     setUnreadCount(prev => Math.max(0, prev - 1))
+
+    // Update database
+    try {
+      const supabase = getSupabaseBrowserClient()
+      
+      if (!supabase) {
+        console.warn('Supabase client not available')
+        return
+      }
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id)
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Failed to mark notification as read:', error)
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
   }
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    // Update UI immediately
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     setUnreadCount(0)
+
+    // Update database
+    try {
+      const supabase = getSupabaseBrowserClient()
+      
+      if (!supabase) {
+        console.warn('Supabase client not available')
+        return
+      }
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', userId)
+        .eq('read', false)
+
+      if (error) {
+        console.error('Failed to mark all notifications as read:', error)
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+    }
   }
 
-  const clearAll = () => {
+  const clearAll = async () => {
+    // Update UI immediately
     setNotifications([])
     setUnreadCount(0)
+
+    // Delete from database
+    try {
+      const supabase = getSupabaseBrowserClient()
+      
+      if (!supabase) {
+        console.warn('Supabase client not available')
+        return
+      }
+      
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Failed to clear notifications:', error)
+      }
+    } catch (error) {
+      console.error('Error clearing notifications:', error)
+    }
   }
 
   const handleNotificationClick = (notification: Notification) => {
@@ -113,12 +302,19 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <button className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
+        <button 
+          className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          title={isRealtimeEnabled ? 'Notifikasi (Realtime Aktif)' : 'Notifikasi (Development Mode)'}
+        >
           <Bell className="w-5 h-5 text-slate-600" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
+          )}
+          {/* Development mode indicator */}
+          {!isRealtimeEnabled && isDevelopment && (
+            <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-orange-400 rounded-full" title="Realtime disabled in dev mode" />
           )}
         </button>
       </DropdownMenuTrigger>
@@ -130,6 +326,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             <h3 className="font-bold text-slate-900">Notifikasi</h3>
             {unreadCount > 0 && (
               <p className="text-xs text-slate-500">{unreadCount} belum dibaca</p>
+            )}
+            {!isRealtimeEnabled && isDevelopment && (
+              <p className="text-xs text-orange-600 mt-1">⚠️ Dev mode: Realtime disabled</p>
             )}
           </div>
           <div className="flex items-center gap-2">

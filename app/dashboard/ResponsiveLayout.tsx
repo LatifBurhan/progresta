@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 type Session = {
   userId: string;
@@ -67,6 +68,9 @@ export default function ResponsiveLayout({ session, profile, children, logoutAct
 
             {/* Right Section */}
             <div className="flex items-center gap-3 sm:gap-6">
+              {/* Notification Bell */}
+              <NotificationBell userId={session.userId} />
+              
               <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
                 <div className="hidden sm:flex flex-col text-right">
                   <span className="text-sm font-semibold text-slate-900 leading-tight">{session.email.split("@")[0]}</span>
